@@ -12,6 +12,7 @@ use Intervention\Image\Laravel\Facades\Image;
 use File;
 use Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class FrontUserController extends Controller
 {
@@ -102,13 +103,16 @@ class FrontUserController extends Controller
     }
     //ajax get districts
     public function getDistricts(Request $request){ 
-    $data =  CustomData::where('key_name','state')->where('parent_id',$request->state_id)->orderBy('name','asc')->get();
-    return response()->json($data);
+        $stateId = $request->state_id ?? $request->id;
+        $data = CustomData::where('key_name','state')->where('parent_id', $stateId)->orderBy('name','asc')->get();
+        return response()->json($data);
     }
-    //ajax get districts
-    public function getCities(Request $request){ Log::info('district = '.$request->district_id);
-    $data =  CustomData::where('key_name','state')->where('parent_id',$request->district_id)->orderBy('name','asc')->get();
-    return response()->json($data);
+    //ajax get cities
+    public function getCities(Request $request){ 
+        $districtId = $request->district_id ?? $request->id;
+        Log::info('district = ' . $districtId);
+        $data = CustomData::where('key_name','state')->where('parent_id', $districtId)->orderBy('name','asc')->get();
+        return response()->json($data);
     }
 
     //ajax get user details

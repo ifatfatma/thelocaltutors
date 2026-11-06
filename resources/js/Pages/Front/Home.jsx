@@ -26,35 +26,53 @@ export default function Home({
     });
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
+    const [loadingDistricts, setLoadingDistricts] = useState(false);
+    const [loadingCities, setLoadingCities] = useState(false);
 
     const handleStateChange = async (e) => {
         const stateId = e.target.value;
-        setSearchState({ ...searchState, search_state: stateId, search_district: '0', search_city: '0' });
+        setSearchState((prev) => ({ ...prev, search_state: stateId, search_district: '0', search_city: '0' }));
+        setDistricts([]);
+        setCities([]);
+
         if (stateId && stateId !== '0') {
+            setLoadingDistricts(true);
             try {
                 const res = await axios.get(`/get-districts?state_id=${stateId}`);
                 setDistricts(res.data || []);
             } catch (err) {
-                console.error(err);
+                try {
+                    const fallback = await axios.get(`/getDistrictAjax/${stateId}`);
+                    setDistricts(fallback.data || []);
+                } catch (e2) {
+                    console.error('Error fetching districts:', err);
+                }
+            } finally {
+                setLoadingDistricts(false);
             }
-        } else {
-            setDistricts([]);
-            setCities([]);
         }
     };
 
     const handleDistrictChange = async (e) => {
         const distId = e.target.value;
-        setSearchState({ ...searchState, search_district: distId, search_city: '0' });
+        setSearchState((prev) => ({ ...prev, search_district: distId, search_city: '0' }));
+        setCities([]);
+
         if (distId && distId !== '0') {
+            setLoadingCities(true);
             try {
                 const res = await axios.get(`/get-cities?district_id=${distId}`);
                 setCities(res.data || []);
             } catch (err) {
-                console.error(err);
+                try {
+                    const fallback = await axios.get(`/getCityAjax/${distId}`);
+                    setCities(fallback.data || []);
+                } catch (e2) {
+                    console.error('Error fetching cities:', err);
+                }
+            } finally {
+                setLoadingCities(false);
             }
-        } else {
-            setCities([]);
         }
     };
 
@@ -131,9 +149,11 @@ export default function Home({
                                                 className="form-select form-select-sm"
                                                 value={searchState.search_district}
                                                 onChange={handleDistrictChange}
-                                                disabled={districts.length === 0}
+                                                disabled={searchState.search_state === '0' || loadingDistricts}
                                             >
-                                                <option value="0">Select District</option>
+                                                <option value="0">
+                                                    {loadingDistricts ? 'Loading Districts...' : 'Select District'}
+                                                </option>
                                                 {districts.map((d) => (
                                                     <option key={d.id} value={d.id}>{d.name}</option>
                                                 ))}
@@ -144,10 +164,16 @@ export default function Home({
                                             <select
                                                 className="form-select form-select-sm"
                                                 value={searchState.search_city}
-                                                onChange={(e) => setSearchState({ ...searchState, search_city: e.target.value })}
-                                                disabled={cities.length === 0}
+                                                onChange={(e) => setSearchState((prev) => ({ ...prev, search_city: e.target.value }))}
+                                                disabled={searchState.search_district === '0' || loadingCities}
                                             >
-                                                <option value="0">Select City</option>
+                                                <option value="0">
+                                                    {loadingCities
+                                                        ? 'Loading Cities...'
+                                                        : (searchState.search_district !== '0' && cities.length === 0)
+                                                            ? 'No Cities Found'
+                                                            : 'Select City'}
+                                                </option>
                                                 {cities.map((c) => (
                                                     <option key={c.id} value={c.id}>{c.name}</option>
                                                 ))}

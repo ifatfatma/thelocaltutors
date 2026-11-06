@@ -35,35 +35,47 @@ export default function UpdateMore({ teacher = {}, user_id, states = [] }) {
         if (form.state && form.state !== '0') {
             axios.get(`/get-districts?state_id=${form.state}`).then((res) => {
                 setDistricts(res.data || []);
+            }).catch(() => {
+                axios.get(`/getDistrictAjax/${form.state}`).then((res) => setDistricts(res.data || []));
             });
         }
         if (form.district && form.district !== '0') {
             axios.get(`/get-cities?district_id=${form.district}`).then((res) => {
                 setCities(res.data || []);
+            }).catch(() => {
+                axios.get(`/getCityAjax/${form.district}`).then((res) => setCities(res.data || []));
             });
         }
     }, []);
 
     const handleStateChange = async (e) => {
         const sId = e.target.value;
-        setForm({ ...form, state: sId, district: '0', city: '0' });
+        setForm((prev) => ({ ...prev, state: sId, district: '0', city: '0' }));
+        setDistricts([]);
+        setCities([]);
         if (sId && sId !== '0') {
-            const res = await axios.get(`/get-districts?state_id=${sId}`);
-            setDistricts(res.data || []);
-        } else {
-            setDistricts([]);
-            setCities([]);
+            try {
+                const res = await axios.get(`/get-districts?state_id=${sId}`);
+                setDistricts(res.data || []);
+            } catch {
+                const res = await axios.get(`/getDistrictAjax/${sId}`);
+                setDistricts(res.data || []);
+            }
         }
     };
 
     const handleDistrictChange = async (e) => {
         const dId = e.target.value;
-        setForm({ ...form, district: dId, city: '0' });
+        setForm((prev) => ({ ...prev, district: dId, city: '0' }));
+        setCities([]);
         if (dId && dId !== '0') {
-            const res = await axios.get(`/get-cities?district_id=${dId}`);
-            setCities(res.data || []);
-        } else {
-            setCities([]);
+            try {
+                const res = await axios.get(`/get-cities?district_id=${dId}`);
+                setCities(res.data || []);
+            } catch {
+                const res = await axios.get(`/getCityAjax/${dId}`);
+                setCities(res.data || []);
+            }
         }
     };
 
