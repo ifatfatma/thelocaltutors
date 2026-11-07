@@ -121,12 +121,16 @@ export default function EditProfile({
         }
 
         try {
-            await axios.post('/EditProfilePost', formData, {
+            const res = await axios.post('/EditProfilePost', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setStatusMsg({ type: 'success', text: 'Profile updated successfully!' });
+            setStatusMsg({ type: 'success', text: res.data?.message || 'Profile updated successfully!' });
+            setImageFile(null);
+            router.reload();
         } catch (err) {
-            setStatusMsg({ type: 'danger', text: 'Error updating profile. Please check input.' });
+            console.error(err);
+            const msg = err.response?.data?.message || 'Error updating profile. Please check input.';
+            setStatusMsg({ type: 'danger', text: msg });
         } finally {
             setLoading(false);
         }
