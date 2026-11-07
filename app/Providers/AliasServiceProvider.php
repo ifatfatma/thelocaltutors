@@ -13,8 +13,9 @@ class AliasServiceProvider extends ServiceProvider
     {
         $loader = AliasLoader::getInstance();
 
-        // Add your aliases
+        // Add aliases
         $loader->alias('Common', \App\Http\Controllers\Common::class);
+        $loader->alias('EnrollCourse', \App\Models\enrollCourse::class);
     }
 
     /**

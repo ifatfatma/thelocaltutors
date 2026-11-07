@@ -30,7 +30,9 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         },
-        "files":["App/Http/Controllers/Common.php"]
+        "files": [
+            "app/Http/Controllers/Common.php"
+        ]
         
     },
     "autoload-dev": {
