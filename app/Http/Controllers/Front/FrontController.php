@@ -71,15 +71,6 @@ class FrontController extends Controller
             $tchtxt.='<li class="list-group-item"><label class="profiletitle">description</label>'.($teacherinfo->teachermore->description??'--').'</li>';
            } 
 
-           $tchtxt.='<li class="list-group-item">
-           <h6>Write your feedback for this teacher</h6>
-                     <div class="row">
-                     <div class="col-lg-12"><select name="teacher_rating" id="teacher_rating" class="form-select form-select-sm mb-3"><option value="0">Ratings</option>'.Common::getRatingDropDown('teacher_rating').'</select></div>
-                     <div class="col-lg-12"><textarea style="border:1px solid #ccc" name="teacher_review" id="teacher_review" class="mb-3 form-control" placeholder="Write your feedback"></textarea></div>
-                     <div class="col-lg-12"><input id="'.$teacherinfo->id.'" class="btn btn-dark btn-sm mb-3 teacherreviewbtn" type="button" name="teacherreviewbtn"  value="SUBMIT"></div>
-                     </div>
-                     </li>';
-           
           $tchtxt.='</ul>';
         }
         return ['status'=>200,'message'=>$tchtxt];
@@ -122,16 +113,7 @@ class FrontController extends Controller
                if(!empty($teacherinfo->teachermore->description)){
                 $tchtxt.='<li class="list-group-item"><label class="profiletitle">description</label>'.($teacherinfo->teachermore->description??'--').'</li>';
                } 
-    
-               $tchtxt.='<li class="list-group-item">
-               <h6>Write your feedback for this teacher</h6>
-                         <div class="row">
-                         <div class="col-lg-12"><select name="teacher_rating" id="teacher_rating" class="form-select form-select-sm mb-3"><option value="0">Ratings</option>'.Common::getRatingDropDown('teacher_rating').'</select></div>
-                         <div class="col-lg-12"><textarea style="border:1px solid #ccc" name="teacher_review" id="teacher_review" class="mb-3 form-control" placeholder="Write your feedback"></textarea></div>
-                         <div class="col-lg-12"><input id="'.$teacherinfo->id.'" class="btn btn-dark btn-sm mb-3 teacherreviewbtn" type="button" name="teacherreviewbtn"  value="SUBMIT"></div>
-                         </div>
-                         </li>';
-               
+
               $tchtxt.='</ul>';
             }
             return ['status'=>200,'message'=>$tchtxt];
