@@ -4,7 +4,7 @@ import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
 import axios from 'axios';
 
-export default function SearchResults({ lists, searchdetails }) {
+export default function SearchResults({ lists, searchdetails, custom_lookups = {} }) {
     const teacherList = lists?.data || lists || [];
     const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
@@ -12,6 +12,26 @@ export default function SearchResults({ lists, searchdetails }) {
     const [teacherRating, setTeacherRating] = useState('5');
     const [teacherReview, setTeacherReview] = useState('');
     const [reviewMsg, setReviewMsg] = useState('');
+
+    const resolveSubjects = (teacher) => {
+        if (teacher.subject_names) return teacher.subject_names;
+        if (!teacher.subjects) return '';
+        const parts = teacher.subjects.toString().split(',').map(s => s.trim()).filter(Boolean);
+        return parts.map(p => custom_lookups[p] || p).join(', ');
+    };
+
+    const resolveQualification = (teacher) => {
+        if (teacher.qualification_name) return teacher.qualification_name;
+        if (!teacher.qualification) return '';
+        return custom_lookups[teacher.qualification] || teacher.qualification;
+    };
+
+    const resolveBoard = (teacher) => {
+        if (teacher.board_names) return teacher.board_names;
+        if (!teacher.board) return '';
+        const parts = teacher.board.toString().split(',').map(s => s.trim()).filter(Boolean);
+        return parts.map(p => custom_lookups[p] || p).join(', ');
+    };
 
     const openTeacherModal = async (teacher) => {
         setSelectedTeacher(teacher);
@@ -89,14 +109,19 @@ export default function SearchResults({ lists, searchdetails }) {
                                     </span>
 
                                     <div className="text-start small text-muted mb-3 flex-grow-1">
-                                        {teacher.qualification && (
+                                        {resolveQualification(teacher) && (
                                             <div className="mb-1">
-                                                <strong>Qualification:</strong> {teacher.qualification}
+                                                <strong>Qualification:</strong> {resolveQualification(teacher)}
                                             </div>
                                         )}
-                                        {teacher.subjects && (
+                                        {resolveSubjects(teacher) && (
                                             <div className="mb-1">
-                                                <strong>Subjects:</strong> {teacher.subjects}
+                                                <strong>Subjects:</strong> {resolveSubjects(teacher)}
+                                            </div>
+                                        )}
+                                        {resolveBoard(teacher) && (
+                                            <div className="mb-1">
+                                                <strong>Board:</strong> {resolveBoard(teacher)}
                                             </div>
                                         )}
                                         {teacher.description && (

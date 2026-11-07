@@ -51,16 +51,19 @@ class Common extends Controller
   }
 
   public static function getSubjects($ids){
-    $txt='';
-  $explode = explode(',',$ids);
-  if(count($explode)>0){
-  foreach($explode as $sub){
-    $txt.=self::tmodeName($sub).',';
-  }
-  }else{
-    $txt.=self::tmodeName($ids);
-  }
-  return $txt;
+    $txt = '';
+    $explode = array_filter(explode(',', (string)$ids));
+    if (count($explode) > 0) {
+      foreach ($explode as $sub) {
+        $name = self::tmodeName($sub);
+        if (!empty($name)) {
+          $txt .= $name . ', ';
+        }
+      }
+    } else {
+      $txt = self::tmodeName($ids);
+    }
+    return rtrim($txt, ', ');
   }
 
   public static function custData($id){
@@ -221,8 +224,9 @@ class Common extends Controller
 
 
 public static function tmodeName($id){
-  $info =  CustomData::where('id',$id)->first();
-  return $info->name;
+  if (empty($id)) return '';
+  $info = CustomData::where('id', $id)->first();
+  return $info ? $info->name : '';
 }
 
 public static function getkeyname($id){

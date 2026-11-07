@@ -506,7 +506,9 @@ class FrontController extends Controller
                 $savesearch->save(); 
                 }
             }
-            return Inertia::render('Front/SearchResults', compact('lists'));
+            $lists = $this->enrichTeacherLists($lists);
+            $custom_lookups = CustomData::pluck('name', 'id')->toArray();
+            return Inertia::render('Front/SearchResults', compact('lists', 'custom_lookups'));
         }
 
         public function showsearchresult(Request $request, $id){
@@ -563,7 +565,56 @@ class FrontController extends Controller
                 }
 
                 $lists = $lists->paginate(20)->withQueryString();
-            return Inertia::render('Front/SearchResults', compact('lists', 'searchdetails'));
+            $lists = $this->enrichTeacherLists($lists);
+            $custom_lookups = CustomData::pluck('name', 'id')->toArray();
+            return Inertia::render('Front/SearchResults', compact('lists', 'searchdetails', 'custom_lookups'));
+        }
+
+        private function enrichTeacherLists($lists)
+        {
+            $qualIds = $lists->getCollection()->pluck('qualification')->filter()->unique()->toArray();
+            $allSubIds = [];
+            $allBoardIds = [];
+
+            foreach ($lists->getCollection() as $item) {
+                if (!empty($item->subjects)) {
+                    $allSubIds = array_merge($allSubIds, explode(',', (string)$item->subjects));
+                }
+                if (!empty($item->board)) {
+                    $allBoardIds = array_merge($allBoardIds, explode(',', (string)$item->board));
+                }
+            }
+
+            $idsToLookup = array_unique(array_filter(array_merge($qualIds, $allSubIds, $allBoardIds)));
+            $lookup = !empty($idsToLookup)
+                ? CustomData::whereIn('id', $idsToLookup)->pluck('name', 'id')->toArray()
+                : [];
+
+            $lists->getCollection()->transform(function ($item) use ($lookup) {
+                $item->qualification_name = $lookup[$item->qualification] ?? '';
+
+                if (!empty($item->subjects)) {
+                    $subIds = array_filter(explode(',', (string)$item->subjects));
+                    $names = array_map(fn($id) => $lookup[$id] ?? null, $subIds);
+                    $names = array_filter($names);
+                    $item->subject_names = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->subject_names = '';
+                }
+
+                if (!empty($item->board)) {
+                    $boardIds = array_filter(explode(',', (string)$item->board));
+                    $names = array_map(fn($id) => $lookup[$id] ?? null, $boardIds);
+                    $names = array_filter($names);
+                    $item->board_names = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->board_names = '';
+                }
+
+                return $item;
+            });
+
+            return $lists;
         }
 
         public function searchhistory(){
