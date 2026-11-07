@@ -26,9 +26,9 @@ class FaqController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create():View
+    public function create()
     {
-        return view('faq.create');
+        return redirect()->route('faq.index');
     }
 
     /**
@@ -56,10 +56,9 @@ class FaqController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Faq $faq):View
+    public function edit(Faq $faq)
     {
-       
-        return view('faq.edit',['faq'=>$faq]); 
+        return redirect()->route('faq.index');
     }
 
     /**

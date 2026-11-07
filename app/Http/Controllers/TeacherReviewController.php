@@ -27,11 +27,9 @@ class TeacherReviewController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create():View
+    public function create()
     {
-        $teacherlist = User::where('type','teacher')->orderBy('name','asc')->get();
-        $studentlist = User::where('type','student')->orderBy('name','asc')->get();
-        return view('teacher_review.create',compact('teacherlist','studentlist'));
+        return redirect()->route('teacher_review.index');
     }
 
     /**
@@ -61,10 +59,7 @@ class TeacherReviewController extends Controller
      */
     public function edit(TeacherReview $teacher_review)
     {
-        $teacherlist = User::where('type','teacher')->orderBy('name','asc')->get();
-        $studentlist = User::where('type','student')->orderBy('name','asc')->get();
-        return view('teacher_review.edit',['teacher_review'=>$teacher_review],compact('teacherlist','studentlist'));
-
+        return redirect()->route('teacher_review.index');
     }
 
     /**

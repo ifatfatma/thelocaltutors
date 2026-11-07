@@ -359,13 +359,13 @@ class FrontController extends Controller
     }
 
         public function event_details(){
-            return view('front.pages.event_details');
+            return redirect()->route('front.all_course');
         }
         public function event_sidebar(){
-            return view('front.pages.event_sidebar');
+            return redirect()->route('front.all_course');
         }
         public function event(){
-            return view('front.pages.event');
+            return redirect()->route('front.all_course');
         }
         public function faq(){
             $faqlist = Faq::where('is_active',1)->get();
@@ -382,17 +382,17 @@ class FrontController extends Controller
             return Inertia::render('Auth/Register');
         }
         public function setting(){
-            return view('front.pages.setting');
+            return redirect()->route('front.dashboard.index');
         }
         public function shop_dtails(){
-            return view('front.pages.shop_details');
+            return redirect()->route('front.all_course');
         }
         public function shop(){
-            return view('front.pages.shop');
+            return redirect()->route('front.all_course');
         }
         
         public function studentinterface(){
-            return view('front.pages.studentinterface');
+            return redirect()->route('front.dashboard.index');
         }
         public function search(Request $request){
             $radius = 400;

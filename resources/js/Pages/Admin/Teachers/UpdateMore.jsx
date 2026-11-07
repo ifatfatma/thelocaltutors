@@ -3,7 +3,16 @@ import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import axios from 'axios';
 
-export default function UpdateMore({ teacher = {}, user_id, states = [] }) {
+export default function UpdateMore({
+    teacher = {},
+    user_id,
+    states = [],
+    boards = [],
+    subjects = [],
+    qualifications = [],
+    modes = [],
+    days = []
+}) {
     const [form, setForm] = useState({
         gender: teacher?.gender || 'Male',
         whatsapp: teacher?.whatsapp || '',
@@ -21,15 +30,27 @@ export default function UpdateMore({ teacher = {}, user_id, states = [] }) {
         latitude: teacher?.latitude || '',
         longitude: teacher?.longitude || '',
         timings: teacher?.timings || '',
-        qualification: teacher?.qualification ? teacher.qualification.split(',') : [],
-        teaching_mode: teacher?.teaching_mode ? teacher.teaching_mode.split(',') : [],
-        board: teacher?.board ? teacher.board.split(',') : [],
-        subjects: teacher?.subjects ? teacher.subjects.split(',') : [],
-        days: teacher?.days ? teacher.days.split(',') : [],
+        qualification: teacher?.qualification ? teacher.qualification.split(',').map(String) : [],
+        teaching_mode: teacher?.teaching_mode ? teacher.teaching_mode.split(',').map(String) : [],
+        board: teacher?.board ? teacher.board.split(',').map(String) : [],
+        subjects: teacher?.subjects ? teacher.subjects.split(',').map(String) : [],
+        days: teacher?.days ? teacher.days.split(',').map(String) : [],
     });
 
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
+
+    const handleMultiSelect = (field, id) => {
+        const strId = String(id);
+        const current = [...(form[field] || [])].map(String);
+        const idx = current.indexOf(strId);
+        if (idx > -1) {
+            current.splice(idx, 1);
+        } else {
+            current.push(strId);
+        }
+        setForm((prev) => ({ ...prev, [field]: current }));
+    };
 
     useEffect(() => {
         if (form.state && form.state !== '0') {
@@ -232,6 +253,106 @@ export default function UpdateMore({ teacher = {}, user_id, states = [] }) {
                                 value={form.longitude}
                                 onChange={(e) => setForm({ ...form, longitude: e.target.value })}
                             />
+                        </div>
+
+                        <div className="col-12">
+                            <label className="form-label fw-semibold">Qualifications</label>
+                            <div className="d-flex flex-wrap gap-2">
+                                {qualifications.map((q) => {
+                                    const isSelected = form.qualification.includes(String(q.id));
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={q.id}
+                                            onClick={() => handleMultiSelect('qualification', q.id)}
+                                            className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                        >
+                                            {isSelected && '✓ '}
+                                            {q.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="col-12">
+                            <label className="form-label fw-semibold">Subjects Taught</label>
+                            <div className="d-flex flex-wrap gap-2">
+                                {subjects.map((sub) => {
+                                    const isSelected = form.subjects.includes(String(sub.id));
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={sub.id}
+                                            onClick={() => handleMultiSelect('subjects', sub.id)}
+                                            className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                        >
+                                            {isSelected && '✓ '}
+                                            {sub.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="col-12">
+                            <label className="form-label fw-semibold">Boards</label>
+                            <div className="d-flex flex-wrap gap-2">
+                                {boards.map((b) => {
+                                    const isSelected = form.board.includes(String(b.id));
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={b.id}
+                                            onClick={() => handleMultiSelect('board', b.id)}
+                                            className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                        >
+                                            {isSelected && '✓ '}
+                                            {b.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="col-12">
+                            <label className="form-label fw-semibold">Teaching Mode</label>
+                            <div className="d-flex flex-wrap gap-2">
+                                {modes.map((m) => {
+                                    const isSelected = form.teaching_mode.includes(String(m.id));
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={m.id}
+                                            onClick={() => handleMultiSelect('teaching_mode', m.id)}
+                                            className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                        >
+                                            {isSelected && '✓ '}
+                                            {m.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="col-12">
+                            <label className="form-label fw-semibold">Available Days</label>
+                            <div className="d-flex flex-wrap gap-2">
+                                {days.map((d) => {
+                                    const isSelected = form.days.includes(String(d.id));
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={d.id}
+                                            onClick={() => handleMultiSelect('days', d.id)}
+                                            className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                        >
+                                            {isSelected && '✓ '}
+                                            {d.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         <div className="col-12">

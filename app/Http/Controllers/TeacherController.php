@@ -113,13 +113,23 @@ class TeacherController extends Controller
     /*View of update more */
     public function updateview($id)
     {
-        $teacher = Teacher::where('user_id',$id)->first();
-        $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
+        $teacher = Teacher::where('user_id', $id)->first();
+        $states = CustomData::where('key_name', 'state')->where('parent_id', 0)->orderBy('name', 'asc')->get();
+        $boards = CustomData::where('key_name', 'board')->orderBy('name', 'asc')->get();
+        $subjects = CustomData::where('key_name', 'subject')->orderBy('name', 'asc')->get();
+        $qualifications = CustomData::where('key_name', 'qualification')->orderBy('name', 'asc')->get();
+        $modes = CustomData::where('key_name', 'teachmode')->orderBy('name', 'asc')->get();
+        $days = CustomData::where('key_name', 'days')->orderBy('name', 'asc')->get();
 
         return Inertia::render('Admin/Teachers/UpdateMore', [
             'teacher' => $teacher,
             'user_id' => $id,
-            'states' => $states
+            'states' => $states,
+            'boards' => $boards,
+            'subjects' => $subjects,
+            'qualifications' => $qualifications,
+            'modes' => $modes,
+            'days' => $days,
         ]);
     }
 
@@ -164,29 +174,29 @@ class TeacherController extends Controller
 
     public function updatemore(Request $request,$id)
     {
-        $user                = Teacher::firstOrNew(array('user_id' =>$id));
-        $user->gender        = $request->gender??'Male';
-        $user->user_id       = $id??0;
-        $user->description   = $request->description??'';
-        $user->whatsapp      = $request->whatsapp??'';
-        $user->experience    = $request->experience??'';
-        $user->qualification = !empty($request->qualification)?implode(',',$request->qualification):NULL;
-        $user->address       = $request->address??'';
-        $user->district      = $request->district??0;
-        $user->city          = $request->city??0;
-        $user->state         = $request->state??0;
-        $user->pincode       = $request->pincode??'';
-        $user->teaching_mode = !empty($request->teaching_mode)?implode(',',$request->teaching_mode):NULL;
-        $user->board         = !empty($request->board)?implode(',',$request->board):NULL;
-        $user->subjects      = !empty($request->subjects)?implode(',',$request->subjects):NULL;
-        $user->days          = !empty($request->days)?implode(',',$request->days):NULL;
-        $user->timings       = $request->timings??'';
-        $user->street        = $request->street??'';
-        $user->block         = $request->block??'';
-        $user->post_office   = $request->post_office??'';
-        $user->police_station= $request->police_station??'';
-        $user->latitude      = $request->latitude??'';
-        $user->longitude     = $request->longitude??'';
+        $user                = Teacher::firstOrNew(['user_id' => $id]);
+        $user->gender        = $request->gender ?? 'Male';
+        $user->user_id       = $id ?? 0;
+        $user->description   = $request->description ?? '';
+        $user->whatsapp      = $request->whatsapp ?? '';
+        $user->experience    = $request->experience ?? '';
+        $user->qualification = is_array($request->qualification) ? implode(',', $request->qualification) : ($request->qualification ?? null);
+        $user->address       = $request->address ?? '';
+        $user->district      = $request->district ?? 0;
+        $user->city          = $request->city ?? 0;
+        $user->state         = $request->state ?? 0;
+        $user->pincode       = $request->pincode ?? '';
+        $user->teaching_mode = is_array($request->teaching_mode) ? implode(',', $request->teaching_mode) : ($request->teaching_mode ?? null);
+        $user->board         = is_array($request->board) ? implode(',', $request->board) : ($request->board ?? null);
+        $user->subjects      = is_array($request->subjects) ? implode(',', $request->subjects) : ($request->subjects ?? null);
+        $user->days          = is_array($request->days) ? implode(',', $request->days) : ($request->days ?? null);
+        $user->timings       = $request->timings ?? '';
+        $user->street        = $request->street ?? '';
+        $user->block         = $request->block ?? '';
+        $user->post_office   = $request->post_office ?? '';
+        $user->police_station= $request->police_station ?? '';
+        $user->latitude      = $request->latitude ?? '';
+        $user->longitude     = $request->longitude ?? '';
         $user->save();
         return redirect()->back()
                          ->withSuccess('Teacher is updated successfully.');

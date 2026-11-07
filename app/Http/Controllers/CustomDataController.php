@@ -62,9 +62,9 @@ class CustomDataController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create()
     {
-        return view('customdata.create');
+        return redirect()->route('customdata.index');
     }
 
     /**
@@ -92,23 +92,17 @@ class CustomDataController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(CustomData $customData): View
+    public function show(CustomData $customData)
     {
-        return view('customdata.show', [
-            'customdata' => $customData
-        ]);
+        return redirect()->route('customdata.index');
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id):View
+    public function edit($id)
     {
-        $customdata =  CustomData::findorfail($id);
-      
-        return view('customdata.edit', [
-            'customdata' => $customdata
-        ]);
+        return redirect()->route('customdata.index');
     }
 
     /**

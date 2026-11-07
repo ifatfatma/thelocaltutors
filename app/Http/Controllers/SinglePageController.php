@@ -26,9 +26,9 @@ class SinglePageController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create():View
+    public function create()
     {
-        return view('singlepages.create');
+        return redirect()->route('singlepages.index');
     }
 
     /**
