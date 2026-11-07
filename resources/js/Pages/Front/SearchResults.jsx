@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
 import axios from 'axios';
 
-export default function SearchResults({ lists, searchdetails, custom_lookups = {} }) {
+export default function SearchResults({ lists, searchdetails = {}, custom_lookups = {} }) {
     const teacherList = lists?.data || lists || [];
     const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
@@ -12,6 +12,60 @@ export default function SearchResults({ lists, searchdetails, custom_lookups = {
     const [teacherRating, setTeacherRating] = useState('5');
     const [teacherReview, setTeacherReview] = useState('');
     const [reviewMsg, setReviewMsg] = useState('');
+    const [locating, setLocating] = useState(false);
+    const [locatingMsg, setLocatingMsg] = useState('');
+
+    const currentRadius = searchdetails?.search_radius ? Number(searchdetails.search_radius) : 0;
+
+    const handleDetectCurrentLocation = (targetRadius = 1) => {
+        if (!navigator.geolocation) {
+            setLocatingMsg('Geolocation is not supported by your browser.');
+            return;
+        }
+
+        setLocating(true);
+        setLocatingMsg('Detecting your GPS location...');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+
+                axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
+
+                setLocating(false);
+                setLocatingMsg('');
+
+                router.get('/search', {
+                    ...searchdetails,
+                    search_radius: targetRadius,
+                    user_lat: lat,
+                    user_lng: lng,
+                }, { preserveState: true });
+            },
+            (error) => {
+                setLocating(false);
+                let msg = 'Unable to access your location.';
+                if (error.code === 1) {
+                    msg = 'Location permission denied. Please allow location access in your browser.';
+                }
+                setLocatingMsg(msg);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    const updateRadius = (newRadius) => {
+        if (newRadius > 0 && (!searchdetails?.user_lat || !searchdetails?.user_lng)) {
+            handleDetectCurrentLocation(newRadius);
+            return;
+        }
+
+        router.get('/search', {
+            ...searchdetails,
+            search_radius: newRadius,
+        }, { preserveState: true });
+    };
 
     const resolveSubjects = (teacher) => {
         if (teacher.subject_names) return teacher.subject_names;
@@ -81,20 +135,128 @@ export default function SearchResults({ lists, searchdetails, custom_lookups = {
                 </div>
             </div>
 
-            <div className="container py-5">
+            <div className="container py-4">
+                {/* Geolocation & Radius Filter Bar */}
+                <div className="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-light">
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div className="d-flex align-items-center gap-2">
+                            <i className="bi bi-geo-alt-fill text-danger fs-4"></i>
+                            <div>
+                                <h6 className="fw-bold mb-0 text-dark">Radius &amp; Location Filter</h6>
+                                <p className="text-muted small mb-0">
+                                    {currentRadius > 0
+                                        ? `Filtering tutors within ${currentRadius} km of your browsing location`
+                                        : 'Showing tutors without distance limit'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="d-flex flex-wrap align-items-center gap-2">
+                            <span className="small fw-semibold text-secondary me-1">Radius:</span>
+                            <div className="btn-group btn-group-sm" role="group">
+                                <button
+                                    type="button"
+                                    className={`btn ${currentRadius === 1 ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => updateRadius(1)}
+                                    disabled={locating}
+                                >
+                                    1 KM (Nearest)
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn ${currentRadius === 2 ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => updateRadius(2)}
+                                    disabled={locating}
+                                >
+                                    2 KM
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn ${currentRadius === 5 ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => updateRadius(5)}
+                                    disabled={locating}
+                                >
+                                    5 KM
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn ${currentRadius === 10 ? 'btn-primary' : 'btn-outline-primary'}`}
+                                    onClick={() => updateRadius(10)}
+                                    disabled={locating}
+                                >
+                                    10 KM
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`btn ${currentRadius === 0 ? 'btn-secondary text-white' : 'btn-outline-secondary'}`}
+                                    onClick={() => updateRadius(0)}
+                                    disabled={locating}
+                                >
+                                    All Locations
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 ms-lg-2"
+                                onClick={() => handleDetectCurrentLocation(1)}
+                                disabled={locating}
+                                title="Re-detect GPS location and search 1 km"
+                            >
+                                <i className="bi bi-crosshair"></i>
+                                <span>{locating ? 'Detecting...' : 'Near Me (1 km)'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {locatingMsg && (
+                        <div className="alert alert-info py-1 px-3 small mt-2 mb-0">
+                            {locatingMsg}
+                        </div>
+                    )}
+                </div>
+
                 {teacherList.length === 0 ? (
                     <div className="text-center py-5">
-                        <i className="bi bi-person-x fs-1 text-muted"></i>
-                        <h4 className="mt-3 text-muted">No teachers matched your current search filters.</h4>
-                        <p className="text-muted small">Try broadening your search criteria or checking back soon.</p>
-                        <Link href="/" className="btn btn-primary mt-2">Modify Search</Link>
+                        <i className={`bi ${currentRadius > 0 ? 'bi-geo-alt' : 'bi-person-x'} fs-1 text-muted`}></i>
+                        <h4 className="mt-3 text-muted">
+                            {currentRadius > 0
+                                ? `No teachers found within ${currentRadius} km of your location.`
+                                : 'No teachers matched your current search filters.'}
+                        </h4>
+                        <p className="text-muted small">
+                            {currentRadius > 0
+                                ? 'Try expanding the radius to 5 km or browsing all teachers in your city.'
+                                : 'Try broadening your search criteria or checking back soon.'}
+                        </p>
+                        <div className="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+                            {currentRadius > 0 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-primary"
+                                        onClick={() => updateRadius(5)}
+                                    >
+                                        Expand to 5 KM
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={() => updateRadius(0)}
+                                    >
+                                        View All Tutors
+                                    </button>
+                                </>
+                            )}
+                            <Link href="/" className="btn btn-outline-secondary">Modify Search</Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="row g-4">
                         {teacherList.map((teacher) => (
                             <div key={teacher.id} className="col-md-6 col-lg-4">
                                 <div className="card h-100 border-0 shadow-sm rounded-4 p-4 text-center d-flex flex-column">
-                                    <div className="mx-auto mb-3">
+                                    <div className="mx-auto mb-3 position-relative">
                                         <img
                                             src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
                                             onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
@@ -104,9 +266,20 @@ export default function SearchResults({ lists, searchdetails, custom_lookups = {
                                         />
                                     </div>
                                     <h5 className="fw-bold text-dark mb-1">{teacher.name}</h5>
-                                    <span className="badge bg-primary-subtle text-primary align-self-center mb-3">
+                                    <span className="badge bg-primary-subtle text-primary align-self-center mb-2">
                                         {teacher.gender || 'Teacher'}
                                     </span>
+
+                                    {teacher.distance !== undefined && teacher.distance !== null && (
+                                        <div className="mb-2">
+                                            <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                <i className="bi bi-geo-alt-fill me-1"></i>
+                                                {Number(teacher.distance) < 1
+                                                    ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
+                                                    : `${Number(teacher.distance).toFixed(1)} km away`}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     <div className="text-start small text-muted mb-3 flex-grow-1">
                                         {resolveQualification(teacher) && (

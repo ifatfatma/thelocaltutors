@@ -395,7 +395,15 @@ class FrontController extends Controller
             return redirect()->route('front.dashboard.index');
         }
         public function search(Request $request){
-            $radius = 400;
+            $radius = !empty($request->search_radius) ? (float)$request->search_radius : 0;
+            $userLat = $request->user_lat ?? $request->latitude ?? Session::get('latitude');
+            $userLng = $request->user_lng ?? $request->longitude ?? Session::get('longitude');
+
+            if (!empty($userLat) && !empty($userLng)) {
+                Session::put('latitude', (string)$userLat);
+                Session::put('longitude', (string)$userLng);
+            }
+
             $lists = User::select(
                 'users.*',
                 'teachers.id as tid',
@@ -411,48 +419,57 @@ class FrontController extends Controller
                 'teachers.longitude')
                 ->join('teachers','users.id','=','teachers.user_id')
                 ->where('is_active',1);
-                if(!empty($request->search_state)){
-                    $lists = $lists->where('teachers.state',$request->search_state);
-                }
-                if(!empty($request->search_district)){
-                    $lists = $lists->where('teachers.district',$request->search_district);
-                }
-                if(!empty($request->search_city)){
-                    $lists = $lists->where('teachers.city',$request->search_city);
-                }
-                if(!empty($request->search_board)){
-                    $board = $request->search_board;
-                    $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
-                }
-                if(!empty($request->search_subject)){
-                    $subject = $request->search_subject;
-                    $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
-                }
-                if(!empty($request->search_gender)){
-                    $lists = $lists->where('teachers.gender',$request->search_gender);
-                }
-                
-                if(!empty($request->search_radius) && !empty(Session::get('latitude')) && !empty(Session::get('longitude'))){
-                    $radius    = $radius*$request->search_radius;
-                    $latitude  = Session::get('latitude');
-                    $longitude = Session::get('longitude');
-                    $lists = $lists->selectRaw("
-                         ( 6371000 * acos( cos( radians(?) ) *
-                           cos( radians( latitude ) )
-                           * cos( radians( longitude ) - radians(?)
-                           ) + sin( radians(?) ) *
-                           sin( radians( latitude ) ) )
-                         ) AS distance", [$latitude, $longitude, $latitude])
-                         ->having("distance", "<", $radius);
-                }
 
-                $lists = $lists->paginate(20)->withQueryString();
-                if(!empty(Auth::user()->id)){
+            if(!empty($request->search_state)){
+                $lists = $lists->where('teachers.state',$request->search_state);
+            }
+            if(!empty($request->search_district)){
+                $lists = $lists->where('teachers.district',$request->search_district);
+            }
+            if(!empty($request->search_city)){
+                $lists = $lists->where('teachers.city',$request->search_city);
+            }
+            if(!empty($request->search_board)){
+                $board = $request->search_board;
+                $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
+            }
+            if(!empty($request->search_subject)){
+                $subject = $request->search_subject;
+                $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
+            }
+            if(!empty($request->search_gender)){
+                $lists = $lists->where('teachers.gender',$request->search_gender);
+            }
+            
+            if(!empty($userLat) && !empty($userLng)){
+                $haversine = "( 6371 * acos(
+                    least(1.0, greatest(-1.0,
+                        cos( radians(?) ) *
+                        cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
+                        cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                        sin( radians(?) ) *
+                        sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
+                    ))
+                ) )";
+                $lists = $lists->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat]);
+
+                if($radius > 0){
+                    $lists = $lists->whereNotNull('teachers.latitude')
+                                   ->where('teachers.latitude', '!=', '')
+                                   ->whereNotNull('teachers.longitude')
+                                   ->where('teachers.longitude', '!=', '')
+                                   ->having("distance", "<=", $radius)
+                                   ->orderBy('distance', 'asc');
+                }
+            }
+
+            $lists = $lists->paginate(20)->withQueryString();
+            if(!empty(Auth::user()->id)){
                 $check = Search::where('user_id',Auth::user()->id)->whereDate('created_at',date('Y-m-d'));
                 if(!empty($request->lookingfor)){
                     $check  = $check->where('lookingfor',$request->lookingfor);
                 }
-                 if(!empty($request->search_state)){
+                if(!empty($request->search_state)){
                     $check  = $check->where('state',$request->search_state);
                 }
                 if(!empty($request->search_district)){
@@ -475,27 +492,45 @@ class FrontController extends Controller
                 } 
                 $check  = $check->first();
                 if(empty($check->id)){
-                $savesearch = new Search;
-                $savesearch->user_id = Auth::user()->id;
-                $savesearch->lookingfor = $request->lookingfor;
-                $savesearch->state = $request->search_state;
-                $savesearch->district = $request->search_district;
-                $savesearch->city = $request->search_city;
-                $savesearch->board = $request->search_board;
-                $savesearch->subject = $request->search_subject;
-                $savesearch->gender = $request->search_gender;
-                $savesearch->radius = $request->search_radius;
-                $savesearch->save(); 
+                    $savesearch = new Search;
+                    $savesearch->user_id = Auth::user()->id;
+                    $savesearch->lookingfor = $request->lookingfor;
+                    $savesearch->state = $request->search_state;
+                    $savesearch->district = $request->search_district;
+                    $savesearch->city = $request->search_city;
+                    $savesearch->board = $request->search_board;
+                    $savesearch->subject = $request->search_subject;
+                    $savesearch->gender = $request->search_gender;
+                    $savesearch->radius = $request->search_radius;
+                    $savesearch->save(); 
                 }
             }
             $lists = $this->enrichTeacherLists($lists);
             $custom_lookups = CustomData::pluck('name', 'id')->toArray();
-            return Inertia::render('Front/SearchResults', compact('lists', 'custom_lookups'));
+            $searchdetails = [
+                'lookingfor' => $request->lookingfor ?? 'teacher',
+                'search_state' => $request->search_state ?? '0',
+                'search_district' => $request->search_district ?? '0',
+                'search_city' => $request->search_city ?? '0',
+                'search_board' => $request->search_board ?? '0',
+                'search_subject' => $request->search_subject ?? '0',
+                'search_gender' => $request->search_gender ?? '',
+                'search_radius' => $radius,
+                'user_lat' => $userLat,
+                'user_lng' => $userLng,
+            ];
+            return Inertia::render('Front/SearchResults', compact('lists', 'custom_lookups', 'searchdetails'));
         }
 
         public function showsearchresult(Request $request, $id){
-            $radius = 400;
             $searchdetails = Search::find($id);
+            if (!$searchdetails) {
+                return redirect()->route('front.search');
+            }
+            $radius = !empty($searchdetails->radius) ? (float)$searchdetails->radius : 0;
+            $userLat = $request->user_lat ?? $request->latitude ?? Session::get('latitude');
+            $userLng = $request->user_lng ?? $request->longitude ?? Session::get('longitude');
+
             $lists = User::select(
                 'users.*',
                 'teachers.id as tid',
@@ -511,42 +546,51 @@ class FrontController extends Controller
                 'teachers.longitude')
                 ->join('teachers','users.id','=','teachers.user_id')
                 ->where('is_active',1);
-                if(!empty($searchdetails->state)){
-                    $lists = $lists->where('teachers.state',$searchdetails->state);
-                }
-                if(!empty($searchdetails->district)){
-                    $lists = $lists->where('teachers.district',$searchdetails->district);
-                }
-                if(!empty($searchdetails->city)){
-                    $lists = $lists->where('teachers.city',$searchdetails->city);
-                }
-                if(!empty($searchdetails->board)){
-                    $board = $searchdetails->board;
-                    $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
-                }
-                if(!empty($searchdetails->subject)){
-                    $subject = $searchdetails->subject;
-                    $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
-                }
-                if(!empty($searchdetails->gender)){
-                    $lists = $lists->where('teachers.gender',$searchdetails->gender);
-                }
-                
-                if(!empty($searchdetails->radius) && !empty(Session::get('latitude')) && !empty(Session::get('longitude'))){
-                    $radius    = $radius*$searchdetails->radius;
-                    $latitude  = Session::get('latitude');
-                    $longitude = Session::get('longitude');
-                    $lists = $lists->selectRaw("
-                         ( 6371000 * acos( cos( radians(?) ) *
-                           cos( radians( latitude ) )
-                           * cos( radians( longitude ) - radians(?)
-                           ) + sin( radians(?) ) *
-                           sin( radians( latitude ) ) )
-                         ) AS distance", [$latitude, $longitude, $latitude])
-                         ->having("distance", "<", $radius);
-                }
 
-                $lists = $lists->paginate(20)->withQueryString();
+            if(!empty($searchdetails->state)){
+                $lists = $lists->where('teachers.state',$searchdetails->state);
+            }
+            if(!empty($searchdetails->district)){
+                $lists = $lists->where('teachers.district',$searchdetails->district);
+            }
+            if(!empty($searchdetails->city)){
+                $lists = $lists->where('teachers.city',$searchdetails->city);
+            }
+            if(!empty($searchdetails->board)){
+                $board = $searchdetails->board;
+                $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
+            }
+            if(!empty($searchdetails->subject)){
+                $subject = $searchdetails->subject;
+                $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
+            }
+            if(!empty($searchdetails->gender)){
+                $lists = $lists->where('teachers.gender',$searchdetails->gender);
+            }
+            
+            if(!empty($userLat) && !empty($userLng)){
+                $haversine = "( 6371 * acos(
+                    least(1.0, greatest(-1.0,
+                        cos( radians(?) ) *
+                        cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
+                        cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                        sin( radians(?) ) *
+                        sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
+                    ))
+                ) )";
+                $lists = $lists->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat]);
+
+                if($radius > 0){
+                    $lists = $lists->whereNotNull('teachers.latitude')
+                                   ->where('teachers.latitude', '!=', '')
+                                   ->whereNotNull('teachers.longitude')
+                                   ->where('teachers.longitude', '!=', '')
+                                   ->having("distance", "<=", $radius)
+                                   ->orderBy('distance', 'asc');
+                }
+            }
+
+            $lists = $lists->paginate(20)->withQueryString();
             $lists = $this->enrichTeacherLists($lists);
             $custom_lookups = CustomData::pluck('name', 'id')->toArray();
             return Inertia::render('Front/SearchResults', compact('lists', 'searchdetails', 'custom_lookups'));
@@ -592,6 +636,8 @@ class FrontController extends Controller
                 } else {
                     $item->board_names = '';
                 }
+
+                $item->distance = isset($item->distance) && !is_null($item->distance) ? round((float)$item->distance, 2) : null;
 
                 return $item;
             });

@@ -43,6 +43,55 @@ export default function EditProfile({
     const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+    const [detectingLocation, setDetectingLocation] = useState(false);
+    const [locationStatus, setLocationStatus] = useState({ type: '', text: '' });
+
+    const handleDetectServingLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationStatus({
+                type: 'warning',
+                text: 'Geolocation is not supported by your browser. You can still enter coordinates manually.',
+            });
+            return;
+        }
+
+        setDetectingLocation(true);
+        setLocationStatus({ type: 'info', text: 'Detecting your current location...' });
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+                const accuracy = Math.round(position.coords.accuracy);
+
+                setForm((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+                setDetectingLocation(false);
+                setLocationStatus({
+                    type: 'success',
+                    text: `Current serving location detected: ${lat}, ${lng} (Accuracy: ~${accuracy}m). Click "Save Profile" below to persist.`,
+                });
+
+                axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
+            },
+            (error) => {
+                setDetectingLocation(false);
+                let msg = 'Unable to retrieve location.';
+                if (error.code === 1) {
+                    msg = 'Location permission was denied. Please allow location access in your browser or enter coordinates manually.';
+                } else if (error.code === 2) {
+                    msg = 'Location unavailable. Please check your network/GPS connection or enter coordinates manually.';
+                } else if (error.code === 3) {
+                    msg = 'Location request timed out. Please try again.';
+                }
+                setLocationStatus({ type: 'danger', text: msg });
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    };
 
     useEffect(() => {
         if (form.state && form.state !== '0') {
@@ -326,6 +375,87 @@ export default function EditProfile({
                                                     value={form.address}
                                                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                                                 />
+                                            </div>
+
+                                            {/* Serving Location & Geolocation */}
+                                            <div className="col-12 mt-3">
+                                                <div className="p-3 bg-light rounded-4 border">
+                                                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                                        <div>
+                                                            <h6 className="fw-bold mb-1 text-dark d-flex align-items-center">
+                                                                <i className="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
+                                                                Serving Location &amp; Coordinates
+                                                            </h6>
+                                                            <p className="text-muted small mb-0">
+                                                                Save your current physical location where you provide tutoring. Students searching within 1 km or nearby will discover your profile based on these coordinates.
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm"
+                                                            onClick={handleDetectServingLocation}
+                                                            disabled={detectingLocation}
+                                                        >
+                                                            {detectingLocation ? (
+                                                                <>
+                                                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                                    <span>Detecting GPS...</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className="bi bi-crosshair"></i>
+                                                                    <span>Detect / Use My Current Location</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+
+                                                    {locationStatus.text && (
+                                                        <div className={`alert alert-${locationStatus.type} py-2 px-3 small mb-3`}>
+                                                            {locationStatus.text}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="row g-2">
+                                                        <div className="col-sm-6">
+                                                            <label className="form-label small fw-semibold text-secondary">
+                                                                Serving Latitude
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control form-control-sm"
+                                                                placeholder="e.g. 22.545120"
+                                                                value={form.latitude}
+                                                                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
+                                                            />
+                                                        </div>
+                                                        <div className="col-sm-6">
+                                                            <label className="form-label small fw-semibold text-secondary">
+                                                                Serving Longitude
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control form-control-sm"
+                                                                placeholder="e.g. 88.305430"
+                                                                value={form.longitude}
+                                                                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {form.latitude && form.longitude && (
+                                                        <div className="mt-2 text-end">
+                                                            <a
+                                                                href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="text-decoration-none small text-primary fw-semibold"
+                                                            >
+                                                                <i className="bi bi-box-arrow-up-right me-1"></i> Preview on Google Maps
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="col-12">

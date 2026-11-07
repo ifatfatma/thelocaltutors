@@ -39,6 +39,30 @@ export default function UpdateMore({
 
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
+    const [detectingLocation, setDetectingLocation] = useState(false);
+
+    const handleDetectLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation not supported by browser.');
+            return;
+        }
+        setDetectingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setForm((prev) => ({
+                    ...prev,
+                    latitude: pos.coords.latitude.toFixed(6),
+                    longitude: pos.coords.longitude.toFixed(6),
+                }));
+                setDetectingLocation(false);
+            },
+            () => {
+                alert('Could not determine current location.');
+                setDetectingLocation(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     const handleMultiSelect = (field, id) => {
         const strId = String(id);
@@ -235,24 +259,52 @@ export default function UpdateMore({
                             />
                         </div>
 
-                        <div className="col-md-6">
-                            <label className="form-label fw-semibold">Latitude</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={form.latitude}
-                                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="col-md-6">
-                            <label className="form-label fw-semibold">Longitude</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={form.longitude}
-                                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                            />
+                        <div className="col-12 mt-2">
+                            <div className="p-3 bg-light rounded-3 border">
+                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                    <label className="form-label fw-bold mb-0">Serving GPS Coordinates (Latitude / Longitude)</label>
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={handleDetectLocation}
+                                        disabled={detectingLocation}
+                                    >
+                                        {detectingLocation ? 'Detecting...' : '📍 Detect Current Location'}
+                                    </button>
+                                </div>
+                                <div className="row g-2">
+                                    <div className="col-md-6">
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="Latitude (e.g. 22.545120)"
+                                            value={form.latitude}
+                                            onChange={(e) => setForm({ ...form, latitude: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="col-md-6">
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="Longitude (e.g. 88.305430)"
+                                            value={form.longitude}
+                                            onChange={(e) => setForm({ ...form, longitude: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                {form.latitude && form.longitude && (
+                                    <div className="mt-2 text-end">
+                                        <a
+                                            href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="small text-decoration-none"
+                                        >
+                                            View on Google Maps &rarr;
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="col-12">

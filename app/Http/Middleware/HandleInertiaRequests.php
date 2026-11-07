@@ -57,6 +57,10 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'message' => fn () => $request->session()->get('message'),
             ],
+            'userLocation' => [
+                'latitude' => fn () => $request->session()->get('latitude'),
+                'longitude' => fn () => $request->session()->get('longitude'),
+            ],
             'settings' => fn () => General_Setting::find(1),
             'categories' => fn () => CourseCategory::where('is_active', 1)->orderBy('title', 'asc')->get(['id', 'title', 'slug']),
             'appName' => config('app.name', 'The Local Tutors'),

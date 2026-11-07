@@ -90,8 +90,8 @@ class FrontUserController extends Controller
             $teacher->city          = $request->city ?? 0;
             $teacher->state         = $request->state ?? 0;
             $teacher->pincode       = $request->pincode ?? '';
-            $teacher->latitude      = $request->latitude ?? '';
-            $teacher->longitude     = $request->longitude ?? '';
+            $teacher->latitude      = !empty($request->latitude) ? trim((string)$request->latitude) : '';
+            $teacher->longitude     = !empty($request->longitude) ? trim((string)$request->longitude) : '';
             $teacher->save();
         }
 

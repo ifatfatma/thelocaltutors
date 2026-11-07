@@ -23,11 +23,57 @@ export default function Home({
         search_board: '0',
         search_gender: '',
         search_radius: '0',
+        user_lat: '',
+        user_lng: '',
     });
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
     const [loadingDistricts, setLoadingDistricts] = useState(false);
     const [loadingCities, setLoadingCities] = useState(false);
+    const [geoActive, setGeoActive] = useState(false);
+    const [loadingGeo, setLoadingGeo] = useState(false);
+    const [geoMsg, setGeoMsg] = useState('');
+
+    const handleUseCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            setGeoMsg('Geolocation is not supported by your browser.');
+            return;
+        }
+
+        setLoadingGeo(true);
+        setGeoMsg('Detecting your GPS location...');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
+
+                setSearchState((prev) => ({
+                    ...prev,
+                    search_radius: '1',
+                    user_lat: lat,
+                    user_lng: lng,
+                }));
+
+                setLoadingGeo(false);
+                setGeoActive(true);
+                setGeoMsg('📍 Location acquired! Ready to find tutors within 1 km.');
+
+                axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
+            },
+            (error) => {
+                setLoadingGeo(false);
+                let msg = 'Unable to fetch your location.';
+                if (error.code === 1) {
+                    msg = 'Location permission denied. Please allow location access in your browser.';
+                } else if (error.code === 2) {
+                    msg = 'Location unavailable. Please check your GPS/internet connection.';
+                }
+                setGeoMsg(msg);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     const handleStateChange = async (e) => {
         const stateId = e.target.value;
@@ -206,8 +252,56 @@ export default function Home({
                                             </select>
                                         </div>
 
+                                        <div className="col-sm-6">
+                                            <select
+                                                className="form-select form-select-sm"
+                                                value={searchState.search_radius}
+                                                onChange={(e) => setSearchState({ ...searchState, search_radius: e.target.value })}
+                                            >
+                                                <option value="0">All Locations (City-wide)</option>
+                                                <option value="1">Within 1 KM (Nearest)</option>
+                                                <option value="2">Within 2 KM</option>
+                                                <option value="3">Within 3 KM</option>
+                                                <option value="5">Within 5 KM</option>
+                                                <option value="10">Within 10 KM</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="col-12 mt-2">
+                                            <button
+                                                type="button"
+                                                className={`btn btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold ${
+                                                    geoActive ? 'btn-success text-white' : 'btn-outline-primary'
+                                                }`}
+                                                onClick={handleUseCurrentLocation}
+                                                disabled={loadingGeo}
+                                            >
+                                                {loadingGeo ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                        <span>Detecting your GPS location...</span>
+                                                    </>
+                                                ) : geoActive ? (
+                                                    <>
+                                                        <i className="bi bi-geo-alt-fill"></i>
+                                                        <span>📍 Browsing Near You (1 km Radius Active)</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="bi bi-crosshair"></i>
+                                                        <span>Use My Current Location (Search 1 km Radius)</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                            {geoMsg && (
+                                                <div className={`small text-center mt-1 fw-semibold ${geoActive ? 'text-success' : 'text-danger'}`}>
+                                                    {geoMsg}
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="col-12 mt-3">
-                                            <button type="submit" className="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                            <button type="submit" className="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm">
                                                 <i className="bi bi-search"></i>
                                                 <span>Search Now</span>
                                             </button>

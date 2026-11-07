@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import FlashAlert from '../Components/FlashAlert';
 
 export default function FrontLayout({ children, title }) {
-    const { auth, settings, categories } = usePage().props;
+    const { auth, settings, categories, userLocation } = usePage().props;
     const [navOpen, setNavOpen] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && navigator.geolocation && (!userLocation?.latitude || !userLocation?.longitude)) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    fetch(`/savelatlong/${lat}/${lng}`).catch(() => {});
+                },
+                () => {},
+                { maximumAge: 300000, timeout: 8000 }
+            );
+        }
+    }, [userLocation]);
 
     const handleLogout = (e) => {
         e.preventDefault();
