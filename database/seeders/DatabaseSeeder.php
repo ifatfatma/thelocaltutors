@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             GeneralSettingSeeder::class,
             CustomDataSeeder::class,
             SinglePageSeeder::class,
+            FakeTeacherSeeder::class,
         ]);
     }
 }
