@@ -71,20 +71,24 @@ export default function SearchResults({ lists, searchdetails = {}, custom_lookup
         if (teacher.subject_names) return teacher.subject_names;
         if (!teacher.subjects) return '';
         const parts = teacher.subjects.toString().split(',').map(s => s.trim()).filter(Boolean);
-        return parts.map(p => custom_lookups[p] || p).join(', ');
+        const resolved = parts.map(p => custom_lookups[p] || (isNaN(p) ? p : '')).filter(Boolean);
+        return resolved.join(', ');
     };
 
     const resolveQualification = (teacher) => {
         if (teacher.qualification_name) return teacher.qualification_name;
         if (!teacher.qualification) return '';
-        return custom_lookups[teacher.qualification] || teacher.qualification;
+        const parts = teacher.qualification.toString().split(',').map(s => s.trim()).filter(Boolean);
+        const resolved = parts.map(p => custom_lookups[p] || (isNaN(p) ? p : '')).filter(Boolean);
+        return resolved.join(', ');
     };
 
     const resolveBoard = (teacher) => {
         if (teacher.board_names) return teacher.board_names;
         if (!teacher.board) return '';
         const parts = teacher.board.toString().split(',').map(s => s.trim()).filter(Boolean);
-        return parts.map(p => custom_lookups[p] || p).join(', ');
+        const resolved = parts.map(p => custom_lookups[p] || (isNaN(p) ? p : '')).filter(Boolean);
+        return resolved.join(', ');
     };
 
     const openTeacherModal = async (teacher) => {

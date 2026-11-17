@@ -187,10 +187,13 @@ class InstallController extends Controller
             return redirect('/')->with('info', 'Application is already installed.');
         }
 
-        $dbConfig = session('install_db');
-        if (!$dbConfig) {
-            return redirect()->route('install.database')->with('error', 'Please configure your database first.');
-        }
+        $dbConfig = session('install_db') ?: [
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'thelocaltutors'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+        ];
 
         $defaultAppName = env('APP_NAME', 'The Local Tutors');
         $defaultAppUrl = request()->getSchemeAndHttpHost();
@@ -217,25 +220,16 @@ class InstallController extends Controller
             'admin_password' => 'required|min:6|confirmed'
         ]);
 
-        $dbConfig = session('install_db');
-        if (!$dbConfig) {
-            return redirect()->route('install.database')->with('error', 'Database configuration missing.');
-        }
+        $dbConfig = session('install_db') ?: [
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'thelocaltutors'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+        ];
 
         try {
-            // 1. Update .env file
-            $this->updateEnv([
-                'APP_NAME' => $request->app_name,
-                'APP_URL' => $request->app_url,
-                'DB_CONNECTION' => 'mysql',
-                'DB_HOST' => $dbConfig['host'],
-                'DB_PORT' => $dbConfig['port'],
-                'DB_DATABASE' => $dbConfig['database'],
-                'DB_USERNAME' => $dbConfig['username'],
-                'DB_PASSWORD' => $dbConfig['password'],
-            ]);
-
-            // 2. Set dynamic config in runtime
+            // 1. Set dynamic config in runtime
             config([
                 'app.name' => $request->app_name,
                 'app.url' => $request->app_url,
@@ -249,33 +243,48 @@ class InstallController extends Controller
             DB::purge('mysql');
             DB::reconnect('mysql');
 
-            // 3. Generate APP_KEY if missing
+            // 2. Generate APP_KEY if missing
             if (empty(env('APP_KEY')) && empty(config('app.key'))) {
                 Artisan::call('key:generate', ['--force' => true]);
             }
 
-            // 4. Run Migrations & Seeders
+            // 3. Run Migrations & Seeders
             Artisan::call('migrate:fresh', ['--force' => true]);
             Artisan::call('db:seed', ['--force' => true]);
 
-            // 5. Create / Update Super Admin User
-            $superAdmin = User::updateOrCreate(
-                ['email' => $request->admin_email],
-                [
+            // 4. Create / Update Super Admin User
+            $existingUser = User::where('email', $request->admin_email)
+                ->orWhere('username', $request->admin_username)
+                ->first();
+
+            if ($existingUser) {
+                $existingUser->update([
                     'name' => $request->admin_name,
+                    'email' => $request->admin_email,
                     'username' => $request->admin_username,
                     'mobile' => $request->admin_mobile,
                     'password' => Hash::make($request->admin_password),
                     'type' => 'admin',
                     'is_active' => '1',
-                ]
-            );
+                ]);
+                $superAdmin = $existingUser;
+            } else {
+                $superAdmin = User::create([
+                    'name' => $request->admin_name,
+                    'email' => $request->admin_email,
+                    'username' => $request->admin_username,
+                    'mobile' => $request->admin_mobile,
+                    'password' => Hash::make($request->admin_password),
+                    'type' => 'admin',
+                    'is_active' => '1',
+                ]);
+            }
 
             if (!$superAdmin->hasRole('Super Admin')) {
                 $superAdmin->assignRole('Super Admin');
             }
 
-            // 6. Create storage/installed lock file
+            // 5. Create storage/installed lock file BEFORE modifying .env
             file_put_contents(storage_path('installed'), json_encode([
                 'installed_at' => now()->toIso8601String(),
                 'version' => '1.0.0',
@@ -284,12 +293,17 @@ class InstallController extends Controller
                 'admin_email' => $request->admin_email,
             ], JSON_PRETTY_PRINT));
 
-            // 7. Clear caches
-            try {
-                Artisan::call('optimize:clear');
-            } catch (\Throwable $e) {
-                Log::info('Optimize clear notice: ' . $e->getMessage());
-            }
+            // 6. Update .env file (now that all database work and lock file are committed)
+            $this->updateEnv([
+                'APP_NAME' => $request->app_name,
+                'APP_URL' => $request->app_url,
+                'DB_CONNECTION' => 'mysql',
+                'DB_HOST' => $dbConfig['host'],
+                'DB_PORT' => $dbConfig['port'],
+                'DB_DATABASE' => $dbConfig['database'],
+                'DB_USERNAME' => $dbConfig['username'],
+                'DB_PASSWORD' => $dbConfig['password'],
+            ]);
 
             // Clear session DB config
             session()->forget('install_db');

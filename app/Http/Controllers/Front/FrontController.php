@@ -161,19 +161,26 @@ class FrontController extends Controller
             }
         }
         public function index(){
-            $pageData = SinglePage::where('id',5)->first();
-            $popularCategories = Common::homecoursecategory();
-            $courses = Course::with('category')->where('is_active',1)->latest('id')->take(6)->get();
-            $blogs = Common::blogs();
-            $teachers = Common::teachers();
-            $stats = [
-                'courses' => Common::coursecount(),
-                'teachers' => Common::teacherscount(),
-                'students' => User::where('type','student')->count(),
-            ];
-            $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
-            $subjects = CustomData::where('key_name','subject')->orderBy('name','asc')->get();
-            $boards = CustomData::where('key_name','board')->orderBy('name','asc')->get();
+            try {
+                $pageData = SinglePage::where('id',5)->first();
+                $popularCategories = Common::homecoursecategory();
+                $courses = Course::with('category')->where('is_active',1)->latest('id')->take(6)->get();
+                $blogs = Common::blogs();
+                $teachers = Common::teachers();
+                $stats = [
+                    'courses' => Common::coursecount(),
+                    'teachers' => Common::teacherscount(),
+                    'students' => User::where('type','student')->count(),
+                ];
+                $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
+                $subjects = CustomData::where('key_name','subject')->orderBy('name','asc')->get();
+                $boards = CustomData::where('key_name','board')->orderBy('name','asc')->get();
+            } catch (\Throwable $e) {
+                if (!file_exists(storage_path('installed'))) {
+                    return redirect()->route('install.index');
+                }
+                throw $e;
+            }
 
             return Inertia::render('Front/Home', compact(
                 'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards'
@@ -598,11 +605,14 @@ class FrontController extends Controller
 
         private function enrichTeacherLists($lists)
         {
-            $qualIds = $lists->getCollection()->pluck('qualification')->filter()->unique()->toArray();
+            $qualIds = [];
             $allSubIds = [];
             $allBoardIds = [];
 
             foreach ($lists->getCollection() as $item) {
+                if (!empty($item->qualification)) {
+                    $qualIds = array_merge($qualIds, explode(',', (string)$item->qualification));
+                }
                 if (!empty($item->subjects)) {
                     $allSubIds = array_merge($allSubIds, explode(',', (string)$item->subjects));
                 }
@@ -611,27 +621,31 @@ class FrontController extends Controller
                 }
             }
 
-            $idsToLookup = array_unique(array_filter(array_merge($qualIds, $allSubIds, $allBoardIds)));
+            $idsToLookup = array_unique(array_filter(array_map('trim', array_merge($qualIds, $allSubIds, $allBoardIds))));
             $lookup = !empty($idsToLookup)
                 ? CustomData::whereIn('id', $idsToLookup)->pluck('name', 'id')->toArray()
                 : [];
 
             $lists->getCollection()->transform(function ($item) use ($lookup) {
-                $item->qualification_name = $lookup[$item->qualification] ?? '';
+                if (!empty($item->qualification)) {
+                    $qIds = array_filter(array_map('trim', explode(',', (string)$item->qualification)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $qIds));
+                    $item->qualification_name = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->qualification_name = '';
+                }
 
                 if (!empty($item->subjects)) {
-                    $subIds = array_filter(explode(',', (string)$item->subjects));
-                    $names = array_map(fn($id) => $lookup[$id] ?? null, $subIds);
-                    $names = array_filter($names);
+                    $subIds = array_filter(array_map('trim', explode(',', (string)$item->subjects)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $subIds));
                     $item->subject_names = !empty($names) ? implode(', ', $names) : '';
                 } else {
                     $item->subject_names = '';
                 }
 
                 if (!empty($item->board)) {
-                    $boardIds = array_filter(explode(',', (string)$item->board));
-                    $names = array_map(fn($id) => $lookup[$id] ?? null, $boardIds);
-                    $names = array_filter($names);
+                    $boardIds = array_filter(array_map('trim', explode(',', (string)$item->board)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $boardIds));
                     $item->board_names = !empty($names) ? implode(', ', $names) : '';
                 } else {
                     $item->board_names = '';
