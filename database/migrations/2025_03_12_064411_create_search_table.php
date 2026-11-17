@@ -13,16 +13,18 @@ return new class extends Migration
     {
         Schema::create('search', function (Blueprint $table) {
             $table->id();
-            $table->string('user_id')->nullable();
-            $table->string('lookingfor')->nullable();
-            $table->string('state')->nullable();
-            $table->string('district')->nullable();
-            $table->string('city')->nullable();
-            $table->string('board')->nullable();
-            $table->string('subject')->nullable();
-            $table->string('gender')->nullable();
-            $table->string('radius')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable()->index();
+            $table->string('lookingfor', 50)->nullable()->index();
+            $table->string('state', 50)->nullable();
+            $table->string('district', 50)->nullable();
+            $table->string('city', 50)->nullable();
+            $table->string('board', 50)->nullable();
+            $table->string('subject', 50)->nullable();
+            $table->string('gender', 20)->nullable();
+            $table->string('radius', 20)->nullable();
             $table->timestamps();
+
+            $table->index(['user_id', 'created_at']);
         });
     }
 

@@ -13,12 +13,12 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::create(['name' => 'Super Admin']);
-        $admin = Role::create(['name' => 'Admin']);
-        $normalAdmin = Role::create(['name' => 'Normal Admin']);
-        $user = Role::create(['name' => 'User']);
+        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
+        $normalAdmin = Role::firstOrCreate(['name' => 'Normal Admin']);
+        $user = Role::firstOrCreate(['name' => 'User']);
 
-        $admin->givePermissionTo([
+        $admin->syncPermissions([
             'create-user',
             'edit-user',
             'delete-user',
@@ -27,13 +27,13 @@ class RoleSeeder extends Seeder
             'delete-teacher'
         ]);
 
-        $normalAdmin->givePermissionTo([
+        $normalAdmin->syncPermissions([
             'create-teacher',
             'edit-teacher',
             'delete-teacher'
         ]);
 
-        $user->givePermissionTo([
+        $user->syncPermissions([
             'view-teacher'
         ]);
     }

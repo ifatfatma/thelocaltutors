@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('enrollcourses', function (Blueprint $table) {
             $table->id();
-            $table->string('course_id');
-            $table->string('user_id');
-            $table->enum('status',['pending','accepted','canceled','completed'])->default('pending');
+            $table->unsignedBigInteger('course_id')->index();
+            $table->unsignedBigInteger('user_id')->index();
+            $table->enum('status', ['pending', 'accepted', 'canceled', 'completed'])->default('pending')->index();
             $table->timestamps();
+
+            $table->index(['user_id', 'course_id']);
         });
     }
 

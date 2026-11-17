@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('course_feedback', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id')->default(0);
-            $table->integer('course_id')->default(0);
+            $table->unsignedBigInteger('user_id')->default(0)->index();
+            $table->unsignedBigInteger('course_id')->default(0)->index();
             $table->integer('rating')->nullable();
             $table->longText('feedback')->nullable();
-            $table->tinyinteger('is_active')->default(0);
+            $table->tinyInteger('is_active')->default(1)->index();
             $table->softDeletes();
             $table->timestamps();
+
+            $table->index(['course_id', 'is_active']);
         });
     }
 

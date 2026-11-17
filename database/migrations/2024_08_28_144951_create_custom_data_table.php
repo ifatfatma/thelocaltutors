@@ -13,17 +13,19 @@ return new class extends Migration
     {
         Schema::create('custom_data', function (Blueprint $table) {
             $table->id();
-            $table->string('key_name',20)->nullable();
-            $table->string('name',192)->nullable();
-            $table->integer('sorting')->default(0);
-            $table->string('image',192)->nullable();
-            $table->integer('parent_id')->default(0);
-            $table->string('custom_field1',192)->nullable();
-            $table->string('custom_field2',192)->nullable();
-            $table->string('custom_field3',192)->nullable();
-            $table->string('is_active')->default('0');
+            $table->string('key_name', 50)->nullable()->index();
+            $table->string('name', 192)->nullable();
+            $table->integer('sorting')->default(0)->index();
+            $table->string('image', 192)->nullable();
+            $table->unsignedBigInteger('parent_id')->default(0)->index();
+            $table->string('custom_field1', 192)->nullable();
+            $table->string('custom_field2', 192)->nullable();
+            $table->string('custom_field3', 192)->nullable();
+            $table->string('is_active', 10)->default('1')->index();
             $table->softDeletes();
             $table->timestamps();
+
+            $table->index(['key_name', 'parent_id']);
         });
     }
 
