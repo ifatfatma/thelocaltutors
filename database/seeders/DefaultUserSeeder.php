@@ -13,8 +13,11 @@ class DefaultUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // Skip default seed users if an admin user already exists or if running from web installer
+        if (User::where('type', 'admin')->exists() || (function_exists('request') && request() && request()->is('install*'))) {
+            return;
+        }
 
-        
         // Creating Super Admin User
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@thelocaltutor.com'],

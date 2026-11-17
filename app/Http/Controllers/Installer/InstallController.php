@@ -253,32 +253,22 @@ class InstallController extends Controller
             Artisan::call('db:seed', ['--force' => true]);
 
             // 4. Create / Update Super Admin User
-            $existingUser = User::where('email', $request->admin_email)
+            // Purge any pre-existing or conflicting accounts (including soft-deleted) across email, username, or mobile
+            User::withTrashed()
+                ->where('email', $request->admin_email)
                 ->orWhere('username', $request->admin_username)
-                ->first();
+                ->orWhere('mobile', $request->admin_mobile)
+                ->forceDelete();
 
-            if ($existingUser) {
-                $existingUser->update([
-                    'name' => $request->admin_name,
-                    'email' => $request->admin_email,
-                    'username' => $request->admin_username,
-                    'mobile' => $request->admin_mobile,
-                    'password' => Hash::make($request->admin_password),
-                    'type' => 'admin',
-                    'is_active' => '1',
-                ]);
-                $superAdmin = $existingUser;
-            } else {
-                $superAdmin = User::create([
-                    'name' => $request->admin_name,
-                    'email' => $request->admin_email,
-                    'username' => $request->admin_username,
-                    'mobile' => $request->admin_mobile,
-                    'password' => Hash::make($request->admin_password),
-                    'type' => 'admin',
-                    'is_active' => '1',
-                ]);
-            }
+            $superAdmin = User::create([
+                'name' => $request->admin_name,
+                'email' => $request->admin_email,
+                'username' => $request->admin_username,
+                'mobile' => $request->admin_mobile,
+                'password' => Hash::make($request->admin_password),
+                'type' => 'admin',
+                'is_active' => '1',
+            ]);
 
             if (!$superAdmin->hasRole('Super Admin')) {
                 $superAdmin->assignRole('Super Admin');
