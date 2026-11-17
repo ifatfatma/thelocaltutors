@@ -13,6 +13,8 @@ export default function Home({
     states = [],
     subjects = [],
     boards = [],
+    showcaseTeachers = [],
+    isShowcaseNearby = false,
 }) {
     const [searchState, setSearchState] = useState({
         lookingfor: 'teacher',
@@ -33,6 +35,120 @@ export default function Home({
     const [geoActive, setGeoActive] = useState(false);
     const [loadingGeo, setLoadingGeo] = useState(false);
     const [geoMsg, setGeoMsg] = useState('');
+
+    // Hero Showcase Slider State
+    const [tutorList, setTutorList] = useState(showcaseTeachers || []);
+    const [isNearby, setIsNearby] = useState(isShowcaseNearby || false);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isAutoPlay, setIsAutoPlay] = useState(true);
+    const [isDetecting, setIsDetecting] = useState(false);
+    const [showcaseStatusMsg, setShowcaseStatusMsg] = useState('');
+    const [selectedTeacher, setSelectedTeacher] = useState(null);
+    const [teacherModalHtml, setTeacherModalHtml] = useState('');
+    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [teacherRating, setTeacherRating] = useState('5');
+    const [teacherReview, setTeacherReview] = useState('');
+    const [reviewMsg, setReviewMsg] = useState('');
+
+    useEffect(() => {
+        if (showcaseTeachers && showcaseTeachers.length > 0) {
+            setTutorList(showcaseTeachers);
+            setIsNearby(isShowcaseNearby);
+        }
+    }, [showcaseTeachers, isShowcaseNearby]);
+
+    // Auto-slide effect
+    useEffect(() => {
+        if (!isAutoPlay || tutorList.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % tutorList.length);
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [isAutoPlay, tutorList.length]);
+
+    const prevSlide = () => {
+        setCurrentIndex((prev) => (prev - 1 + tutorList.length) % tutorList.length);
+    };
+
+    const nextSlide = () => {
+        setCurrentIndex((prev) => (prev + 1) % tutorList.length);
+    };
+
+    const fetchNearbyShowcase = async (lat, lng) => {
+        setIsDetecting(true);
+        try {
+            const res = await axios.get('/getNearbyShowcaseTeachersAjax', {
+                params: { lat, lng, radius: 5 }
+            });
+            if (res.data && res.data.teachers && res.data.teachers.length > 0) {
+                setTutorList(res.data.teachers);
+                setIsNearby(res.data.is_nearby);
+                setCurrentIndex(0);
+                if (res.data.is_nearby) {
+                    setShowcaseStatusMsg(`Found ${res.data.teachers.length} tutor(s) within 5 km of your location!`);
+                } else {
+                    setShowcaseStatusMsg('No tutors within 5 km; showing top verified tutors.');
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load nearby tutors', e);
+        } finally {
+            setIsDetecting(false);
+        }
+    };
+
+    // Auto-detect browser location once on mount
+    useEffect(() => {
+        if (navigator.geolocation && !isShowcaseNearby) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    fetchNearbyShowcase(lat, lng);
+                },
+                () => {},
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
+    }, []);
+
+    const openTeacherModal = async (teacher) => {
+        setSelectedTeacher(teacher);
+        setLoadingDetails(true);
+        setTeacherModalHtml('');
+        setReviewMsg('');
+
+        try {
+            const res = await axios.get(`/getTeacherDetailsAjax/${teacher.user_id || teacher.id}`);
+            if (res.data.status === 200) {
+                setTeacherModalHtml(res.data.message);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingDetails(false);
+        }
+    };
+
+    const handlePostTeacherReview = async () => {
+        if (!selectedTeacher) return;
+        setReviewMsg('');
+        try {
+            const res = await axios.get('/postTeacherReviews', {
+                params: {
+                    id: selectedTeacher.user_id || selectedTeacher.id,
+                    teacher_rating: teacherRating,
+                    teacher_review: teacherReview,
+                }
+            });
+            setReviewMsg(res.data.message);
+            if (res.data.status === 200) {
+                setTeacherReview('');
+            }
+        } catch (err) {
+            setReviewMsg('Please login to post a review or check your input.');
+        }
+    };
 
     const handleUseCurrentLocation = () => {
         if (!navigator.geolocation) {
@@ -58,20 +174,23 @@ export default function Home({
                 setLoadingGeo(false);
                 setGeoActive(true);
                 setGeoMsg('📍 Location acquired! Ready to find tutors within 1 km.');
-
                 axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
+                fetchNearbyShowcase(lat, lng);
             },
             (error) => {
                 setLoadingGeo(false);
-                let msg = 'Unable to fetch your location.';
+                setGeoActive(false);
+                let errText = 'Failed to get location.';
                 if (error.code === 1) {
-                    msg = 'Location permission denied. Please allow location access in your browser.';
+                    errText = 'Location permission denied. Please allow location in your browser.';
                 } else if (error.code === 2) {
-                    msg = 'Location unavailable. Please check your GPS/internet connection.';
+                    errText = 'Location unavailable. Please check device GPS.';
+                } else if (error.code === 3) {
+                    errText = 'Location request timed out. Please try again.';
                 }
-                setGeoMsg(msg);
+                setGeoMsg(errText);
             },
-            { enableHighAccuracy: true, timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     };
 
@@ -311,15 +430,259 @@ export default function Home({
                             </div>
                         </div>
 
-                        {/* Hero Image */}
-                        <div className="col-lg-6 text-center">
-                            <img
-                                src="/front/img/bg-img/home-4/c-1.png"
-                                onError={(e) => { e.target.src = '/front/img/bg-img/light.png'; }}
-                                alt="Tutoring Platform"
-                                className="img-fluid rounded-4 shadow-sm"
-                                style={{ maxHeight: '450px' }}
-                            />
+                        {/* Hero Right Column: Teacher Showcase Auto-sliding Card */}
+                        <div className="col-lg-6 d-flex flex-column justify-content-center">
+                            {tutorList.length === 0 ? (
+                                <div className="card border-0 shadow-lg rounded-4 p-4 text-center bg-white">
+                                    <div className="py-4">
+                                        <i className="bi bi-person-workspace fs-1 text-primary mb-3 d-inline-block"></i>
+                                        <h4 className="fw-bold text-dark">Verified Local Tutors</h4>
+                                        <p className="text-muted small mb-3">
+                                            Connect with top-rated home & online educators across Kolkata and West Bengal.
+                                        </p>
+                                        <Link href="/search?lookingfor=teacher" className="btn btn-primary rounded-pill px-4">
+                                            Browse Tutors
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div
+                                    className="position-relative h-100 d-flex flex-column justify-content-center py-2"
+                                    onMouseEnter={() => setIsAutoPlay(false)}
+                                    onMouseLeave={() => setIsAutoPlay(true)}
+                                >
+                                    {/* Top Showcase Status Header */}
+                                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                        {isNearby ? (
+                                            <span className="badge bg-success text-white px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
+                                                <span className="spinner-grow spinner-grow-sm text-white" style={{ width: '8px', height: '8px' }}></span>
+                                                <span>Tutors Near You ({tutorList.length})</span>
+                                            </span>
+                                        ) : (
+                                            <span className="badge bg-primary text-white px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
+                                                <i className="bi bi-patch-check-fill text-warning"></i>
+                                                <span>Top Verified Tutors</span>
+                                            </span>
+                                        )}
+
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="badge bg-light text-muted border small px-2 py-1">
+                                                {currentIndex + 1} of {tutorList.length}
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 small d-flex align-items-center gap-1 shadow-sm"
+                                                onClick={() => {
+                                                    if (navigator.geolocation) {
+                                                        setIsDetecting(true);
+                                                        navigator.geolocation.getCurrentPosition(
+                                                            (pos) => fetchNearbyShowcase(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6)),
+                                                            () => setIsDetecting(false),
+                                                            { enableHighAccuracy: true, timeout: 8000 }
+                                                        );
+                                                    }
+                                                }}
+                                                disabled={isDetecting}
+                                                title="Detect GPS location for nearest tutors"
+                                            >
+                                                <i className={`bi bi-crosshair ${isDetecting ? 'spinner-border spinner-border-sm' : ''}`}></i>
+                                                <span className="d-none d-sm-inline">{isDetecting ? 'Detecting...' : 'Near Me'}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {showcaseStatusMsg && (
+                                        <div className="alert alert-info py-1 px-3 small rounded-3 mb-2">
+                                            {showcaseStatusMsg}
+                                        </div>
+                                    )}
+
+                                    {/* Active Teacher Card */}
+                                    {(() => {
+                                        const teacher = tutorList[currentIndex] || tutorList[0];
+                                        if (!teacher) return null;
+                                        return (
+                                            <div className="card border-0 shadow-lg rounded-4 p-4 text-start bg-white position-relative overflow-hidden transition-all">
+                                                {/* Top Accent Gradient Bar */}
+                                                <div
+                                                    className="position-absolute top-0 start-0 end-0"
+                                                    style={{
+                                                        height: '5px',
+                                                        background: isNearby
+                                                            ? 'linear-gradient(90deg, #198754, #20c997)'
+                                                            : 'linear-gradient(90deg, #0d6efd, #0dcaf0)'
+                                                    }}
+                                                />
+
+                                                {/* Profile Header */}
+                                                <div className="d-flex align-items-center gap-3 mb-3">
+                                                    <div className="position-relative flex-shrink-0">
+                                                        <img
+                                                            src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
+                                                            onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
+                                                            alt={teacher.name}
+                                                            className="rounded-circle shadow-sm border border-2 border-primary-subtle"
+                                                            style={{ width: '85px', height: '85px', objectFit: 'cover' }}
+                                                        />
+                                                        <span
+                                                            className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"
+                                                            title="Available for Tuition"
+                                                            style={{ width: '14px', height: '14px' }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex-grow-1 min-w-0">
+                                                        <h5 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2 flex-wrap">
+                                                            <span className="text-truncate">{teacher.name}</span>
+                                                            <span className="badge bg-light text-secondary border small fw-normal">
+                                                                {teacher.gender || 'Teacher'}
+                                                            </span>
+                                                        </h5>
+
+                                                        <div className="d-flex flex-wrap gap-1 align-items-center mb-1">
+                                                            {teacher.distance !== null && teacher.distance !== undefined ? (
+                                                                <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1">
+                                                                    <i className="bi bi-geo-alt-fill"></i>
+                                                                    {Number(teacher.distance) < 1
+                                                                        ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
+                                                                        : `${Number(teacher.distance).toFixed(1)} km away`}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 d-inline-flex align-items-center gap-1">
+                                                                    <i className="bi bi-shield-check"></i>
+                                                                    Verified Educator
+                                                                </span>
+                                                            )}
+
+                                                            {teacher.experience && (
+                                                                <span className="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1">
+                                                                    {teacher.experience} Years Exp
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {(teacher.city_name || teacher.state_name) && (
+                                                            <div className="text-muted small text-truncate">
+                                                                <i className="bi bi-geo-alt me-1 text-primary"></i>
+                                                                {[teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Teacher Details on Card */}
+                                                <div className="bg-light rounded-3 p-3 mb-3 small">
+                                                    {teacher.qualification_name && (
+                                                        <div className="row g-1 mb-1">
+                                                            <span className="col-4 text-muted fw-semibold">Qualification:</span>
+                                                            <span className="col-8 text-dark fw-medium text-truncate">{teacher.qualification_name}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {teacher.subject_names && (
+                                                        <div className="row g-1 mb-1">
+                                                            <span className="col-4 text-muted fw-semibold">Subjects:</span>
+                                                            <span className="col-8 text-dark fw-medium text-truncate-2">{teacher.subject_names}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {teacher.board_names && (
+                                                        <div className="row g-1 mb-1">
+                                                            <span className="col-4 text-muted fw-semibold">Board:</span>
+                                                            <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {teacher.teaching_mode_name && (
+                                                        <div className="row g-1 mb-1">
+                                                            <span className="col-4 text-muted fw-semibold">Mode:</span>
+                                                            <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {teacher.timings && (
+                                                        <div className="row g-1">
+                                                            <span className="col-4 text-muted fw-semibold">Timings:</span>
+                                                            <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Bio / Description */}
+                                                {teacher.description && (
+                                                    <p className="text-muted small mb-3 text-truncate-2 fst-italic">
+                                                        "{teacher.description}"
+                                                    </p>
+                                                )}
+
+                                                {/* Card Footer Actions */}
+                                                <div className="d-flex align-items-center justify-content-between gap-2 pt-2 border-top">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openTeacherModal(teacher)}
+                                                        className="btn btn-primary btn-sm rounded-pill px-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#homeTeacherModal"
+                                                    >
+                                                        <i className="bi bi-info-circle"></i>
+                                                        <span>View Full Profile</span>
+                                                    </button>
+
+                                                    <Link
+                                                        href={`/search?lookingfor=teacher&search_state=${teacher.state || 0}&search_city=${teacher.city || 0}`}
+                                                        className="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                                    >
+                                                        Explore More &rarr;
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Slider Controls: Arrows & Dot Indicators */}
+                                    <div className="d-flex justify-content-between align-items-center mt-3 px-2">
+                                        <button
+                                            type="button"
+                                            className="btn btn-light btn-sm rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
+                                            onClick={prevSlide}
+                                            style={{ width: '38px', height: '38px' }}
+                                            title="Previous Tutor"
+                                        >
+                                            <i className="bi bi-chevron-left"></i>
+                                        </button>
+
+                                        {/* Dot Indicators */}
+                                        <div className="d-flex align-items-center gap-1">
+                                            {tutorList.map((_, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    className={`btn p-0 rounded-pill transition-all ${idx === currentIndex ? 'bg-primary' : 'bg-secondary-subtle'}`}
+                                                    style={{
+                                                        width: idx === currentIndex ? '22px' : '8px',
+                                                        height: '8px',
+                                                        border: 'none',
+                                                        transition: 'all 0.3s ease'
+                                                    }}
+                                                    onClick={() => setCurrentIndex(idx)}
+                                                    title={`Slide ${idx + 1}`}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className="btn btn-light btn-sm rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
+                                            onClick={nextSlide}
+                                            style={{ width: '38px', height: '38px' }}
+                                            title="Next Tutor"
+                                        >
+                                            <i className="bi bi-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -535,6 +898,76 @@ export default function Home({
                     </div>
                 </section>
             )}
+            {/* Teacher Details Modal */}
+            <div className="modal fade" id="homeTeacherModal" tabIndex="-1" aria-labelledby="homeTeacherModalLabel" aria-hidden="true">
+                <div className="modal-dialog modal-dialog-centered modal-lg">
+                    <div className="modal-content rounded-4 border-0 shadow">
+                        <div className="modal-header border-0 pb-0">
+                            <h5 className="modal-title fw-bold" id="homeTeacherModalLabel">
+                                {selectedTeacher?.name || 'Teacher Profile'}
+                            </h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body p-4">
+                            {loadingDetails ? (
+                                <div className="text-center py-5">
+                                    <div className="spinner-border text-primary" role="status"></div>
+                                    <div className="mt-2 text-muted small">Loading teacher details...</div>
+                                </div>
+                            ) : (
+                                <div>
+                                    {teacherModalHtml ? (
+                                        <div dangerouslySetInnerHTML={{ __html: teacherModalHtml }} />
+                                    ) : (
+                                        <div className="text-center py-3">
+                                            <p className="text-muted">No additional profile details found.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Direct review post in modal */}
+                                    <div className="card border-0 bg-light p-3 mt-4 rounded-3">
+                                        <h6 className="fw-bold mb-2">Write feedback for this teacher</h6>
+                                        {reviewMsg && <div className="alert alert-info py-2 small">{reviewMsg}</div>}
+                                        <div className="row g-2">
+                                            <div className="col-sm-4">
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={teacherRating}
+                                                    onChange={(e) => setTeacherRating(e.target.value)}
+                                                >
+                                                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                                                    <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                                                    <option value="3">⭐⭐⭐ 3 Stars</option>
+                                                    <option value="2">⭐⭐ 2 Stars</option>
+                                                    <option value="1">⭐ 1 Star</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-12">
+                                                <textarea
+                                                    rows="2"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Share your experience with this teacher..."
+                                                    value={teacherReview}
+                                                    onChange={(e) => setTeacherReview(e.target.value)}
+                                                ></textarea>
+                                            </div>
+                                            <div className="col-12">
+                                                <button
+                                                    type="button"
+                                                    onClick={handlePostTeacherReview}
+                                                    className="btn btn-dark btn-sm"
+                                                >
+                                                    Submit Review
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </FrontLayout>
     );
 }
