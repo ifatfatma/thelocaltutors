@@ -61,7 +61,15 @@ class HandleInertiaRequests extends Middleware
                 'latitude' => fn () => $request->session()->get('latitude'),
                 'longitude' => fn () => $request->session()->get('longitude'),
             ],
-            'settings' => fn () => General_Setting::find(1),
+            'settings' => function () {
+                try {
+                    return \Illuminate\Support\Facades\Schema::hasTable('general_settings')
+                        ? General_Setting::find(1)
+                        : null;
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            },
             'categories' => fn () => CourseCategory::where('is_active', 1)->orderBy('title', 'asc')->get(['id', 'title', 'slug']),
             'appName' => config('app.name', 'The Local Tutors'),
         ];

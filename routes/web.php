@@ -22,7 +22,18 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CourseFaqController;
+use App\Http\Controllers\Installer\InstallController;
 
+// Web Installer Routes
+Route::prefix('install')->name('install.')->group(function () {
+    Route::get('/', [InstallController::class, 'index'])->name('index');
+    Route::get('/database', [InstallController::class, 'database'])->name('database');
+    Route::post('/database/test', [InstallController::class, 'testDatabase'])->name('database.test');
+    Route::post('/database/save', [InstallController::class, 'saveDatabase'])->name('database.save');
+    Route::get('/admin', [InstallController::class, 'admin'])->name('admin');
+    Route::post('/process', [InstallController::class, 'process'])->name('process');
+    Route::get('/finish', [InstallController::class, 'finish'])->name('finish');
+});
 
 Auth::routes();
  

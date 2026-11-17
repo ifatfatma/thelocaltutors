@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             DefaultUserSeeder::class,
             GeneralSettingSeeder::class,
+            CustomDataSeeder::class,
+            SinglePageSeeder::class,
         ]);
     }
 }

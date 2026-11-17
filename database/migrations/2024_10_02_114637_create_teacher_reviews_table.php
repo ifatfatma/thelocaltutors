@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('teacher_reviews', function (Blueprint $table) {
             $table->id();
-            $table->integer('teacher_id')->nullable();
-            $table->integer('student_id')->nullable();            
+            $table->unsignedBigInteger('teacher_id')->nullable()->index();
+            $table->unsignedBigInteger('student_id')->nullable()->index();            
             $table->longText('teacher_review')->nullable();
-            $table->string('teacher_rating')->nullable();
+            $table->string('teacher_rating', 10)->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

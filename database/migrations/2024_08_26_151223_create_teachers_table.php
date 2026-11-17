@@ -13,21 +13,21 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id');
-            $table->enum('gender',['Male','Female'])->nullable();
+            $table->unsignedBigInteger('user_id')->index();
+            $table->enum('gender', ['Male', 'Female', 'Other'])->nullable();
             $table->longText('description')->nullable();
             $table->string('whatsapp')->nullable();
             $table->string('experience')->nullable();
             $table->string('qualification')->nullable();
             $table->string('address')->nullable();
-            $table->integer('city')->nullable();
-            $table->integer('state')->nullable();
-            $table->integer('district')->nullable();
-            $table->integer('pincode')->nullable();
+            $table->unsignedBigInteger('city')->nullable()->index();
+            $table->unsignedBigInteger('state')->nullable()->index();
+            $table->unsignedBigInteger('district')->nullable()->index();
+            $table->string('pincode', 20)->nullable();
             $table->string('teaching_mode')->nullable();
             $table->string('board')->nullable();
-            $table->string('latitude')->nullable();
-            $table->string('longitude')->nullable();
+            $table->string('latitude')->nullable()->index();
+            $table->string('longitude')->nullable()->index();
             $table->string('street')->nullable();
             $table->string('block')->nullable();
             $table->string('days')->nullable();

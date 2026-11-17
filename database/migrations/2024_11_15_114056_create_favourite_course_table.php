@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('favourite_course', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('course_id')->default(0)->index();
+            $table->unsignedBigInteger('user_id')->default(0)->index();
             $table->softDeletes();
-            $table->integer('course_id')->default(0);
-            $table->integer('user_id')->default(0);
             $table->timestamps();
+
+            $table->index(['user_id', 'course_id']);
         });
     }
 

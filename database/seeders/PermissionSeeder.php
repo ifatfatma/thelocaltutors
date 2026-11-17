@@ -82,9 +82,9 @@ class PermissionSeeder extends Seeder
             'delete-single-page'
          ];
  
-          // Looping and Inserting Array's Permissions into Permission Table
-         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
-          }
+        // Looping and Inserting Array's Permissions into Permission Table
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
     }
 }

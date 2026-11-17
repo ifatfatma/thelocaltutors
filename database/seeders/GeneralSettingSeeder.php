@@ -12,10 +12,13 @@ class GeneralSettingSeeder extends Seeder
      */
     public function run(): void
     {
-       // Creating Super Admin User
-       $superAdmin = General_Setting::create([
-        'name' => 'The Local Tutors', 
-        'email' => 'info@thelocaltutors.com'
-    ]);
+        General_Setting::firstOrCreate(
+            ['id' => 1],
+            [
+                'name' => 'The Local Tutors', 
+                'email' => 'info@thelocaltutors.com',
+                'is_active' => '1',
+            ]
+        );
     }
 }
