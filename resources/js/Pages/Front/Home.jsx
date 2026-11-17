@@ -260,180 +260,199 @@ export default function Home({
             <Head title="Home - Find Expert Tutors Near You" />
 
             {/* Hero Section */}
-            <section className="hero-section py-5 bg-light position-relative overflow-hidden border-bottom">
-                <div className="container py-lg-4">
-                    <div className="row align-items-center gy-4">
-                        <div className="col-lg-6">
-                            <span className="badge bg-primary-subtle text-primary fw-bold mb-3 px-3 py-2 rounded-pill">
-                                Top Rated Learning Platform
+            <section className="hero-section py-4 py-lg-5 bg-light position-relative overflow-hidden border-bottom">
+                <div className="container">
+                    {/* Hero Header Row */}
+                    <div className="row mb-4">
+                        <div className="col-lg-9">
+                            <span className="badge bg-primary-subtle text-primary fw-bold mb-2 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1 shadow-xs">
+                                <i className="bi bi-patch-check-fill text-primary"></i> Top Rated Learning Platform
                             </span>
-                            <h1 className="display-5 fw-bold text-dark lh-sm mb-3">
+                            <h1 className="display-5 fw-bold text-dark lh-sm mb-2">
                                 Find the Perfect <span className="text-primary">Tutor</span> in Your Local Area
                             </h1>
-                            <p className="lead text-muted mb-4">
+                            <p className="lead text-muted mb-0">
                                 Connect with qualified home and online teachers, coaching institutes, schools, and colleges for all subjects and boards.
                             </p>
+                        </div>
+                    </div>
 
-                            {/* Search Form Card */}
-                            <div className="card shadow border-0 rounded-4 p-3 p-md-4 bg-white">
-                                <h5 className="fw-bold mb-3 text-dark d-flex align-items-center">
-                                    <i className="bi bi-search text-primary me-2"></i>
-                                    What are you looking for?
-                                </h5>
-                                <form onSubmit={handleSearch}>
-                                    <div className="row g-2">
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.lookingfor}
-                                                onChange={(e) => setSearchState({ ...searchState, lookingfor: e.target.value })}
-                                            >
-                                                <option value="teacher">Tutors / Teachers</option>
-                                                <option value="coaching-center">Coaching Center</option>
-                                                <option value="schools">Schools</option>
-                                                <option value="college">Colleges</option>
-                                                <option value="university">Universities</option>
-                                            </select>
-                                        </div>
+                    {/* Both Boxes Side-by-Side in Exact Alignment */}
+                    <div className="row g-4 align-items-stretch">
+                        {/* Left Box: Search Form Card */}
+                        <div className="col-lg-6 d-flex flex-column">
+                            <div className="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                        <h5 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                            <i className="bi bi-search text-primary"></i>
+                                            What are you looking for?
+                                        </h5>
+                                        <span className="badge bg-light text-muted border small fw-normal">Find Tutors</span>
+                                    </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_state}
-                                                onChange={handleStateChange}
-                                            >
-                                                <option value="0">Select State</option>
-                                                {states.map((s) => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <form onSubmit={handleSearch}>
+                                        <div className="row g-2">
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">Category</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.lookingfor}
+                                                    onChange={(e) => setSearchState({ ...searchState, lookingfor: e.target.value })}
+                                                >
+                                                    <option value="teacher">Tutors / Teachers</option>
+                                                    <option value="coaching-center">Coaching Center</option>
+                                                    <option value="schools">Schools</option>
+                                                    <option value="college">Colleges</option>
+                                                    <option value="university">Universities</option>
+                                                </select>
+                                            </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_district}
-                                                onChange={handleDistrictChange}
-                                                disabled={searchState.search_state === '0' || loadingDistricts}
-                                            >
-                                                <option value="0">
-                                                    {loadingDistricts ? 'Loading Districts...' : 'Select District'}
-                                                </option>
-                                                {districts.map((d) => (
-                                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">State</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_state}
+                                                    onChange={handleStateChange}
+                                                >
+                                                    <option value="0">Select State</option>
+                                                    {states.map((s) => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_city}
-                                                onChange={(e) => setSearchState((prev) => ({ ...prev, search_city: e.target.value }))}
-                                                disabled={searchState.search_district === '0' || loadingCities}
-                                            >
-                                                <option value="0">
-                                                    {loadingCities
-                                                        ? 'Loading Cities...'
-                                                        : (searchState.search_district !== '0' && cities.length === 0)
-                                                            ? 'No Cities Found'
-                                                            : 'Select City'}
-                                                </option>
-                                                {cities.map((c) => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">District</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_district}
+                                                    onChange={handleDistrictChange}
+                                                    disabled={searchState.search_state === '0' || loadingDistricts}
+                                                >
+                                                    <option value="0">
+                                                        {loadingDistricts ? 'Loading Districts...' : 'Select District'}
+                                                    </option>
+                                                    {districts.map((d) => (
+                                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_subject}
-                                                onChange={(e) => setSearchState({ ...searchState, search_subject: e.target.value })}
-                                            >
-                                                <option value="0">Select Subject</option>
-                                                {subjects.map((sub) => (
-                                                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">City</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_city}
+                                                    onChange={(e) => setSearchState((prev) => ({ ...prev, search_city: e.target.value }))}
+                                                    disabled={searchState.search_district === '0' || loadingCities}
+                                                >
+                                                    <option value="0">
+                                                        {loadingCities
+                                                            ? 'Loading Cities...'
+                                                            : (searchState.search_district !== '0' && cities.length === 0)
+                                                                ? 'No Cities Found'
+                                                                : 'Select City'}
+                                                    </option>
+                                                    {cities.map((c) => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_board}
-                                                onChange={(e) => setSearchState({ ...searchState, search_board: e.target.value })}
-                                            >
-                                                <option value="0">Select Board</option>
-                                                {boards.map((b) => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">Subject</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_subject}
+                                                    onChange={(e) => setSearchState({ ...searchState, search_subject: e.target.value })}
+                                                >
+                                                    <option value="0">Select Subject</option>
+                                                    {subjects.map((sub) => (
+                                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <div className="col-sm-6">
-                                            <select
-                                                className="form-select form-select-sm"
-                                                value={searchState.search_radius}
-                                                onChange={(e) => setSearchState({ ...searchState, search_radius: e.target.value })}
-                                            >
-                                                <option value="0">All Locations (City-wide)</option>
-                                                <option value="1">Within 1 KM (Nearest)</option>
-                                                <option value="2">Within 2 KM</option>
-                                                <option value="3">Within 3 KM</option>
-                                                <option value="5">Within 5 KM</option>
-                                                <option value="10">Within 10 KM</option>
-                                            </select>
-                                        </div>
+                                            <div className="col-sm-6">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">Board</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_board}
+                                                    onChange={(e) => setSearchState({ ...searchState, search_board: e.target.value })}
+                                                >
+                                                    <option value="0">Select Board</option>
+                                                    {boards.map((b) => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
 
-                                        <div className="col-12 mt-2">
-                                            <button
-                                                type="button"
-                                                className={`btn btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold ${
-                                                    geoActive ? 'btn-success text-white' : 'btn-outline-primary'
-                                                }`}
-                                                onClick={handleUseCurrentLocation}
-                                                disabled={loadingGeo}
-                                            >
-                                                {loadingGeo ? (
-                                                    <>
-                                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                        <span>Detecting your GPS location...</span>
-                                                    </>
-                                                ) : geoActive ? (
-                                                    <>
-                                                        <i className="bi bi-geo-alt-fill"></i>
-                                                        <span>📍 Browsing Near You (1 km Radius Active)</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <i className="bi bi-crosshair"></i>
-                                                        <span>Use My Current Location (Search 1 km Radius)</span>
-                                                    </>
+                                            <div className="col-12">
+                                                <label className="form-label small text-muted mb-1 fw-semibold">Search Distance / Radius</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={searchState.search_radius}
+                                                    onChange={(e) => setSearchState({ ...searchState, search_radius: e.target.value })}
+                                                >
+                                                    <option value="0">All Locations (City-wide)</option>
+                                                    <option value="1">Within 1 KM (Nearest)</option>
+                                                    <option value="2">Within 2 KM</option>
+                                                    <option value="3">Within 3 KM</option>
+                                                    <option value="5">Within 5 KM</option>
+                                                    <option value="10">Within 10 KM</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="col-12 mt-2">
+                                                <button
+                                                    type="button"
+                                                    className={`btn btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2 fw-semibold ${
+                                                        geoActive ? 'btn-success text-white' : 'btn-outline-primary'
+                                                    }`}
+                                                    onClick={handleUseCurrentLocation}
+                                                    disabled={loadingGeo}
+                                                >
+                                                    {loadingGeo ? (
+                                                        <>
+                                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                            <span>Detecting your GPS location...</span>
+                                                        </>
+                                                    ) : geoActive ? (
+                                                        <>
+                                                            <i className="bi bi-geo-alt-fill"></i>
+                                                            <span>📍 Browsing Near You (1 km Radius Active)</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <i className="bi bi-crosshair"></i>
+                                                            <span>Use My Current Location (Search 1 km Radius)</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {geoMsg && (
+                                                    <div className={`small text-center mt-1 fw-semibold ${geoActive ? 'text-success' : 'text-danger'}`}>
+                                                        {geoMsg}
+                                                    </div>
                                                 )}
-                                            </button>
-                                            {geoMsg && (
-                                                <div className={`small text-center mt-1 fw-semibold ${geoActive ? 'text-success' : 'text-danger'}`}>
-                                                    {geoMsg}
-                                                </div>
-                                            )}
+                                            </div>
                                         </div>
 
-                                        <div className="col-12 mt-3">
-                                            <button type="submit" className="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm">
+                                        <div className="mt-3">
+                                            <button type="submit" className="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3">
                                                 <i className="bi bi-search"></i>
                                                 <span>Search Now</span>
                                             </button>
                                         </div>
-                                    </div>
-                                </form>
+                                    </form>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Hero Right Column: Teacher Showcase Auto-sliding Card */}
-                        <div className="col-lg-6 d-flex flex-column justify-content-center">
+                        {/* Right Box: Teacher Showcase Card in Identical Alignment */}
+                        <div className="col-lg-6 d-flex flex-column">
                             {tutorList.length === 0 ? (
-                                <div className="card border-0 shadow-lg rounded-4 p-4 text-center bg-white">
+                                <div className="card shadow-sm border-0 rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-center">
                                     <div className="py-4">
                                         <i className="bi bi-person-workspace fs-1 text-primary mb-3 d-inline-block"></i>
                                         <h4 className="fw-bold text-dark">Verified Local Tutors</h4>
@@ -447,239 +466,242 @@ export default function Home({
                                 </div>
                             ) : (
                                 <div
-                                    className="position-relative h-100 d-flex flex-column justify-content-center py-2"
+                                    className="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between position-relative overflow-hidden"
                                     onMouseEnter={() => setIsAutoPlay(false)}
                                     onMouseLeave={() => setIsAutoPlay(true)}
                                 >
-                                    {/* Top Showcase Status Header */}
-                                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                        {isNearby ? (
-                                            <span className="badge bg-success text-white px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
-                                                <span className="spinner-grow spinner-grow-sm text-white" style={{ width: '8px', height: '8px' }}></span>
-                                                <span>Tutors Near You ({tutorList.length})</span>
-                                            </span>
-                                        ) : (
-                                            <span className="badge bg-primary text-white px-3 py-2 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
-                                                <i className="bi bi-patch-check-fill text-warning"></i>
-                                                <span>Top Verified Tutors</span>
-                                            </span>
+                                    {/* Top Accent Gradient Bar */}
+                                    <div
+                                        className="position-absolute top-0 start-0 end-0"
+                                        style={{
+                                            height: '4px',
+                                            background: isNearby
+                                                ? 'linear-gradient(90deg, #198754, #20c997)'
+                                                : 'linear-gradient(90deg, #0d6efd, #0dcaf0)'
+                                        }}
+                                    />
+
+                                    {/* Card Header matching left card's header */}
+                                    <div>
+                                        <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                                            <div>
+                                                {isNearby ? (
+                                                    <span className="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
+                                                        <span className="spinner-grow spinner-grow-sm text-white" style={{ width: '7px', height: '7px' }}></span>
+                                                        <span>Tutors Near You ({tutorList.length})</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="badge bg-primary text-white px-3 py-1 rounded-pill fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
+                                                        <i className="bi bi-patch-check-fill text-warning"></i>
+                                                        <span>Top Verified Tutors</span>
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="d-flex align-items-center gap-2">
+                                                <span className="badge bg-light text-muted border small px-2 py-1">
+                                                    {currentIndex + 1} of {tutorList.length}
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 small d-inline-flex align-items-center gap-1"
+                                                    onClick={() => {
+                                                        if (navigator.geolocation) {
+                                                            setIsDetecting(true);
+                                                            navigator.geolocation.getCurrentPosition(
+                                                                (pos) => fetchNearbyShowcase(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6)),
+                                                                () => setIsDetecting(false),
+                                                                { enableHighAccuracy: true, timeout: 8000 }
+                                                            );
+                                                        }
+                                                    }}
+                                                    disabled={isDetecting}
+                                                    title="Detect GPS location for nearest tutors"
+                                                >
+                                                    <i className={`bi bi-crosshair ${isDetecting ? 'spinner-border spinner-border-sm' : ''}`}></i>
+                                                    <span>{isDetecting ? 'Detecting...' : 'Near Me'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {showcaseStatusMsg && (
+                                            <div className="alert alert-info py-1 px-3 small rounded-3 mb-2">
+                                                {showcaseStatusMsg}
+                                            </div>
                                         )}
 
-                                        <div className="d-flex align-items-center gap-2">
-                                            <span className="badge bg-light text-muted border small px-2 py-1">
-                                                {currentIndex + 1} of {tutorList.length}
-                                            </span>
-
-                                            <button
-                                                type="button"
-                                                className="btn btn-sm btn-outline-primary rounded-pill px-2 py-1 small d-flex align-items-center gap-1 shadow-sm"
-                                                onClick={() => {
-                                                    if (navigator.geolocation) {
-                                                        setIsDetecting(true);
-                                                        navigator.geolocation.getCurrentPosition(
-                                                            (pos) => fetchNearbyShowcase(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6)),
-                                                            () => setIsDetecting(false),
-                                                            { enableHighAccuracy: true, timeout: 8000 }
-                                                        );
-                                                    }
-                                                }}
-                                                disabled={isDetecting}
-                                                title="Detect GPS location for nearest tutors"
-                                            >
-                                                <i className={`bi bi-crosshair ${isDetecting ? 'spinner-border spinner-border-sm' : ''}`}></i>
-                                                <span className="d-none d-sm-inline">{isDetecting ? 'Detecting...' : 'Near Me'}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {showcaseStatusMsg && (
-                                        <div className="alert alert-info py-1 px-3 small rounded-3 mb-2">
-                                            {showcaseStatusMsg}
-                                        </div>
-                                    )}
-
-                                    {/* Active Teacher Card */}
-                                    {(() => {
-                                        const teacher = tutorList[currentIndex] || tutorList[0];
-                                        if (!teacher) return null;
-                                        return (
-                                            <div className="card border-0 shadow-lg rounded-4 p-4 text-start bg-white position-relative overflow-hidden transition-all">
-                                                {/* Top Accent Gradient Bar */}
-                                                <div
-                                                    className="position-absolute top-0 start-0 end-0"
-                                                    style={{
-                                                        height: '5px',
-                                                        background: isNearby
-                                                            ? 'linear-gradient(90deg, #198754, #20c997)'
-                                                            : 'linear-gradient(90deg, #0d6efd, #0dcaf0)'
-                                                    }}
-                                                />
-
-                                                {/* Profile Header */}
-                                                <div className="d-flex align-items-center gap-3 mb-3">
-                                                    <div className="position-relative flex-shrink-0">
-                                                        <img
-                                                            src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
-                                                            onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
-                                                            alt={teacher.name}
-                                                            className="rounded-circle shadow-sm border border-2 border-primary-subtle"
-                                                            style={{ width: '85px', height: '85px', objectFit: 'cover' }}
-                                                        />
-                                                        <span
-                                                            className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"
-                                                            title="Available for Tuition"
-                                                            style={{ width: '14px', height: '14px' }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="flex-grow-1 min-w-0">
-                                                        <h5 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2 flex-wrap">
-                                                            <span className="text-truncate">{teacher.name}</span>
-                                                            <span className="badge bg-light text-secondary border small fw-normal">
-                                                                {teacher.gender || 'Teacher'}
-                                                            </span>
-                                                        </h5>
-
-                                                        <div className="d-flex flex-wrap gap-1 align-items-center mb-1">
-                                                            {teacher.distance !== null && teacher.distance !== undefined ? (
-                                                                <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1">
-                                                                    <i className="bi bi-geo-alt-fill"></i>
-                                                                    {Number(teacher.distance) < 1
-                                                                        ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
-                                                                        : `${Number(teacher.distance).toFixed(1)} km away`}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 d-inline-flex align-items-center gap-1">
-                                                                    <i className="bi bi-shield-check"></i>
-                                                                    Verified Educator
-                                                                </span>
-                                                            )}
-
-                                                            {teacher.experience && (
-                                                                <span className="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1">
-                                                                    {teacher.experience} Years Exp
-                                                                </span>
-                                                            )}
+                                        {/* Teacher Content */}
+                                        {(() => {
+                                            const teacher = tutorList[currentIndex] || tutorList[0];
+                                            if (!teacher) return null;
+                                            return (
+                                                <div>
+                                                    {/* Profile Header */}
+                                                    <div className="d-flex align-items-center gap-3 mb-3">
+                                                        <div className="position-relative flex-shrink-0">
+                                                            <img
+                                                                src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
+                                                                onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
+                                                                alt={teacher.name}
+                                                                className="rounded-circle shadow-sm border border-2 border-primary-subtle"
+                                                                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                                            />
+                                                            <span
+                                                                className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"
+                                                                title="Available for Tuition"
+                                                                style={{ width: '13px', height: '13px' }}
+                                                            />
                                                         </div>
 
-                                                        {(teacher.city_name || teacher.state_name) && (
-                                                            <div className="text-muted small text-truncate">
-                                                                <i className="bi bi-geo-alt me-1 text-primary"></i>
-                                                                {[teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}
+                                                        <div className="flex-grow-1 min-w-0">
+                                                            <h5 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2 flex-wrap">
+                                                                <span className="text-truncate">{teacher.name}</span>
+                                                                <span className="badge bg-light text-secondary border small fw-normal">
+                                                                    {teacher.gender || 'Teacher'}
+                                                                </span>
+                                                            </h5>
+
+                                                            <div className="d-flex flex-wrap gap-1 align-items-center mb-1">
+                                                                {teacher.distance !== null && teacher.distance !== undefined ? (
+                                                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small">
+                                                                        <i className="bi bi-geo-alt-fill"></i>
+                                                                        {Number(teacher.distance) < 1
+                                                                            ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
+                                                                            : `${Number(teacher.distance).toFixed(1)} km away`}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small">
+                                                                        <i className="bi bi-shield-check"></i>
+                                                                        Verified Educator
+                                                                    </span>
+                                                                )}
+
+                                                                {teacher.experience && (
+                                                                    <span className="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 small">
+                                                                        {teacher.experience} Years Exp
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {(teacher.city_name || teacher.state_name) && (
+                                                                <div className="text-muted small text-truncate">
+                                                                    <i className="bi bi-geo-alt me-1 text-primary"></i>
+                                                                    {[teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Details Grid */}
+                                                    <div className="bg-light rounded-3 p-3 mb-3 small">
+                                                        {teacher.qualification_name && (
+                                                            <div className="row g-1 mb-1">
+                                                                <span className="col-4 text-muted fw-semibold">Qualification:</span>
+                                                                <span className="col-8 text-dark fw-medium text-truncate">{teacher.qualification_name}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {teacher.subject_names && (
+                                                            <div className="row g-1 mb-1">
+                                                                <span className="col-4 text-muted fw-semibold">Subjects:</span>
+                                                                <span className="col-8 text-dark fw-medium text-truncate-2">{teacher.subject_names}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {teacher.board_names && (
+                                                            <div className="row g-1 mb-1">
+                                                                <span className="col-4 text-muted fw-semibold">Board:</span>
+                                                                <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {teacher.teaching_mode_name && (
+                                                            <div className="row g-1 mb-1">
+                                                                <span className="col-4 text-muted fw-semibold">Mode:</span>
+                                                                <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {teacher.timings && (
+                                                            <div className="row g-1">
+                                                                <span className="col-4 text-muted fw-semibold">Timings:</span>
+                                                                <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
                                                             </div>
                                                         )}
                                                     </div>
-                                                </div>
 
-                                                {/* Teacher Details on Card */}
-                                                <div className="bg-light rounded-3 p-3 mb-3 small">
-                                                    {teacher.qualification_name && (
-                                                        <div className="row g-1 mb-1">
-                                                            <span className="col-4 text-muted fw-semibold">Qualification:</span>
-                                                            <span className="col-8 text-dark fw-medium text-truncate">{teacher.qualification_name}</span>
-                                                        </div>
-                                                    )}
-
-                                                    {teacher.subject_names && (
-                                                        <div className="row g-1 mb-1">
-                                                            <span className="col-4 text-muted fw-semibold">Subjects:</span>
-                                                            <span className="col-8 text-dark fw-medium text-truncate-2">{teacher.subject_names}</span>
-                                                        </div>
-                                                    )}
-
-                                                    {teacher.board_names && (
-                                                        <div className="row g-1 mb-1">
-                                                            <span className="col-4 text-muted fw-semibold">Board:</span>
-                                                            <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
-                                                        </div>
-                                                    )}
-
-                                                    {teacher.teaching_mode_name && (
-                                                        <div className="row g-1 mb-1">
-                                                            <span className="col-4 text-muted fw-semibold">Mode:</span>
-                                                            <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
-                                                        </div>
-                                                    )}
-
-                                                    {teacher.timings && (
-                                                        <div className="row g-1">
-                                                            <span className="col-4 text-muted fw-semibold">Timings:</span>
-                                                            <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
-                                                        </div>
+                                                    {/* Description */}
+                                                    {teacher.description && (
+                                                        <p className="text-muted small mb-3 text-truncate-2 fst-italic">
+                                                            "{teacher.description}"
+                                                        </p>
                                                     )}
                                                 </div>
+                                            );
+                                        })()}
+                                    </div>
 
-                                                {/* Bio / Description */}
-                                                {teacher.description && (
-                                                    <p className="text-muted small mb-3 text-truncate-2 fst-italic">
-                                                        "{teacher.description}"
-                                                    </p>
-                                                )}
-
-                                                {/* Card Footer Actions */}
-                                                <div className="d-flex align-items-center justify-content-between gap-2 pt-2 border-top">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openTeacherModal(teacher)}
-                                                        className="btn btn-primary btn-sm rounded-pill px-3 fw-semibold d-flex align-items-center gap-1 shadow-sm"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#homeTeacherModal"
-                                                    >
-                                                        <i className="bi bi-info-circle"></i>
-                                                        <span>View Full Profile</span>
-                                                    </button>
-
-                                                    <Link
-                                                        href={`/search?lookingfor=teacher&search_state=${teacher.state || 0}&search_city=${teacher.city || 0}`}
-                                                        className="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                                                    >
-                                                        Explore More &rarr;
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
-
-                                    {/* Slider Controls: Arrows & Dot Indicators */}
-                                    <div className="d-flex justify-content-between align-items-center mt-3 px-2">
+                                    {/* Card Footer matching left card's bottom line */}
+                                    <div className="pt-2 border-top d-flex align-items-center justify-content-between gap-2 flex-wrap">
                                         <button
                                             type="button"
-                                            className="btn btn-light btn-sm rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
-                                            onClick={prevSlide}
-                                            style={{ width: '38px', height: '38px' }}
-                                            title="Previous Tutor"
+                                            onClick={() => openTeacherModal(tutorList[currentIndex] || tutorList[0])}
+                                            className="btn btn-primary btn-sm rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#homeTeacherModal"
                                         >
-                                            <i className="bi bi-chevron-left"></i>
+                                            <i className="bi bi-info-circle"></i>
+                                            <span>View Full Profile</span>
                                         </button>
 
-                                        {/* Dot Indicators */}
+                                        {/* Slider Prev / Dots / Next */}
                                         <div className="d-flex align-items-center gap-1">
-                                            {tutorList.map((_, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    type="button"
-                                                    className={`btn p-0 rounded-pill transition-all ${idx === currentIndex ? 'bg-primary' : 'bg-secondary-subtle'}`}
-                                                    style={{
-                                                        width: idx === currentIndex ? '22px' : '8px',
-                                                        height: '8px',
-                                                        border: 'none',
-                                                        transition: 'all 0.3s ease'
-                                                    }}
-                                                    onClick={() => setCurrentIndex(idx)}
-                                                    title={`Slide ${idx + 1}`}
-                                                />
-                                            ))}
+                                            <button
+                                                type="button"
+                                                className="btn btn-light btn-sm rounded-circle border shadow-xs d-inline-flex align-items-center justify-content-center p-0"
+                                                onClick={prevSlide}
+                                                style={{ width: '30px', height: '30px' }}
+                                                title="Previous Tutor"
+                                            >
+                                                <i className="bi bi-chevron-left small"></i>
+                                            </button>
+
+                                            <div className="d-flex align-items-center gap-1 px-1">
+                                                {tutorList.map((_, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        className={`btn p-0 rounded-pill ${idx === currentIndex ? 'bg-primary' : 'bg-secondary-subtle'}`}
+                                                        style={{
+                                                            width: idx === currentIndex ? '18px' : '6px',
+                                                            height: '6px',
+                                                            border: 'none',
+                                                            transition: 'all 0.3s ease'
+                                                        }}
+                                                        onClick={() => setCurrentIndex(idx)}
+                                                        title={`Slide ${idx + 1}`}
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                className="btn btn-light btn-sm rounded-circle border shadow-xs d-inline-flex align-items-center justify-content-center p-0"
+                                                onClick={nextSlide}
+                                                style={{ width: '30px', height: '30px' }}
+                                                title="Next Tutor"
+                                            >
+                                                <i className="bi bi-chevron-right small"></i>
+                                            </button>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            className="btn btn-light btn-sm rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
-                                            onClick={nextSlide}
-                                            style={{ width: '38px', height: '38px' }}
-                                            title="Next Tutor"
+                                        <Link
+                                            href={`/search?lookingfor=teacher&search_state=${(tutorList[currentIndex] || tutorList[0])?.state || 0}&search_city=${(tutorList[currentIndex] || tutorList[0])?.city || 0}`}
+                                            className="btn btn-outline-secondary btn-sm rounded-pill px-3"
                                         >
-                                            <i className="bi bi-chevron-right"></i>
-                                        </button>
+                                            Explore &rarr;
+                                        </Link>
                                     </div>
                                 </div>
                             )}
