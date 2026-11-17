@@ -160,7 +160,7 @@ class FrontController extends Controller
             return ['status'=>400,'message'=>'You have already posted your feedback. Thank you'];    
             }
         }
-        public function index(){
+        public function index(Request $request){
             try {
                 $pageData = SinglePage::where('id',5)->first();
                 $popularCategories = Common::homecoursecategory();
@@ -175,6 +175,12 @@ class FrontController extends Controller
                 $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
                 $subjects = CustomData::where('key_name','subject')->orderBy('name','asc')->get();
                 $boards = CustomData::where('key_name','board')->orderBy('name','asc')->get();
+
+                $userLat = $request->latitude ?? $request->user_lat ?? Session::get('latitude');
+                $userLng = $request->longitude ?? $request->user_lng ?? Session::get('longitude');
+                $showcaseData = $this->getShowcaseTeachersData($userLat, $userLng, 5);
+                $showcaseTeachers = $showcaseData['teachers'];
+                $isShowcaseNearby = $showcaseData['is_nearby'];
             } catch (\Throwable $e) {
                 if (!file_exists(storage_path('installed'))) {
                     return redirect()->route('install.index');
@@ -183,8 +189,198 @@ class FrontController extends Controller
             }
 
             return Inertia::render('Front/Home', compact(
-                'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards'
+                'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards',
+                'showcaseTeachers', 'isShowcaseNearby'
             ));
+        }
+
+        public function getNearbyShowcaseTeachersAjax(Request $request)
+        {
+            $lat = $request->lat ?? $request->latitude ?? Session::get('latitude');
+            $lng = $request->lng ?? $request->longitude ?? Session::get('longitude');
+            $radius = $request->radius ? (float)$request->radius : 5;
+
+            if (!empty($lat) && !empty($lng)) {
+                Session::put('latitude', (string)$lat);
+                Session::put('longitude', (string)$lng);
+            }
+
+            $data = $this->getShowcaseTeachersData($lat, $lng, $radius);
+            return response()->json([
+                'status' => 200,
+                'is_nearby' => $data['is_nearby'],
+                'teachers' => $data['teachers'],
+                'count' => count($data['teachers']),
+            ]);
+        }
+
+        public function getShowcaseTeachersData($userLat = null, $userLng = null, $radius = 5)
+        {
+            $isNearby = false;
+            $teachers = collect();
+
+            if (!empty($userLat) && !empty($userLng) && is_numeric($userLat) && is_numeric($userLng)) {
+                $haversine = "( 6371 * acos(
+                    least(1.0, greatest(-1.0,
+                        cos( radians(?) ) *
+                        cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
+                        cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                        sin( radians(?) ) *
+                        sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
+                    ))
+                ) )";
+
+                $nearbyQuery = User::select(
+                    'users.id as user_id',
+                    'users.name',
+                    'users.email',
+                    'users.mobile',
+                    'users.image',
+                    'teachers.id as id',
+                    'teachers.qualification',
+                    'teachers.gender',
+                    'teachers.description',
+                    'teachers.state',
+                    'teachers.district',
+                    'teachers.city',
+                    'teachers.board',
+                    'teachers.subjects',
+                    'teachers.experience',
+                    'teachers.timings',
+                    'teachers.teaching_mode',
+                    'teachers.address',
+                    'teachers.latitude',
+                    'teachers.longitude'
+                )
+                ->join('teachers', 'users.id', '=', 'teachers.user_id')
+                ->whereIn('users.is_active', ['1', 1])
+                ->whereNotNull('teachers.latitude')
+                ->where('teachers.latitude', '!=', '')
+                ->whereNotNull('teachers.longitude')
+                ->where('teachers.longitude', '!=', '')
+                ->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat])
+                ->having("distance", "<=", (float)$radius)
+                ->orderBy('distance', 'asc')
+                ->take(10)
+                ->get();
+
+                if ($nearbyQuery->count() > 0) {
+                    $isNearby = true;
+                    $teachers = $nearbyQuery;
+                }
+            }
+
+            // If not found near current lat/long (or not provided), get default other teachers
+            if ($teachers->isEmpty()) {
+                $teachers = User::select(
+                    'users.id as user_id',
+                    'users.name',
+                    'users.email',
+                    'users.mobile',
+                    'users.image',
+                    'teachers.id as id',
+                    'teachers.qualification',
+                    'teachers.gender',
+                    'teachers.description',
+                    'teachers.state',
+                    'teachers.district',
+                    'teachers.city',
+                    'teachers.board',
+                    'teachers.subjects',
+                    'teachers.experience',
+                    'teachers.timings',
+                    'teachers.teaching_mode',
+                    'teachers.address',
+                    'teachers.latitude',
+                    'teachers.longitude'
+                )
+                ->join('teachers', 'users.id', '=', 'teachers.user_id')
+                ->whereIn('users.is_active', ['1', 1])
+                ->latest('teachers.id')
+                ->take(8)
+                ->get();
+            }
+
+            $formatted = $this->formatTeacherCollection($teachers, $isNearby);
+
+            return [
+                'teachers' => $formatted,
+                'is_nearby' => $isNearby,
+                'user_lat' => $userLat,
+                'user_lng' => $userLng,
+                'count' => count($formatted),
+            ];
+        }
+
+        private function formatTeacherCollection($teachers, $isNearby = false)
+        {
+            $idsToLookup = [];
+            foreach ($teachers as $item) {
+                if (!empty($item->qualification)) {
+                    $idsToLookup = array_merge($idsToLookup, explode(',', (string)$item->qualification));
+                }
+                if (!empty($item->subjects)) {
+                    $idsToLookup = array_merge($idsToLookup, explode(',', (string)$item->subjects));
+                }
+                if (!empty($item->board)) {
+                    $idsToLookup = array_merge($idsToLookup, explode(',', (string)$item->board));
+                }
+                if (!empty($item->teaching_mode)) {
+                    $idsToLookup = array_merge($idsToLookup, explode(',', (string)$item->teaching_mode));
+                }
+                if (!empty($item->city)) {
+                    $idsToLookup[] = $item->city;
+                }
+                if (!empty($item->state)) {
+                    $idsToLookup[] = $item->state;
+                }
+            }
+
+            $idsToLookup = array_unique(array_filter(array_map('trim', $idsToLookup)));
+            $lookup = !empty($idsToLookup)
+                ? CustomData::whereIn('id', $idsToLookup)->pluck('name', 'id')->toArray()
+                : [];
+
+            return $teachers->map(function ($item) use ($lookup, $isNearby) {
+                if (!empty($item->qualification)) {
+                    $qIds = array_filter(array_map('trim', explode(',', (string)$item->qualification)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $qIds));
+                    $item->qualification_name = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->qualification_name = '';
+                }
+
+                if (!empty($item->subjects)) {
+                    $subIds = array_filter(array_map('trim', explode(',', (string)$item->subjects)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $subIds));
+                    $item->subject_names = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->subject_names = '';
+                }
+
+                if (!empty($item->board)) {
+                    $bIds = array_filter(array_map('trim', explode(',', (string)$item->board)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $bIds));
+                    $item->board_names = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->board_names = '';
+                }
+
+                if (!empty($item->teaching_mode)) {
+                    $mIds = array_filter(array_map('trim', explode(',', (string)$item->teaching_mode)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $mIds));
+                    $item->teaching_mode_name = !empty($names) ? implode(', ', $names) : '';
+                } else {
+                    $item->teaching_mode_name = '';
+                }
+
+                $item->city_name = !empty($item->city) ? ($lookup[$item->city] ?? '') : '';
+                $item->state_name = !empty($item->state) ? ($lookup[$item->state] ?? '') : '';
+                $item->is_nearby = $isNearby;
+                $item->distance = isset($item->distance) && !is_null($item->distance) ? round((float)$item->distance, 2) : null;
+
+                return $item;
+            })->values()->toArray();
         }
 
         public function changepassword(){

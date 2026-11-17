@@ -158,6 +158,7 @@ Route::get('getCityAjax/{id}', [FrontController::class, 'getDistrictAjax'])->nam
 Route::get('getprofileDistrictAjax/{id}', [FrontController::class, 'getDistrictAjax'])->name('front.profile.ajax.get.district');
 Route::get('getprofileCityAjax/{id}', [FrontController::class, 'getDistrictAjax'])->name('front.profile.ajax.get.cities');
 Route::get('getTeacherDetailsAjax/{id}', [FrontController::class, 'getTeacherDetailsAjax'])->name('front.ajax.get.teacher.details');
+Route::get('getNearbyShowcaseTeachersAjax', [FrontController::class, 'getNearbyShowcaseTeachersAjax'])->name('front.ajax.showcase.teachers');
 Route::get('getTeamTeacherDetailsAjax/{id}', [FrontController::class, 'getTeamTeacherDetailsAjax'])->name('front.ajax.get.team.teacher.details');
 Route::get('getCourseVideoAjax/{courseid}', [FrontController::class, 'getCourseVideoAjax'])->name('front.ajax.get.course.video'); 
 Route::get('postTeacherReviews', [FrontController::class, 'postTeacherReviews'])->name('front.ajax.post.teacher.feedback');
