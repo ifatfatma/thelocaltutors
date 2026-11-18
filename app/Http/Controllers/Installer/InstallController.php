@@ -249,7 +249,7 @@ class InstallController extends Controller
             }
 
             // 3. Run Migrations & Seeders
-            Artisan::call('migrate:fresh', ['--force' => true]);
+            Artisan::call('migrate', ['--force' => true]);
             Artisan::call('db:seed', ['--force' => true]);
 
             // 4. Create / Update Super Admin User
