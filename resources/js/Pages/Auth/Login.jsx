@@ -15,6 +15,19 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    useEffect(() => {
+        if (navigator.geolocation && !localStorage.getItem('user_lat')) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    localStorage.setItem('user_lat', pos.coords.latitude.toFixed(6));
+                    localStorage.setItem('user_lng', pos.coords.longitude.toFixed(6));
+                },
+                () => {},
+                { timeout: 6000 }
+            );
+        }
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -23,7 +36,12 @@ export default function Login() {
         setSuccessMsg('');
 
         try {
-            const res = await axios.post('/LoginPost', form);
+            const payload = {
+                ...form,
+                latitude: localStorage.getItem('user_lat') || '',
+                longitude: localStorage.getItem('user_lng') || '',
+            };
+            const res = await axios.post('/LoginPost', payload);
             setSuccessMsg(res.data.message || 'Login successful! Redirecting...');
             setTimeout(() => {
                 window.location.href = '/dashboard';

@@ -229,10 +229,11 @@ class InstallController extends Controller
         ];
 
         try {
-            // 1. Set dynamic config in runtime
+            // 1. Set dynamic config in runtime and enforce MySQL as default
             config([
                 'app.name' => $request->app_name,
                 'app.url' => $request->app_url,
+                'database.default' => 'mysql',
                 'database.connections.mysql.host' => $dbConfig['host'],
                 'database.connections.mysql.port' => $dbConfig['port'],
                 'database.connections.mysql.database' => $dbConfig['database'],
@@ -241,6 +242,7 @@ class InstallController extends Controller
             ]);
 
             DB::purge('mysql');
+            DB::setDefaultConnection('mysql');
             DB::reconnect('mysql');
 
             // 2. Generate APP_KEY if missing
@@ -248,9 +250,20 @@ class InstallController extends Controller
                 Artisan::call('key:generate', ['--force' => true]);
             }
 
+<<<<<<< HEAD
             // 3. Run Migrations & Seeders
             Artisan::call('migrate', ['--force' => true]);
             Artisan::call('db:seed', ['--force' => true]);
+=======
+            // Ensure sqlite fallback file exists if referenced anywhere
+            if (!file_exists(database_path('database.sqlite'))) {
+                @touch(database_path('database.sqlite'));
+            }
+
+            // 3. Run Migrations & Seeders specifically on MySQL
+            Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
+            Artisan::call('db:seed', ['--database' => 'mysql', '--force' => true]);
+>>>>>>> main
 
             // 4. Create / Update Super Admin User
             // Purge any pre-existing or conflicting accounts (including soft-deleted) across email, username, or mobile
