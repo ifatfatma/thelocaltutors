@@ -176,11 +176,22 @@ class FrontController extends Controller
                 $subjects = CustomData::where('key_name','subject')->orderBy('name','asc')->get();
                 $boards = CustomData::where('key_name','board')->orderBy('name','asc')->get();
 
-                $userLat = $request->latitude ?? $request->user_lat ?? Session::get('latitude');
-                $userLng = $request->longitude ?? $request->user_lng ?? Session::get('longitude');
-                $showcaseData = $this->getShowcaseTeachersData($userLat, $userLng, 5);
+                $userLat = $request->latitude ?? $request->lat ?? $request->user_lat ?? Session::get('latitude') ?? Cookie::get('user_lat');
+                $userLng = $request->longitude ?? $request->lng ?? $request->user_lng ?? Session::get('longitude') ?? Cookie::get('user_lng');
+
+                // If user is authenticated, check their profile coordinates
+                if ((empty($userLat) || empty($userLng)) && Auth::check()) {
+                    $teacherProfile = Teacher::where('user_id', Auth::id())->first();
+                    if ($teacherProfile && !empty($teacherProfile->latitude) && !empty($teacherProfile->longitude)) {
+                        $userLat = $teacherProfile->latitude;
+                        $userLng = $teacherProfile->longitude;
+                    }
+                }
+
+                $showcaseData = $this->getShowcaseTeachersData($userLat, $userLng);
                 $showcaseTeachers = $showcaseData['teachers'];
                 $isShowcaseNearby = $showcaseData['is_nearby'];
+                $userAreaName = $showcaseData['user_area'] ?? '';
             } catch (\Throwable $e) {
                 if (!file_exists(storage_path('installed'))) {
                     return redirect()->route('install.index');
@@ -190,88 +201,133 @@ class FrontController extends Controller
 
             return Inertia::render('Front/Home', compact(
                 'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards',
-                'showcaseTeachers', 'isShowcaseNearby'
+                'showcaseTeachers', 'isShowcaseNearby', 'userAreaName'
             ));
         }
 
         public function getNearbyShowcaseTeachersAjax(Request $request)
         {
-            $lat = $request->lat ?? $request->latitude ?? Session::get('latitude');
-            $lng = $request->lng ?? $request->longitude ?? Session::get('longitude');
-            $radius = $request->radius ? (float)$request->radius : 5;
+            $lat = $request->lat ?? $request->latitude ?? Session::get('latitude') ?? Cookie::get('user_lat');
+            $lng = $request->lng ?? $request->longitude ?? Session::get('longitude') ?? Cookie::get('user_lng');
 
             if (!empty($lat) && !empty($lng)) {
                 Session::put('latitude', (string)$lat);
                 Session::put('longitude', (string)$lng);
+                Cookie::queue('user_lat', (string)$lat, 43200);
+                Cookie::queue('user_lng', (string)$lng, 43200);
             }
 
-            $data = $this->getShowcaseTeachersData($lat, $lng, $radius);
+            $data = $this->getShowcaseTeachersData($lat, $lng);
             return response()->json([
                 'status' => 200,
                 'is_nearby' => $data['is_nearby'],
                 'teachers' => $data['teachers'],
                 'count' => count($data['teachers']),
+                'user_lat' => $data['user_lat'],
+                'user_lng' => $data['user_lng'],
+                'user_area' => $data['user_area'] ?? '',
             ]);
         }
 
-        public function getShowcaseTeachersData($userLat = null, $userLng = null, $radius = 5)
+        public function getShowcaseTeachersData($userLat = null, $userLng = null, $radius = null)
         {
             $isNearby = false;
-            $teachers = collect();
+            $userArea = '';
 
-            if (!empty($userLat) && !empty($userLng) && is_numeric($userLat) && is_numeric($userLng)) {
-                $haversine = "( 6371 * acos(
-                    least(1.0, greatest(-1.0,
-                        cos( radians(?) ) *
-                        cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
-                        cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
-                        sin( radians(?) ) *
-                        sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
-                    ))
-                ) )";
+            // 1. Resolve coordinates if missing
+            if (empty($userLat) || empty($userLng) || !is_numeric($userLat) || !is_numeric($userLng)) {
+                $userLat = Session::get('latitude') ?? Cookie::get('user_lat');
+                $userLng = Session::get('longitude') ?? Cookie::get('user_lng');
+            }
 
-                $nearbyQuery = User::select(
-                    'users.id as user_id',
-                    'users.name',
-                    'users.email',
-                    'users.mobile',
-                    'users.image',
-                    'teachers.id as id',
-                    'teachers.qualification',
-                    'teachers.gender',
-                    'teachers.description',
-                    'teachers.state',
-                    'teachers.district',
-                    'teachers.city',
-                    'teachers.board',
-                    'teachers.subjects',
-                    'teachers.experience',
-                    'teachers.timings',
-                    'teachers.teaching_mode',
-                    'teachers.address',
-                    'teachers.latitude',
-                    'teachers.longitude'
-                )
-                ->join('teachers', 'users.id', '=', 'teachers.user_id')
-                ->whereIn('users.is_active', ['1', 1])
-                ->whereNotNull('teachers.latitude')
-                ->where('teachers.latitude', '!=', '')
-                ->whereNotNull('teachers.longitude')
-                ->where('teachers.longitude', '!=', '')
-                ->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat])
-                ->having("distance", "<=", (float)$radius)
-                ->orderBy('distance', 'asc')
-                ->take(10)
-                ->get();
-
-                if ($nearbyQuery->count() > 0) {
-                    $isNearby = true;
-                    $teachers = $nearbyQuery;
+            // 2. Check logged-in user profile
+            if ((empty($userLat) || empty($userLng)) && Auth::check()) {
+                $teacherProfile = Teacher::where('user_id', Auth::id())->first();
+                if ($teacherProfile && !empty($teacherProfile->latitude) && !empty($teacherProfile->longitude)) {
+                    $userLat = $teacherProfile->latitude;
+                    $userLng = $teacherProfile->longitude;
+                    $userArea = $teacherProfile->address ?: '';
                 }
             }
 
-            // If not found near current lat/long (or not provided), get default other teachers
-            if ($teachers->isEmpty()) {
+            // 3. Fallback to public IP geolocation if available
+            if (empty($userLat) || empty($userLng)) {
+                $ip = request()->ip();
+                if ($ip && $ip !== '127.0.0.1' && $ip !== '::1' && !str_starts_with($ip, '192.168.') && !str_starts_with($ip, '10.')) {
+                    try {
+                        $ctx = stream_context_create(['http' => ['timeout' => 1.5]]);
+                        $geoJson = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,city,regionName,lat,lon", false, $ctx);
+                        if ($geoJson) {
+                            $geo = json_decode($geoJson, true);
+                            if (!empty($geo['status']) && $geo['status'] === 'success' && !empty($geo['lat']) && !empty($geo['lon'])) {
+                                $userLat = $geo['lat'];
+                                $userLng = $geo['lon'];
+                                $userArea = $geo['city'] ?? $geo['regionName'] ?? '';
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+                }
+            }
+
+            // 4. Default regional coordinates: Garden Reach, Kolkata (22.531200, 88.301500)
+            // Ensures visitors always see regional proximity sorted tutors immediately
+            if (empty($userLat) || empty($userLng)) {
+                $userLat = 22.531200;
+                $userLng = 88.301500;
+                $userArea = 'Garden Reach, Kolkata';
+            }
+
+            $haversine = "( 6371 * acos(
+                least(1.0, greatest(-1.0,
+                    cos( radians(?) ) *
+                    cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
+                    cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                    sin( radians(?) ) *
+                    sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
+                ))
+            ) )";
+
+            $teachers = User::select(
+                'users.id as user_id',
+                'users.name',
+                'users.email',
+                'users.mobile',
+                'users.image',
+                'teachers.id as id',
+                'teachers.qualification',
+                'teachers.gender',
+                'teachers.description',
+                'teachers.state',
+                'teachers.district',
+                'teachers.city',
+                'teachers.board',
+                'teachers.subjects',
+                'teachers.experience',
+                'teachers.timings',
+                'teachers.teaching_mode',
+                'teachers.address',
+                'teachers.latitude',
+                'teachers.longitude'
+            )
+            ->join('teachers', 'users.id', '=', 'teachers.user_id')
+            ->whereIn('users.is_active', ['1', 1])
+            ->whereNotNull('teachers.latitude')
+            ->where('teachers.latitude', '!=', '')
+            ->whereNotNull('teachers.longitude')
+            ->where('teachers.longitude', '!=', '')
+            ->selectRaw("{$haversine} AS distance", [(float)$userLat, (float)$userLng, (float)$userLat])
+            ->orderBy('distance', 'asc')
+            ->take(12)
+            ->get();
+
+            if ($teachers->isNotEmpty()) {
+                $isNearby = true;
+                if (empty($userArea)) {
+                    $firstTeacher = $teachers->first();
+                    $parts = array_map('trim', explode(',', (string)$firstTeacher->address));
+                    $userArea = count($parts) > 1 ? $parts[1] : ($parts[0] ?? 'Kolkata');
+                }
+            } else {
                 $teachers = User::select(
                     'users.id as user_id',
                     'users.name',
@@ -306,8 +362,9 @@ class FrontController extends Controller
             return [
                 'teachers' => $formatted,
                 'is_nearby' => $isNearby,
-                'user_lat' => $userLat,
-                'user_lng' => $userLng,
+                'user_lat' => (float)$userLat,
+                'user_lng' => (float)$userLng,
+                'user_area' => trim($userArea),
                 'count' => count($formatted),
             ];
         }
@@ -936,11 +993,18 @@ class FrontController extends Controller
             return response()->json($data);
         }
 
-        //save lat/long in session
-        public function savelatlong($lt,$lg){
-        Session::put('latitude',$lt);
-        Session::put('longitude',$lg);
-        return ["status"=>200,"message"=>'Save '.$lt.'-'.$lg];
+        //save lat/long in session and cookies
+        public function savelatlong($lt, $lg){
+            Session::put('latitude', (string)$lt);
+            Session::put('longitude', (string)$lg);
+            \Illuminate\Support\Facades\Cookie::queue('user_lat', (string)$lt, 43200);
+            \Illuminate\Support\Facades\Cookie::queue('user_lng', (string)$lg, 43200);
+            return response()->json([
+                "status" => 200,
+                "message" => 'Save '.$lt.'-'.$lg,
+                "latitude" => $lt,
+                "longitude" => $lg
+            ]);
         }
 
         

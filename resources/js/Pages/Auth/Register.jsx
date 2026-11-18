@@ -23,6 +23,19 @@ export default function Register() {
     const [successMsg, setSuccessMsg] = useState('');
     const [loading, setLoading] = useState(false);
 
+    React.useEffect(() => {
+        if (navigator.geolocation && !localStorage.getItem('user_lat')) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    localStorage.setItem('user_lat', pos.coords.latitude.toFixed(6));
+                    localStorage.setItem('user_lng', pos.coords.longitude.toFixed(6));
+                },
+                () => {},
+                { timeout: 6000 }
+            );
+        }
+    }, []);
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -31,7 +44,12 @@ export default function Register() {
         setSuccessMsg('');
 
         try {
-            const res = await axios.post('/RegisterPost', form);
+            const payload = {
+                ...form,
+                latitude: localStorage.getItem('user_lat') || '',
+                longitude: localStorage.getItem('user_lng') || '',
+            };
+            const res = await axios.post('/RegisterPost', payload);
             setSuccessMsg(res.data.message || 'OTP sent to your mobile number.');
             setStep('otp');
             setLoading(false);

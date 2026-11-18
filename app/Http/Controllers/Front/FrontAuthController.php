@@ -32,6 +32,23 @@ class FrontAuthController extends Controller
             ], $remember
         );
         if ($auth) {
+            // Save client latitude and longitude if provided in login
+            if (!empty($request->latitude) && !empty($request->longitude)) {
+                Session::put('latitude', (string)$request->latitude);
+                Session::put('longitude', (string)$request->longitude);
+                Cookie::queue('user_lat', (string)$request->latitude, 43200);
+                Cookie::queue('user_lng', (string)$request->longitude, 43200);
+            } else {
+                // If logged in as a teacher, retrieve their profile location
+                $teacherProfile = \App\Models\Teacher::where('user_id', Auth::id())->first();
+                if ($teacherProfile && !empty($teacherProfile->latitude) && !empty($teacherProfile->longitude)) {
+                    Session::put('latitude', (string)$teacherProfile->latitude);
+                    Session::put('longitude', (string)$teacherProfile->longitude);
+                    Cookie::queue('user_lat', (string)$teacherProfile->latitude, 43200);
+                    Cookie::queue('user_lng', (string)$teacherProfile->longitude, 43200);
+                }
+            }
+
             if($remember){
                 $minutes = 10080;
                 Cookie::queue('mobile', $request->user_mobile, $minutes);
@@ -45,7 +62,13 @@ class FrontAuthController extends Controller
     }
     //register  
     public function RegisterPost(RegisterRequest $request){
-        
+        if (!empty($request->latitude) && !empty($request->longitude)) {
+            Session::put('latitude', (string)$request->latitude);
+            Session::put('longitude', (string)$request->longitude);
+            Cookie::queue('user_lat', (string)$request->latitude, 43200);
+            Cookie::queue('user_lng', (string)$request->longitude, 43200);
+        }
+
         $user = new User;
         $user->name      = $request->name??'';
         $user->mobile    = $request->mobile??'';

@@ -15,6 +15,7 @@ export default function Home({
     boards = [],
     showcaseTeachers = [],
     isShowcaseNearby = false,
+    userAreaName = '',
 }) {
     const [searchState, setSearchState] = useState({
         lookingfor: 'teacher',
@@ -39,10 +40,13 @@ export default function Home({
     // Hero Showcase Slider State
     const [tutorList, setTutorList] = useState(showcaseTeachers || []);
     const [isNearby, setIsNearby] = useState(isShowcaseNearby || false);
+    const [activeArea, setActiveArea] = useState(userAreaName || 'Garden Reach, Kolkata');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAutoPlay, setIsAutoPlay] = useState(true);
     const [isDetecting, setIsDetecting] = useState(false);
     const [showcaseStatusMsg, setShowcaseStatusMsg] = useState('');
+    const [touchStartX, setTouchStartX] = useState(null);
+    const [touchEndX, setTouchEndX] = useState(null);
     const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [teacherModalHtml, setTeacherModalHtml] = useState('');
     const [loadingDetails, setLoadingDetails] = useState(false);
@@ -54,17 +58,18 @@ export default function Home({
         if (showcaseTeachers && showcaseTeachers.length > 0) {
             setTutorList(showcaseTeachers);
             setIsNearby(isShowcaseNearby);
+            if (userAreaName) setActiveArea(userAreaName);
         }
-    }, [showcaseTeachers, isShowcaseNearby]);
+    }, [showcaseTeachers, isShowcaseNearby, userAreaName]);
 
-    // Auto-slide effect
+    // Auto-slide effect (Smooth 3.5s interval with continuous loop)
     useEffect(() => {
         if (!isAutoPlay || tutorList.length <= 1) return;
         const timer = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % tutorList.length);
-        }, 4000);
+        }, 3500);
         return () => clearInterval(timer);
-    }, [isAutoPlay, tutorList.length]);
+    }, [isAutoPlay, tutorList.length, currentIndex]);
 
     const prevSlide = () => {
         setCurrentIndex((prev) => (prev - 1 + tutorList.length) % tutorList.length);
@@ -74,21 +79,54 @@ export default function Home({
         setCurrentIndex((prev) => (prev + 1) % tutorList.length);
     };
 
-    const fetchNearbyShowcase = async (lat, lng) => {
+    const handleTouchStart = (e) => {
+        if (e.targetTouches && e.targetTouches[0]) {
+            setTouchStartX(e.targetTouches[0].clientX);
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.targetTouches && e.targetTouches[0]) {
+            setTouchEndX(e.targetTouches[0].clientX);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!touchStartX || !touchEndX) return;
+        const diff = touchStartX - touchEndX;
+        if (diff > 45) {
+            nextSlide();
+        } else if (diff < -45) {
+            prevSlide();
+        }
+        setTouchStartX(null);
+        setTouchEndX(null);
+    };
+
+    const fetchNearbyShowcase = async (lat, lng, areaLabel = '') => {
         setIsDetecting(true);
         try {
+            // Persist detected coordinates locally and in cookie
+            localStorage.setItem('user_lat', lat);
+            localStorage.setItem('user_lng', lng);
+            document.cookie = `user_lat=${lat};path=/;max-age=2592000`;
+            document.cookie = `user_lng=${lng};path=/;max-age=2592000`;
+
             const res = await axios.get('/getNearbyShowcaseTeachersAjax', {
-                params: { lat, lng, radius: 5 }
+                params: { lat, lng }
             });
+
             if (res.data && res.data.teachers && res.data.teachers.length > 0) {
                 setTutorList(res.data.teachers);
                 setIsNearby(res.data.is_nearby);
                 setCurrentIndex(0);
-                if (res.data.is_nearby) {
-                    setShowcaseStatusMsg(`Found ${res.data.teachers.length} tutor(s) within 5 km of your location!`);
-                } else {
-                    setShowcaseStatusMsg('No tutors within 5 km; showing top verified tutors.');
-                }
+                const locLabel = areaLabel || res.data.user_area || 'your area';
+                setActiveArea(locLabel);
+                const closest = res.data.teachers[0];
+                const distInfo = closest?.distance !== null && closest?.distance !== undefined
+                    ? (Number(closest.distance) < 0.1 ? 'in your neighborhood' : `${Number(closest.distance).toFixed(1)} km away`)
+                    : '';
+                setShowcaseStatusMsg(`Found ${res.data.teachers.length} tutors near ${locLabel}${distInfo ? ` (closest is ${distInfo})` : ''}!`);
             }
         } catch (e) {
             console.error('Failed to load nearby tutors', e);
@@ -97,17 +135,36 @@ export default function Home({
         }
     };
 
-    // Auto-detect browser location once on mount
+    // Auto-detect visitor location on mount
     useEffect(() => {
-        if (navigator.geolocation && !isShowcaseNearby) {
+        const savedLat = localStorage.getItem('user_lat');
+        const savedLng = localStorage.getItem('user_lng');
+
+        if (savedLat && savedLng) {
+            fetchNearbyShowcase(savedLat, savedLng);
+        } else if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const lat = pos.coords.latitude.toFixed(6);
                     const lng = pos.coords.longitude.toFixed(6);
                     fetchNearbyShowcase(lat, lng);
                 },
-                () => {},
-                { enableHighAccuracy: true, timeout: 8000 }
+                () => {
+                    // Fallback to IP geolocation if GPS is unavailable
+                    fetch('https://ipapi.co/json/')
+                        .then((r) => r.json())
+                        .then((data) => {
+                            if (data && data.latitude && data.longitude) {
+                                fetchNearbyShowcase(
+                                    data.latitude.toFixed(6),
+                                    data.longitude.toFixed(6),
+                                    data.city || data.region || 'your region'
+                                );
+                            }
+                        })
+                        .catch(() => {});
+                },
+                { enableHighAccuracy: true, timeout: 7000 }
             );
         }
     }, []);
@@ -469,6 +526,9 @@ export default function Home({
                                     className="card shadow-sm border-0 rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between position-relative overflow-hidden"
                                     onMouseEnter={() => setIsAutoPlay(false)}
                                     onMouseLeave={() => setIsAutoPlay(true)}
+                                    onTouchStart={handleTouchStart}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
                                 >
                                     {/* Top Accent Gradient Bar */}
                                     <div
@@ -483,12 +543,12 @@ export default function Home({
 
                                     {/* Card Header matching left card's header */}
                                     <div>
-                                        <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                                        <div className="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom flex-wrap gap-2">
                                             <div>
                                                 {isNearby ? (
                                                     <span className="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
                                                         <span className="spinner-grow spinner-grow-sm text-white" style={{ width: '7px', height: '7px' }}></span>
-                                                        <span>Tutors Near You ({tutorList.length})</span>
+                                                        <span>Nearest Tutors ({tutorList.length})</span>
                                                     </span>
                                                 ) : (
                                                     <span className="badge bg-primary text-white px-3 py-1 rounded-pill fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
@@ -525,121 +585,171 @@ export default function Home({
                                             </div>
                                         </div>
 
+                                        {/* Quick Area Filter Chips */}
+                                        <div className="d-flex align-items-center gap-1 mb-2 flex-wrap pb-1">
+                                            <span className="text-muted small me-1" style={{ fontSize: '0.78rem' }}>
+                                                <i className="bi bi-geo-alt-fill text-danger me-1"></i>
+                                                <span className="fw-semibold">{activeArea ? `Nearest: ${activeArea}` : 'Regional tutors:'}</span>
+                                            </span>
+                                            {[
+                                                { name: 'Garden Reach', lat: '22.531200', lng: '88.301500' },
+                                                { name: 'Behala', lat: '22.498800', lng: '88.312900' },
+                                                { name: 'Park Circus', lat: '22.541100', lng: '88.363900' },
+                                                { name: 'Salt Lake', lat: '22.586700', lng: '88.417800' },
+                                                { name: 'Howrah', lat: '22.595800', lng: '88.342600' },
+                                            ].map((loc) => {
+                                                const isSelected = activeArea && activeArea.toLowerCase().includes(loc.name.toLowerCase());
+                                                return (
+                                                    <button
+                                                        key={loc.name}
+                                                        type="button"
+                                                        className={`btn py-0 px-2 rounded-pill border ${isSelected ? 'btn-primary text-white shadow-xs' : 'btn-outline-secondary'}`}
+                                                        style={{ fontSize: '0.72rem', lineHeight: '1.6' }}
+                                                        onClick={() => fetchNearbyShowcase(loc.lat, loc.lng, `${loc.name}, Kolkata`)}
+                                                        title={`Show tutors nearest to ${loc.name}`}
+                                                    >
+                                                        {loc.name}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
                                         {showcaseStatusMsg && (
-                                            <div className="alert alert-info py-1 px-3 small rounded-3 mb-2">
-                                                {showcaseStatusMsg}
+                                            <div className="alert alert-info py-1 px-3 small rounded-3 mb-2 d-flex align-items-center justify-content-between">
+                                                <span>{showcaseStatusMsg}</span>
+                                                <button
+                                                    type="button"
+                                                    className="btn-close small ms-2 p-1"
+                                                    style={{ fontSize: '0.65rem' }}
+                                                    onClick={() => setShowcaseStatusMsg('')}
+                                                ></button>
                                             </div>
                                         )}
+                                    </div>
 
-                                        {/* Teacher Content */}
-                                        {(() => {
-                                            const teacher = tutorList[currentIndex] || tutorList[0];
-                                            if (!teacher) return null;
-                                            return (
-                                                <div>
-                                                    {/* Profile Header */}
-                                                    <div className="d-flex align-items-center gap-3 mb-3">
-                                                        <div className="position-relative flex-shrink-0">
-                                                            <img
-                                                                src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
-                                                                onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
-                                                                alt={teacher.name}
-                                                                className="rounded-circle shadow-sm border border-2 border-primary-subtle"
-                                                                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-                                                            />
-                                                            <span
-                                                                className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"
-                                                                title="Available for Tuition"
-                                                                style={{ width: '13px', height: '13px' }}
-                                                            />
-                                                        </div>
-
-                                                        <div className="flex-grow-1 min-w-0">
-                                                            <h5 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2 flex-wrap">
-                                                                <span className="text-truncate">{teacher.name}</span>
-                                                                <span className="badge bg-light text-secondary border small fw-normal">
-                                                                    {teacher.gender || 'Teacher'}
-                                                                </span>
-                                                            </h5>
-
-                                                            <div className="d-flex flex-wrap gap-1 align-items-center mb-1">
-                                                                {teacher.distance !== null && teacher.distance !== undefined ? (
-                                                                    <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small">
-                                                                        <i className="bi bi-geo-alt-fill"></i>
-                                                                        {Number(teacher.distance) < 1
-                                                                            ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
-                                                                            : `${Number(teacher.distance).toFixed(1)} km away`}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small">
-                                                                        <i className="bi bi-shield-check"></i>
-                                                                        Verified Educator
-                                                                    </span>
-                                                                )}
-
-                                                                {teacher.experience && (
-                                                                    <span className="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 small">
-                                                                        {teacher.experience} Years Exp
-                                                                    </span>
-                                                                )}
+                                    {/* Smooth Horizontal Carousel Track */}
+                                    <div className="position-relative overflow-hidden flex-grow-1 my-1" style={{ minHeight: '380px' }}>
+                                        <div
+                                            className="d-flex h-100"
+                                            style={{
+                                                transform: `translateX(-${currentIndex * 100}%)`,
+                                                transition: 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
+                                                willChange: 'transform'
+                                            }}
+                                        >
+                                            {tutorList.map((teacher, idx) => (
+                                                <div
+                                                    key={teacher.user_id || teacher.id || idx}
+                                                    className="w-100 flex-shrink-0 d-flex flex-column justify-content-between"
+                                                    style={{ minWidth: '100%', boxSizing: 'border-box' }}
+                                                >
+                                                    <div>
+                                                        {/* Profile Header */}
+                                                        <div className="d-flex align-items-center gap-3 mb-3">
+                                                            <div className="position-relative flex-shrink-0">
+                                                                <img
+                                                                    src={teacher.image ? `/user/${teacher.image}` : '/front/img/noprofileimage.png'}
+                                                                    onError={(e) => { e.target.src = '/front/img/noprofileimage.png'; }}
+                                                                    alt={teacher.name}
+                                                                    className="rounded-circle shadow-sm border border-2 border-primary-subtle"
+                                                                    style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                                                                />
+                                                                <span
+                                                                    className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"
+                                                                    title="Available for Tuition"
+                                                                    style={{ width: '13px', height: '13px' }}
+                                                                />
                                                             </div>
 
-                                                            {(teacher.city_name || teacher.state_name) && (
-                                                                <div className="text-muted small text-truncate">
-                                                                    <i className="bi bi-geo-alt me-1 text-primary"></i>
-                                                                    {[teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}
+                                                            <div className="flex-grow-1 min-w-0">
+                                                                <h5 className="fw-bold text-dark mb-1 d-flex align-items-center gap-2 flex-wrap">
+                                                                    <span className="text-truncate">{teacher.name}</span>
+                                                                    <span className="badge bg-light text-secondary border small fw-normal">
+                                                                        {teacher.gender || 'Teacher'}
+                                                                    </span>
+                                                                </h5>
+
+                                                                <div className="d-flex flex-wrap gap-1 align-items-center mb-1">
+                                                                    {teacher.distance !== null && teacher.distance !== undefined ? (
+                                                                        <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small fw-semibold">
+                                                                            <i className="bi bi-geo-alt-fill"></i>
+                                                                            {Number(teacher.distance) < 0.1
+                                                                                ? 'Right in this area'
+                                                                                : Number(teacher.distance) < 1
+                                                                                    ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
+                                                                                    : `${Number(teacher.distance).toFixed(1)} km away`}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 d-inline-flex align-items-center gap-1 small">
+                                                                            <i className="bi bi-shield-check"></i>
+                                                                            Verified Educator
+                                                                        </span>
+                                                                    )}
+
+                                                                    {teacher.experience && (
+                                                                        <span className="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 small">
+                                                                            {teacher.experience} Years Exp
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                {(teacher.address || teacher.city_name || teacher.state_name) && (
+                                                                    <div className="text-muted small text-truncate" title={teacher.address || [teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}>
+                                                                        <i className="bi bi-geo-alt me-1 text-primary"></i>
+                                                                        {teacher.address || [teacher.city_name, teacher.state_name].filter(Boolean).join(', ')}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Details Grid */}
+                                                        <div className="bg-light rounded-3 p-3 mb-3 small">
+                                                            {teacher.qualification_name && (
+                                                                <div className="row g-1 mb-1">
+                                                                    <span className="col-4 text-muted fw-semibold">Qualification:</span>
+                                                                    <span className="col-8 text-dark fw-medium text-truncate">{teacher.qualification_name}</span>
+                                                                </div>
+                            )}
+
+                                                            {teacher.subject_names && (
+                                                                <div className="row g-1 mb-1">
+                                                                    <span className="col-4 text-muted fw-semibold">Subjects:</span>
+                                                                    <span className="col-8 text-dark fw-medium text-truncate-2">{teacher.subject_names}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {teacher.board_names && (
+                                                                <div className="row g-1 mb-1">
+                                                                    <span className="col-4 text-muted fw-semibold">Board:</span>
+                                                                    <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {teacher.teaching_mode_name && (
+                                                                <div className="row g-1 mb-1">
+                                                                    <span className="col-4 text-muted fw-semibold">Mode:</span>
+                                                                    <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {teacher.timings && (
+                                                                <div className="row g-1">
+                                                                    <span className="col-4 text-muted fw-semibold">Timings:</span>
+                                                                    <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
 
-                                                    {/* Details Grid */}
-                                                    <div className="bg-light rounded-3 p-3 mb-3 small">
-                                                        {teacher.qualification_name && (
-                                                            <div className="row g-1 mb-1">
-                                                                <span className="col-4 text-muted fw-semibold">Qualification:</span>
-                                                                <span className="col-8 text-dark fw-medium text-truncate">{teacher.qualification_name}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {teacher.subject_names && (
-                                                            <div className="row g-1 mb-1">
-                                                                <span className="col-4 text-muted fw-semibold">Subjects:</span>
-                                                                <span className="col-8 text-dark fw-medium text-truncate-2">{teacher.subject_names}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {teacher.board_names && (
-                                                            <div className="row g-1 mb-1">
-                                                                <span className="col-4 text-muted fw-semibold">Board:</span>
-                                                                <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {teacher.teaching_mode_name && (
-                                                            <div className="row g-1 mb-1">
-                                                                <span className="col-4 text-muted fw-semibold">Mode:</span>
-                                                                <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {teacher.timings && (
-                                                            <div className="row g-1">
-                                                                <span className="col-4 text-muted fw-semibold">Timings:</span>
-                                                                <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
-                                                            </div>
+                                                        {/* Description */}
+                                                        {teacher.description && (
+                                                            <p className="text-muted small mb-3 text-truncate-2 fst-italic">
+                                                                "{teacher.description}"
+                                                            </p>
                                                         )}
                                                     </div>
-
-                                                    {/* Description */}
-                                                    {teacher.description && (
-                                                        <p className="text-muted small mb-3 text-truncate-2 fst-italic">
-                                                            "{teacher.description}"
-                                                        </p>
-                                                    )}
                                                 </div>
-                                            );
-                                        })()}
+                                            ))}
+                                        </div>
                                     </div>
 
                                     {/* Card Footer matching left card's bottom line */}
@@ -661,7 +771,7 @@ export default function Home({
                                                 type="button"
                                                 className="btn btn-light btn-sm rounded-circle border shadow-xs d-inline-flex align-items-center justify-content-center p-0"
                                                 onClick={prevSlide}
-                                                style={{ width: '30px', height: '30px' }}
+                                                style={{ width: '32px', height: '32px' }}
                                                 title="Previous Tutor"
                                             >
                                                 <i className="bi bi-chevron-left small"></i>
@@ -674,10 +784,10 @@ export default function Home({
                                                         type="button"
                                                         className={`btn p-0 rounded-pill ${idx === currentIndex ? 'bg-primary' : 'bg-secondary-subtle'}`}
                                                         style={{
-                                                            width: idx === currentIndex ? '18px' : '6px',
-                                                            height: '6px',
+                                                            width: idx === currentIndex ? '22px' : '7px',
+                                                            height: '7px',
                                                             border: 'none',
-                                                            transition: 'all 0.3s ease'
+                                                            transition: 'all 0.35s cubic-bezier(0.25, 1, 0.5, 1)'
                                                         }}
                                                         onClick={() => setCurrentIndex(idx)}
                                                         title={`Slide ${idx + 1}`}
@@ -689,7 +799,7 @@ export default function Home({
                                                 type="button"
                                                 className="btn btn-light btn-sm rounded-circle border shadow-xs d-inline-flex align-items-center justify-content-center p-0"
                                                 onClick={nextSlide}
-                                                style={{ width: '30px', height: '30px' }}
+                                                style={{ width: '32px', height: '32px' }}
                                                 title="Next Tutor"
                                             >
                                                 <i className="bi bi-chevron-right small"></i>
