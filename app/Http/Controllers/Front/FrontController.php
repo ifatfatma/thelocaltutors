@@ -190,8 +190,13 @@ class FrontController extends Controller
 
                 $showcaseData = $this->getShowcaseTeachersData($userLat, $userLng);
                 $showcaseTeachers = $showcaseData['teachers'];
+                $showcaseNearbyTeachers = $showcaseData['nearby_teachers'];
                 $isShowcaseNearby = $showcaseData['is_nearby'];
                 $userAreaName = $showcaseData['user_area'] ?? '';
+                $showcaseCounts = [
+                    'all' => $showcaseData['all_count'],
+                    'near_me' => $showcaseData['nearby_count'],
+                ];
             } catch (\Throwable $e) {
                 if (!file_exists(storage_path('installed'))) {
                     return redirect()->route('install.index');
@@ -201,7 +206,7 @@ class FrontController extends Controller
 
             return Inertia::render('Front/Home', compact(
                 'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards',
-                'showcaseTeachers', 'isShowcaseNearby', 'userAreaName'
+                'showcaseTeachers', 'showcaseNearbyTeachers', 'isShowcaseNearby', 'userAreaName', 'showcaseCounts'
             ));
         }
 
@@ -222,6 +227,9 @@ class FrontController extends Controller
                 'status' => 200,
                 'is_nearby' => $data['is_nearby'],
                 'teachers' => $data['teachers'],
+                'nearby_teachers' => $data['nearby_teachers'],
+                'all_count' => $data['all_count'],
+                'nearby_count' => $data['nearby_count'],
                 'count' => count($data['teachers']),
                 'user_lat' => $data['user_lat'],
                 'user_lng' => $data['user_lng'],
@@ -287,7 +295,7 @@ class FrontController extends Controller
                 ))
             ) )";
 
-            $teachers = User::select(
+            $allTeachersCollection = User::select(
                 'users.id as user_id',
                 'users.name',
                 'users.email',
@@ -311,61 +319,45 @@ class FrontController extends Controller
             )
             ->join('teachers', 'users.id', '=', 'teachers.user_id')
             ->whereIn('users.is_active', ['1', 1])
-            ->whereNotNull('teachers.latitude')
-            ->where('teachers.latitude', '!=', '')
-            ->whereNotNull('teachers.longitude')
-            ->where('teachers.longitude', '!=', '')
             ->selectRaw("{$haversine} AS distance", [(float)$userLat, (float)$userLng, (float)$userLat])
+            ->orderByRaw('CASE WHEN teachers.latitude IS NOT NULL AND teachers.latitude != "" AND distance IS NOT NULL AND distance <= 50 THEN 0 ELSE 1 END')
             ->orderBy('distance', 'asc')
-            ->take(12)
+            ->orderBy('teachers.id', 'desc')
+            ->take(16)
             ->get();
 
-            if ($teachers->isNotEmpty()) {
+            if ($allTeachersCollection->isNotEmpty()) {
                 $isNearby = true;
                 if (empty($userArea)) {
-                    $firstTeacher = $teachers->first();
+                    $firstTeacher = $allTeachersCollection->first();
                     $parts = array_map('trim', explode(',', (string)$firstTeacher->address));
                     $userArea = count($parts) > 1 ? $parts[1] : ($parts[0] ?? 'Kolkata');
                 }
-            } else {
-                $teachers = User::select(
-                    'users.id as user_id',
-                    'users.name',
-                    'users.email',
-                    'users.mobile',
-                    'users.image',
-                    'teachers.id as id',
-                    'teachers.qualification',
-                    'teachers.gender',
-                    'teachers.description',
-                    'teachers.state',
-                    'teachers.district',
-                    'teachers.city',
-                    'teachers.board',
-                    'teachers.subjects',
-                    'teachers.experience',
-                    'teachers.timings',
-                    'teachers.teaching_mode',
-                    'teachers.address',
-                    'teachers.latitude',
-                    'teachers.longitude'
-                )
-                ->join('teachers', 'users.id', '=', 'teachers.user_id')
-                ->whereIn('users.is_active', ['1', 1])
-                ->latest('teachers.id')
-                ->take(8)
-                ->get();
             }
 
-            $formatted = $this->formatTeacherCollection($teachers, $isNearby);
+            // Filter subset of strictly nearby tutors (distance <= 50 km)
+            $nearbyTeachersCollection = $allTeachersCollection->filter(function ($t) {
+                return !is_null($t->distance) && (float)$t->distance <= 50;
+            })->values();
+
+            // If empty, take the closest 4 available
+            if ($nearbyTeachersCollection->isEmpty()) {
+                $nearbyTeachersCollection = $allTeachersCollection->take(4);
+            }
+
+            $formattedAll = $this->formatTeacherCollection($allTeachersCollection, $isNearby);
+            $formattedNearby = $this->formatTeacherCollection($nearbyTeachersCollection, true);
 
             return [
-                'teachers' => $formatted,
+                'teachers' => $formattedAll,
+                'nearby_teachers' => $formattedNearby,
+                'all_count' => count($formattedAll),
+                'nearby_count' => count($formattedNearby),
                 'is_nearby' => $isNearby,
                 'user_lat' => (float)$userLat,
                 'user_lng' => (float)$userLng,
                 'user_area' => trim($userArea),
-                'count' => count($formatted),
+                'count' => count($formattedAll),
             ];
         }
 
@@ -655,11 +647,18 @@ class FrontController extends Controller
             return redirect()->route('front.dashboard.index');
         }
         public function search(Request $request){
+            $filterMode = $request->filter_mode ?? 'all';
+            $keyword = trim($request->keyword ?? $request->q ?? $request->search_query ?? '');
+            $category = $request->lookingfor ?? $request->category ?? 'teacher';
             $radius = !empty($request->search_radius) ? (float)$request->search_radius : 0;
-            $userLat = $request->user_lat ?? $request->latitude ?? Session::get('latitude');
-            $userLng = $request->user_lng ?? $request->longitude ?? Session::get('longitude');
+            $userLat = $request->user_lat ?? $request->latitude ?? Session::get('latitude') ?? Cookie::get('user_lat');
+            $userLng = $request->user_lng ?? $request->longitude ?? Session::get('longitude') ?? Cookie::get('user_lng');
 
-            if (!empty($userLat) && !empty($userLng)) {
+            // Fallback default coordinates: Garden Reach, Kolkata (22.531200, 88.301500)
+            if (empty($userLat) || empty($userLng)) {
+                $userLat = 22.531200;
+                $userLng = 88.301500;
+            } else {
                 Session::put('latitude', (string)$userLat);
                 Session::put('longitude', (string)$userLng);
             }
@@ -675,51 +674,102 @@ class FrontController extends Controller
                 'teachers.city',
                 'teachers.board',
                 'teachers.subjects',
+                'teachers.address',
                 'teachers.latitude',
                 'teachers.longitude')
                 ->join('teachers','users.id','=','teachers.user_id')
                 ->where('is_active',1);
 
-            if(!empty($request->search_state)){
+            // Keyword / Subject / Topic search
+            if (!empty($keyword)) {
+                $matchingSubjectIds = CustomData::where('key_name', 'subject')
+                    ->where('name', 'LIKE', "%{$keyword}%")
+                    ->pluck('id')->toArray();
+                $matchingBoardIds = CustomData::where('key_name', 'board')
+                    ->where('name', 'LIKE', "%{$keyword}%")
+                    ->pluck('id')->toArray();
+
+                $lists = $lists->where(function($query) use ($keyword, $matchingSubjectIds, $matchingBoardIds) {
+                    $query->where('users.name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('teachers.description', 'LIKE', "%{$keyword}%")
+                          ->orWhere('teachers.address', 'LIKE', "%{$keyword}%");
+                    foreach ($matchingSubjectIds as $subId) {
+                        $query->orWhereRaw('FIND_IN_SET(?, teachers.subjects)', [$subId]);
+                    }
+                    foreach ($matchingBoardIds as $boardId) {
+                        $query->orWhereRaw('FIND_IN_SET(?, teachers.board)', [$boardId]);
+                    }
+                });
+            }
+
+            if(!empty($request->search_state) && $request->search_state !== '0'){
                 $lists = $lists->where('teachers.state',$request->search_state);
             }
-            if(!empty($request->search_district)){
+            if(!empty($request->search_district) && $request->search_district !== '0'){
                 $lists = $lists->where('teachers.district',$request->search_district);
             }
-            if(!empty($request->search_city)){
+            if(!empty($request->search_city) && $request->search_city !== '0'){
                 $lists = $lists->where('teachers.city',$request->search_city);
             }
-            if(!empty($request->search_board)){
+            if(!empty($request->search_board) && $request->search_board !== '0'){
                 $board = $request->search_board;
                 $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
             }
-            if(!empty($request->search_subject)){
+            if(!empty($request->search_subject) && $request->search_subject !== '0'){
                 $subject = $request->search_subject;
-                $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
+                if (is_numeric($subject)) {
+                    $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');
+                } else {
+                    $subId = CustomData::where('key_name', 'subject')->where('name', 'LIKE', "%{$subject}%")->value('id');
+                    if ($subId) {
+                        $lists = $lists->whereRaw('FIND_IN_SET("'.$subId.'",teachers.subjects)');
+                    } else {
+                        $lists = $lists->where(function($q) use ($subject) {
+                            $q->where('teachers.description', 'LIKE', "%{$subject}%")
+                              ->orWhere('users.name', 'LIKE', "%{$subject}%");
+                        });
+                    }
+                }
             }
             if(!empty($request->search_gender)){
                 $lists = $lists->where('teachers.gender',$request->search_gender);
             }
             
-            if(!empty($userLat) && !empty($userLng)){
-                $haversine = "( 6371 * acos(
-                    least(1.0, greatest(-1.0,
-                        cos( radians(?) ) *
-                        cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
-                        cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
-                        sin( radians(?) ) *
-                        sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
-                    ))
-                ) )";
-                $lists = $lists->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat]);
+            $haversine = "( 6371 * acos(
+                least(1.0, greatest(-1.0,
+                    cos( radians(?) ) *
+                    cos( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) ) *
+                    cos( radians( CAST(teachers.longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                    sin( radians(?) ) *
+                    sin( radians( CAST(teachers.latitude AS DECIMAL(10,6)) ) )
+                ))
+            ) )";
+            $lists = $lists->selectRaw("$haversine AS distance", [(float)$userLat, (float)$userLng, (float)$userLat]);
 
-                if($radius > 0){
+            // Near Me vs. All ordering and filtering logic:
+            // "near_me": strictly tutors within 50 km (or requested radius)
+            // "all" (Default): all tutors, with Near Me tutors (<= 50km) ordered first, followed by remaining tutors
+            if ($filterMode === 'near_me') {
+                $maxDist = $radius > 0 ? $radius : 50;
+                $lists = $lists->whereNotNull('teachers.latitude')
+                               ->where('teachers.latitude', '!=', '')
+                               ->whereNotNull('teachers.longitude')
+                               ->where('teachers.longitude', '!=', '')
+                               ->having("distance", "<=", $maxDist)
+                               ->orderBy('distance', 'asc');
+            } else {
+                if ($radius > 0) {
                     $lists = $lists->whereNotNull('teachers.latitude')
                                    ->where('teachers.latitude', '!=', '')
                                    ->whereNotNull('teachers.longitude')
                                    ->where('teachers.longitude', '!=', '')
                                    ->having("distance", "<=", $radius)
                                    ->orderBy('distance', 'asc');
+                } else {
+                    // Default load behavior ("All"): Show tutors from "All", ordered so Near Me tutors appear first
+                    $lists = $lists->orderByRaw('CASE WHEN teachers.latitude IS NOT NULL AND teachers.latitude != "" AND distance IS NOT NULL AND distance <= 50 THEN 0 ELSE 1 END')
+                                   ->orderBy('distance', 'asc')
+                                   ->orderBy('teachers.id', 'desc');
                 }
             }
 
@@ -776,6 +826,8 @@ class FrontController extends Controller
                 'search_subject' => $request->search_subject ?? '0',
                 'search_gender' => $request->search_gender ?? '',
                 'search_radius' => $radius,
+                'keyword' => $keyword,
+                'filter_mode' => $filterMode,
                 'user_lat' => $userLat,
                 'user_lng' => $userLng,
             ];
