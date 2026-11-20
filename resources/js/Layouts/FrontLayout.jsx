@@ -31,8 +31,17 @@ export default function FrontLayout({ children, title }) {
 
     return (
         <div className="front-layout-root d-flex flex-column min-vh-100">
-            {/* Header */}
-            <header className="header-area four shadow-sm bg-white sticky-top" id="header">
+            {/* Modern Header with Backdrop Blur */}
+            <header
+                className="header-area four sticky-top border-bottom"
+                id="header"
+                style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.3s ease',
+                }}
+            >
                 <nav className="navbar navbar-expand-lg navbar-light py-2">
                     <div className="container">
                         {/* Navbar Brand */}
@@ -41,10 +50,11 @@ export default function FrontLayout({ children, title }) {
                                 <img
                                     src={logoUrl}
                                     alt={settings?.name || 'The Local Tutors'}
-                                    style={{ maxHeight: '60px', objectFit: 'contain' }}
+                                    style={{ maxHeight: '52px', objectFit: 'contain' }}
                                 />
                             ) : (
-                                <span className="fw-bold fs-4 text-primary">
+                                <span className="fw-bold fs-4 text-primary d-flex align-items-center gap-2">
+                                    <i className="bi bi-mortarboard-fill text-primary"></i>
                                     {settings?.name || 'The Local Tutors'}
                                 </span>
                             )}
@@ -52,7 +62,7 @@ export default function FrontLayout({ children, title }) {
 
                         {/* Mobile Toggler */}
                         <button
-                            className="navbar-toggler"
+                            className="navbar-toggler border-0 shadow-none p-2"
                             type="button"
                             onClick={() => setNavOpen(!navOpen)}
                             aria-controls="navbarContent"
@@ -67,9 +77,9 @@ export default function FrontLayout({ children, title }) {
                             className={`collapse navbar-collapse ${navOpen ? 'show' : ''}`}
                             id="navbarContent"
                         >
-                            <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                            <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold" href="/">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/">
                                         Home
                                     </Link>
                                 </li>
@@ -77,7 +87,7 @@ export default function FrontLayout({ children, title }) {
                                 {/* Courses Dropdown */}
                                 <li className="nav-item dropdown">
                                     <a
-                                        className="nav-link dropdown-toggle fw-semibold"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark"
                                         href="#"
                                         role="button"
                                         data-bs-toggle="dropdown"
@@ -85,20 +95,20 @@ export default function FrontLayout({ children, title }) {
                                     >
                                         Courses
                                     </a>
-                                    <ul className="dropdown-menu shadow-sm">
+                                    <ul className="dropdown-menu border-0 shadow-lg rounded-3 py-2">
                                         <li>
-                                            <Link className="dropdown-item" href="/all_course">
-                                                All Courses
+                                            <Link className="dropdown-item py-2 fw-medium" href="/all_course">
+                                                <i className="bi bi-grid me-2 text-primary"></i>All Courses
                                             </Link>
                                         </li>
                                         {categories && categories.length > 0 && (
-                                            <li><hr className="dropdown-divider" /></li>
+                                            <li><hr className="dropdown-divider my-1" /></li>
                                         )}
                                         {categories &&
                                             categories.map((cat) => (
                                                 <li key={cat.id}>
                                                     <Link
-                                                        className="dropdown-item"
+                                                        className="dropdown-item py-2 small"
                                                         href={`/course/${cat.id}/${cat.slug}`}
                                                     >
                                                         {cat.title}
@@ -109,13 +119,13 @@ export default function FrontLayout({ children, title }) {
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold" href="/blogs">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/blogs">
                                         Blogs
                                     </Link>
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold" href="/team">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/team">
                                         Teachers
                                     </Link>
                                 </li>
@@ -123,7 +133,7 @@ export default function FrontLayout({ children, title }) {
                                 {/* About Us Dropdown */}
                                 <li className="nav-item dropdown">
                                     <a
-                                        className="nav-link dropdown-toggle fw-semibold"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark"
                                         href="#"
                                         role="button"
                                         data-bs-toggle="dropdown"
@@ -131,36 +141,36 @@ export default function FrontLayout({ children, title }) {
                                     >
                                         About Us
                                     </a>
-                                    <ul className="dropdown-menu shadow-sm">
+                                    <ul className="dropdown-menu border-0 shadow-lg rounded-3 py-2">
                                         <li>
-                                            <Link className="dropdown-item" href="/about">
-                                                About Us
+                                            <Link className="dropdown-item py-2 fw-medium" href="/about">
+                                                <i className="bi bi-info-circle me-2 text-primary"></i>About Us
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item" href="/ourmission">
-                                                Our Mission
+                                            <Link className="dropdown-item py-2 fw-medium" href="/ourmission">
+                                                <i className="bi bi-compass me-2 text-primary"></i>Our Mission
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item" href="/ourvision">
-                                                Our Vision
+                                            <Link className="dropdown-item py-2 fw-medium" href="/ourvision">
+                                                <i className="bi bi-eye me-2 text-primary"></i>Our Vision
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item" href="/faq">
-                                                FAQ
+                                            <Link className="dropdown-item py-2 fw-medium" href="/faq">
+                                                <i className="bi bi-question-circle me-2 text-primary"></i>FAQ
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item" href="/eventgallery">
-                                                Gallery
+                                            <Link className="dropdown-item py-2 fw-medium" href="/eventgallery">
+                                                <i className="bi bi-images me-2 text-primary"></i>Gallery
                                             </Link>
                                         </li>
-                                        <li><hr className="dropdown-divider" /></li>
+                                        <li><hr className="dropdown-divider my-1" /></li>
                                         <li>
-                                            <Link className="dropdown-item" href="/contact">
-                                                Contact Us
+                                            <Link className="dropdown-item py-2 fw-medium" href="/contact">
+                                                <i className="bi bi-envelope me-2 text-primary"></i>Contact Us
                                             </Link>
                                         </li>
                                     </ul>
@@ -172,55 +182,56 @@ export default function FrontLayout({ children, title }) {
                                 {auth?.user ? (
                                     <div className="dropdown">
                                         <button
-                                            className="btn btn-outline-primary dropdown-toggle d-flex align-items-center gap-2"
+                                            className="btn btn-light border rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-2 shadow-2xs"
                                             type="button"
                                             data-bs-toggle="dropdown"
                                             aria-expanded="false"
                                         >
-                                            <i className="bi bi-person-circle"></i>
-                                            <span>{auth.user.name || 'Account'}</span>
+                                            <i className="bi bi-person-circle text-primary fs-5"></i>
+                                            <span className="small">{auth.user.name || 'Account'}</span>
+                                            <i className="bi bi-chevron-down text-muted small" style={{ fontSize: '0.7rem' }}></i>
                                         </button>
-                                        <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <ul className="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2">
                                             <li>
-                                                <Link className="dropdown-item" href="/dashboard">
-                                                    <i className="bi bi-speedometer2 me-2"></i>Account Panel
+                                                <Link className="dropdown-item py-2 fw-medium" href="/dashboard">
+                                                    <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item" href="/myfavouritecourses">
-                                                    <i className="bi bi-heart me-2"></i>Saved Courses
+                                                <Link className="dropdown-item py-2 fw-medium" href="/myfavouritecourses">
+                                                    <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item" href="/mycourses">
-                                                    <i className="bi bi-mortarboard me-2"></i>My Courses
+                                                <Link className="dropdown-item py-2 fw-medium" href="/mycourses">
+                                                    <i className="bi bi-mortarboard me-2 text-success"></i>My Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item" href="/editprofile">
-                                                    <i className="bi bi-pencil-square me-2"></i>Edit Profile
+                                                <Link className="dropdown-item py-2 fw-medium" href="/editprofile">
+                                                    <i className="bi bi-pencil-square me-2 text-secondary"></i>Edit Profile
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item" href="/changepassword">
-                                                    <i className="bi bi-key me-2"></i>Change Password
+                                                <Link className="dropdown-item py-2 fw-medium" href="/changepassword">
+                                                    <i className="bi bi-key me-2 text-warning"></i>Change Password
                                                 </Link>
                                             </li>
                                             {auth.user.roles?.includes('Admin') && (
                                                 <>
-                                                    <li><hr className="dropdown-divider" /></li>
+                                                    <li><hr className="dropdown-divider my-1" /></li>
                                                     <li>
-                                                        <Link className="dropdown-item text-primary fw-bold" href="/admin/home">
+                                                        <Link className="dropdown-item text-primary fw-bold py-2" href="/admin/home">
                                                             <i className="bi bi-shield-lock me-2"></i>Admin Dashboard
                                                         </Link>
                                                     </li>
                                                 </>
                                             )}
-                                            <li><hr className="dropdown-divider" /></li>
+                                            <li><hr className="dropdown-divider my-1" /></li>
                                             <li>
                                                 <button
                                                     onClick={handleLogout}
-                                                    className="dropdown-item text-danger"
+                                                    className="dropdown-item text-danger py-2 fw-medium"
                                                 >
                                                     <i className="bi bi-box-arrow-right me-2"></i>Logout
                                                 </button>
@@ -228,11 +239,11 @@ export default function FrontLayout({ children, title }) {
                                         </ul>
                                     </div>
                                 ) : (
-                                    <div className="d-flex gap-2">
-                                        <Link href="/login" className="btn btn-outline-secondary btn-sm px-3">
+                                    <div className="d-flex align-items-center gap-2">
+                                        <Link href="/login" className="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold">
                                             Sign In
                                         </Link>
-                                        <Link href="/register" className="btn btn-primary btn-sm px-3">
+                                        <Link href="/register" className="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-semibold shadow-xs">
                                             Join Now
                                         </Link>
                                     </div>

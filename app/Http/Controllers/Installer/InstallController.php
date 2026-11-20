@@ -250,11 +250,6 @@ class InstallController extends Controller
                 Artisan::call('key:generate', ['--force' => true]);
             }
 
-<<<<<<< HEAD
-            // 3. Run Migrations & Seeders
-            Artisan::call('migrate', ['--force' => true]);
-            Artisan::call('db:seed', ['--force' => true]);
-=======
             // Ensure sqlite fallback file exists if referenced anywhere
             if (!file_exists(database_path('database.sqlite'))) {
                 @touch(database_path('database.sqlite'));
@@ -263,7 +258,6 @@ class InstallController extends Controller
             // 3. Run Migrations & Seeders specifically on MySQL
             Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
             Artisan::call('db:seed', ['--database' => 'mysql', '--force' => true]);
->>>>>>> main
 
             // 4. Create / Update Super Admin User
             // Purge any pre-existing or conflicting accounts (including soft-deleted) across email, username, or mobile

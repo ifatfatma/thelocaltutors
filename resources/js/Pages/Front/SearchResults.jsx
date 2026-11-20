@@ -16,6 +16,14 @@ export default function SearchResults({ lists, searchdetails = {}, custom_lookup
     const [locatingMsg, setLocatingMsg] = useState('');
 
     const currentRadius = searchdetails?.search_radius ? Number(searchdetails.search_radius) : 0;
+    const filterMode = searchdetails?.filter_mode || 'all';
+
+    const handleFilterModeChange = (newMode) => {
+        router.get('/search', {
+            ...searchdetails,
+            filter_mode: newMode,
+        }, { preserveState: true });
+    };
 
     const handleDetectCurrentLocation = (targetRadius = 1) => {
         if (!navigator.geolocation) {
@@ -148,15 +156,37 @@ export default function SearchResults({ lists, searchdetails = {}, custom_lookup
                             <div>
                                 <h6 className="fw-bold mb-0 text-dark">Radius &amp; Location Filter</h6>
                                 <p className="text-muted small mb-0">
-                                    {currentRadius > 0
-                                        ? `Filtering tutors within ${currentRadius} km of your browsing location`
-                                        : 'Showing tutors without distance limit'}
+                                    {filterMode === 'near_me'
+                                        ? 'Showing strictly Near Me tutors (sorted by proximity)'
+                                        : currentRadius > 0
+                                            ? `Filtering tutors within ${currentRadius} km of your browsing location`
+                                            : 'Showing all tutors (Near Me prioritized first)'}
+                                    {searchdetails?.keyword && (
+                                        <span className="badge bg-primary-subtle text-primary ms-2">
+                                            Keyword: "{searchdetails.keyword}"
+                                        </span>
+                                    )}
                                 </p>
                             </div>
                         </div>
 
                         <div className="d-flex flex-wrap align-items-center gap-2">
-                            <span className="small fw-semibold text-secondary me-1">Radius:</span>
+                            {/* All vs. Near Me Dropdown */}
+                            <div className="d-flex align-items-center gap-1 bg-white px-2 py-1 rounded-3 border">
+                                <i className="bi bi-filter-circle-fill text-primary small"></i>
+                                <span className="small fw-semibold text-secondary me-1">Show:</span>
+                                <select
+                                    className="form-select form-select-sm border-0 bg-transparent py-0 ps-1 pe-4 fw-semibold text-dark"
+                                    style={{ fontSize: '0.85rem', cursor: 'pointer' }}
+                                    value={filterMode}
+                                    onChange={(e) => handleFilterModeChange(e.target.value)}
+                                >
+                                    <option value="all">All</option>
+                                    <option value="near_me">Near Me</option>
+                                </select>
+                            </div>
+
+                            <span className="small fw-semibold text-secondary ms-lg-2 me-1">Radius:</span>
                             <div className="btn-group btn-group-sm" role="group">
                                 <button
                                     type="button"
