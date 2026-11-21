@@ -43,16 +43,22 @@ export default function Team({ teachers = [] }) {
                 </div>
             </div>
 
-            <div className="container py-5">
+            <div className="container py-5 flex-grow-1 d-flex flex-column">
                 <div className="text-center mb-5">
                     <h2 className="fw-bold text-dark">Qualified Mentors for Every Subject</h2>
                     <p className="text-muted">Connect directly with experienced educators for personalized tutoring.</p>
                 </div>
 
                 {list.length === 0 ? (
-                    <div className="text-center py-5">
-                        <i className="bi bi-people fs-1 text-muted"></i>
-                        <h4 className="mt-3 text-muted">No teachers listed at the moment.</h4>
+                    <div className="text-center py-5 my-auto">
+                        <div className="rounded-circle bg-light d-inline-flex p-4 mb-3 shadow-xs">
+                            <i className="bi bi-people fs-1 text-primary"></i>
+                        </div>
+                        <h4 className="fw-bold text-dark">No Teachers Listed At The Moment</h4>
+                        <p className="text-muted mx-auto" style={{ maxWidth: '420px' }}>
+                            Our directory of verified local tutors is updating. Find teachers using our search on the homepage.
+                        </p>
+                        <Link href="/" className="btn btn-primary rounded-pill px-4 py-2 mt-3 fw-semibold shadow-xs">Back to Home</Link>
                     </div>
                 ) : (
                     <div className="row g-4">

@@ -5,6 +5,22 @@ import FlashAlert from '../Components/FlashAlert';
 export default function FrontLayout({ children, title }) {
     const { auth, settings, categories, userLocation } = usePage().props;
     const [navOpen, setNavOpen] = useState(false);
+    const [openDropdown, setOpenDropdown] = useState(null); // 'courses' | 'about' | 'user' | null
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest('.dropdown')) {
+                setOpenDropdown(null);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const closeAll = () => {
+        setOpenDropdown(null);
+        setNavOpen(false);
+    };
 
     useEffect(() => {
         if (typeof window !== 'undefined' && navigator.geolocation && (!userLocation?.latitude || !userLocation?.longitude)) {
@@ -31,21 +47,23 @@ export default function FrontLayout({ children, title }) {
 
     return (
         <div className="front-layout-root d-flex flex-column min-vh-100">
-            {/* Modern Header with Backdrop Blur */}
+            {/* Modern Header in Normal Flow with Sticky Top */}
             <header
-                className="header-area four sticky-top border-bottom"
+                className="sticky-top border-bottom bg-white"
                 id="header"
                 style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1030,
+                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
                     backdropFilter: 'blur(10px)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-                    transition: 'all 0.3s ease',
+                    boxShadow: '0 2px 15px rgba(0, 0, 0, 0.05)',
                 }}
             >
                 <nav className="navbar navbar-expand-lg navbar-light py-2">
                     <div className="container">
                         {/* Navbar Brand */}
-                        <Link className="navbar-brand d-flex align-items-center" href="/">
+                        <Link className="navbar-brand d-flex align-items-center" href="/" onClick={closeAll}>
                             {settings?.logo ? (
                                 <img
                                     src={logoUrl}
@@ -79,25 +97,36 @@ export default function FrontLayout({ children, title }) {
                         >
                             <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/" onClick={closeAll}>
                                         Home
                                     </Link>
                                 </li>
 
                                 {/* Courses Dropdown */}
-                                <li className="nav-item dropdown">
-                                    <a
-                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark"
-                                        href="#"
-                                        role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                <li className="nav-item dropdown position-relative">
+                                    <button
+                                        type="button"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenDropdown(openDropdown === 'courses' ? null : 'courses');
+                                        }}
+                                        aria-expanded={openDropdown === 'courses'}
                                     >
                                         Courses
-                                    </a>
-                                    <ul className="dropdown-menu border-0 shadow-lg rounded-3 py-2">
+                                    </button>
+                                    <ul
+                                        className={`dropdown-menu border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'courses' ? 'show' : ''}`}
+                                        style={{
+                                            display: openDropdown === 'courses' ? 'block' : 'none',
+                                            visibility: openDropdown === 'courses' ? 'visible' : 'hidden',
+                                            opacity: openDropdown === 'courses' ? 1 : 0,
+                                            position: 'absolute',
+                                            zIndex: 1060,
+                                        }}
+                                    >
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/all_course">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/all_course" onClick={closeAll}>
                                                 <i className="bi bi-grid me-2 text-primary"></i>All Courses
                                             </Link>
                                         </li>
@@ -110,6 +139,7 @@ export default function FrontLayout({ children, title }) {
                                                     <Link
                                                         className="dropdown-item py-2 small"
                                                         href={`/course/${cat.id}/${cat.slug}`}
+                                                        onClick={closeAll}
                                                     >
                                                         {cat.title}
                                                     </Link>
@@ -119,57 +149,68 @@ export default function FrontLayout({ children, title }) {
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/blogs">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/blogs" onClick={closeAll}>
                                         Blogs
                                     </Link>
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/team">
+                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/team" onClick={closeAll}>
                                         Teachers
                                     </Link>
                                 </li>
 
                                 {/* About Us Dropdown */}
-                                <li className="nav-item dropdown">
-                                    <a
-                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark"
-                                        href="#"
-                                        role="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                <li className="nav-item dropdown position-relative">
+                                    <button
+                                        type="button"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenDropdown(openDropdown === 'about' ? null : 'about');
+                                        }}
+                                        aria-expanded={openDropdown === 'about'}
                                     >
                                         About Us
-                                    </a>
-                                    <ul className="dropdown-menu border-0 shadow-lg rounded-3 py-2">
+                                    </button>
+                                    <ul
+                                        className={`dropdown-menu border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'about' ? 'show' : ''}`}
+                                        style={{
+                                            display: openDropdown === 'about' ? 'block' : 'none',
+                                            visibility: openDropdown === 'about' ? 'visible' : 'hidden',
+                                            opacity: openDropdown === 'about' ? 1 : 0,
+                                            position: 'absolute',
+                                            zIndex: 1060,
+                                        }}
+                                    >
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/about">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/about" onClick={closeAll}>
                                                 <i className="bi bi-info-circle me-2 text-primary"></i>About Us
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/ourmission">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/ourmission" onClick={closeAll}>
                                                 <i className="bi bi-compass me-2 text-primary"></i>Our Mission
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/ourvision">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/ourvision" onClick={closeAll}>
                                                 <i className="bi bi-eye me-2 text-primary"></i>Our Vision
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/faq">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/faq" onClick={closeAll}>
                                                 <i className="bi bi-question-circle me-2 text-primary"></i>FAQ
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/eventgallery">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/eventgallery" onClick={closeAll}>
                                                 <i className="bi bi-images me-2 text-primary"></i>Gallery
                                             </Link>
                                         </li>
                                         <li><hr className="dropdown-divider my-1" /></li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/contact">
+                                            <Link className="dropdown-item py-2 fw-medium" href="/contact" onClick={closeAll}>
                                                 <i className="bi bi-envelope me-2 text-primary"></i>Contact Us
                                             </Link>
                                         </li>
@@ -180,40 +221,53 @@ export default function FrontLayout({ children, title }) {
                             {/* Right Side: Auth / CTA */}
                             <div className="d-flex align-items-center gap-2">
                                 {auth?.user ? (
-                                    <div className="dropdown">
+                                    <div className="dropdown position-relative">
                                         <button
                                             className="btn btn-light border rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-2 shadow-2xs"
                                             type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDropdown(openDropdown === 'user' ? null : 'user');
+                                            }}
+                                            aria-expanded={openDropdown === 'user'}
                                         >
                                             <i className="bi bi-person-circle text-primary fs-5"></i>
                                             <span className="small">{auth.user.name || 'Account'}</span>
                                             <i className="bi bi-chevron-down text-muted small" style={{ fontSize: '0.7rem' }}></i>
                                         </button>
-                                        <ul className="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2">
+                                        <ul
+                                            className={`dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'user' ? 'show' : ''}`}
+                                            style={{
+                                                display: openDropdown === 'user' ? 'block' : 'none',
+                                                visibility: openDropdown === 'user' ? 'visible' : 'hidden',
+                                                opacity: openDropdown === 'user' ? 1 : 0,
+                                                position: 'absolute',
+                                                right: 0,
+                                                zIndex: 1060,
+                                            }}
+                                        >
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/dashboard">
+                                                <Link className="dropdown-item py-2 fw-medium" href="/dashboard" onClick={closeAll}>
                                                     <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/myfavouritecourses">
+                                                <Link className="dropdown-item py-2 fw-medium" href="/myfavouritecourses" onClick={closeAll}>
                                                     <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/mycourses">
+                                                <Link className="dropdown-item py-2 fw-medium" href="/mycourses" onClick={closeAll}>
                                                     <i className="bi bi-mortarboard me-2 text-success"></i>My Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/editprofile">
+                                                <Link className="dropdown-item py-2 fw-medium" href="/editprofile" onClick={closeAll}>
                                                     <i className="bi bi-pencil-square me-2 text-secondary"></i>Edit Profile
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/changepassword">
+                                                <Link className="dropdown-item py-2 fw-medium" href="/changepassword" onClick={closeAll}>
                                                     <i className="bi bi-key me-2 text-warning"></i>Change Password
                                                 </Link>
                                             </li>
@@ -221,7 +275,7 @@ export default function FrontLayout({ children, title }) {
                                                 <>
                                                     <li><hr className="dropdown-divider my-1" /></li>
                                                     <li>
-                                                        <Link className="dropdown-item text-primary fw-bold py-2" href="/admin/home">
+                                                        <Link className="dropdown-item text-primary fw-bold py-2" href="/admin/home" onClick={closeAll}>
                                                             <i className="bi bi-shield-lock me-2"></i>Admin Dashboard
                                                         </Link>
                                                     </li>
@@ -240,10 +294,10 @@ export default function FrontLayout({ children, title }) {
                                     </div>
                                 ) : (
                                     <div className="d-flex align-items-center gap-2">
-                                        <Link href="/login" className="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold">
+                                        <Link href="/login" className="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold" onClick={closeAll}>
                                             Sign In
                                         </Link>
-                                        <Link href="/register" className="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-semibold shadow-xs">
+                                        <Link href="/register" className="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-semibold shadow-xs" onClick={closeAll}>
                                             Join Now
                                         </Link>
                                     </div>
@@ -258,7 +312,7 @@ export default function FrontLayout({ children, title }) {
             <FlashAlert />
 
             {/* Main Page Content */}
-            <main className="flex-grow-1">
+            <main className="flex-grow-1 d-flex flex-column" style={{ minHeight: '65vh' }}>
                 {children}
             </main>
 
