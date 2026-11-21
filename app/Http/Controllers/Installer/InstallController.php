@@ -106,23 +106,10 @@ class InstallController extends Controller
     }
 
     /**
-     * AJAX Test Database Connection
+     * Helper to test PDO connection and database creation with friendly diagnostics
      */
-    public function testDatabase(Request $request)
+    private function testPdoConnection($host, $port, $database, $username, $password)
     {
-        $request->validate([
-            'host' => 'required',
-            'port' => 'required|numeric',
-            'database' => 'required',
-            'username' => 'required'
-        ]);
-
-        $host = $request->host;
-        $port = $request->port;
-        $database = $request->database;
-        $username = $request->username;
-        $password = $request->password ?? '';
-
         try {
             // First connect without database to verify host and user
             $dsnNoDb = "mysql:host={$host};port={$port};charset=utf8mb4";
@@ -141,16 +128,60 @@ class InstallController extends Controller
                 PDO::ATTR_TIMEOUT => 5
             ]);
 
+            return ['success' => true];
+        } catch (\PDOException $e) {
+            $msg = $e->getMessage();
+            if ($e->getCode() == 1045 || str_contains($msg, '1045') || str_contains($msg, 'Access denied')) {
+                if (str_contains($msg, 'using password: NO')) {
+                    $friendly = "Access denied: Your MySQL server requires a password for user '{$username}'. Please enter your MySQL password in the Password field.";
+                } else {
+                    $friendly = "Access denied: Incorrect password for MySQL user '{$username}'. Please check your password and try again.";
+                }
+            } elseif ($e->getCode() == 2002 || str_contains($msg, '2002') || str_contains($msg, 'refused') || str_contains($msg, 'not found')) {
+                $friendly = "Cannot connect to MySQL server at {$host}:{$port}. Please verify that your MySQL server/service is started.";
+            } else {
+                $friendly = "Database connection error: " . $msg;
+            }
+
+            return [
+                'success' => false,
+                'message' => $friendly,
+                'raw_error' => $msg,
+            ];
+        }
+    }
+
+    /**
+     * AJAX Test Database Connection
+     */
+    public function testDatabase(Request $request)
+    {
+        $request->validate([
+            'host' => 'required',
+            'port' => 'required|numeric',
+            'database' => 'required',
+            'username' => 'required'
+        ]);
+
+        $res = $this->testPdoConnection(
+            $request->host,
+            $request->port,
+            $request->database,
+            $request->username,
+            $request->password ?? ''
+        );
+
+        if ($res['success']) {
             return response()->json([
                 'status' => 200,
                 'message' => 'Connection verified successfully! Database is ready.'
             ]);
-        } catch (\PDOException $e) {
-            return response()->json([
-                'status' => 400,
-                'message' => 'Database connection failed: ' . $e->getMessage()
-            ], 422);
         }
+
+        return response()->json([
+            'status' => 400,
+            'message' => $res['message']
+        ], 422);
     }
 
     /**
@@ -164,6 +195,20 @@ class InstallController extends Controller
             'database' => 'required',
             'username' => 'required'
         ]);
+
+        $res = $this->testPdoConnection(
+            $request->host,
+            $request->port,
+            $request->database,
+            $request->username,
+            $request->password ?? ''
+        );
+
+        if (!$res['success']) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $res['message']);
+        }
 
         session([
             'install_db' => [
@@ -194,6 +239,36 @@ class InstallController extends Controller
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
         ];
+
+        // Sanity check database connection before showing admin setup
+        $res = $this->testPdoConnection(
+            $dbConfig['host'],
+            $dbConfig['port'],
+            $dbConfig['database'],
+            $dbConfig['username'],
+            $dbConfig['password']
+        );
+
+        // Auto-heal if a password was saved/autofilled but MySQL has no password (common XAMPP situation)
+        if (!$res['success'] && !empty($dbConfig['password'])) {
+            $emptyRes = $this->testPdoConnection(
+                $dbConfig['host'],
+                $dbConfig['port'],
+                $dbConfig['database'],
+                $dbConfig['username'],
+                ''
+            );
+            if ($emptyRes['success']) {
+                $dbConfig['password'] = '';
+                session(['install_db' => $dbConfig]);
+                $res = $emptyRes;
+            }
+        }
+
+        if (!$res['success']) {
+            return redirect()->route('install.database')
+                ->with('error', $res['message']);
+        }
 
         $defaultAppName = env('APP_NAME', 'The Local Tutors');
         $defaultAppUrl = request()->getSchemeAndHttpHost();
@@ -228,7 +303,56 @@ class InstallController extends Controller
             'password' => env('DB_PASSWORD', ''),
         ];
 
+        // Sanity check database connection before running migrations
+        $testRes = $this->testPdoConnection(
+            $dbConfig['host'],
+            $dbConfig['port'],
+            $dbConfig['database'],
+            $dbConfig['username'],
+            $dbConfig['password']
+        );
+
+        // Auto-heal if password was provided/autofilled but MySQL root has no password
+        if (!$testRes['success'] && !empty($dbConfig['password'])) {
+            $emptyRes = $this->testPdoConnection(
+                $dbConfig['host'],
+                $dbConfig['port'],
+                $dbConfig['database'],
+                $dbConfig['username'],
+                ''
+            );
+            if ($emptyRes['success']) {
+                $dbConfig['password'] = '';
+                session(['install_db' => $dbConfig]);
+                $testRes = $emptyRes;
+            }
+        }
+
+        if (!$testRes['success']) {
+            return redirect()->route('install.database')->with('error', $testRes['message']);
+        }
+
         try {
+            // Enforce process and superglobals environment variables for MySQL
+            putenv("DB_CONNECTION=mysql");
+            putenv("DB_HOST={$dbConfig['host']}");
+            putenv("DB_PORT={$dbConfig['port']}");
+            putenv("DB_DATABASE={$dbConfig['database']}");
+            putenv("DB_USERNAME={$dbConfig['username']}");
+            putenv("DB_PASSWORD={$dbConfig['password']}");
+            $_ENV['DB_CONNECTION'] = 'mysql';
+            $_ENV['DB_HOST'] = $dbConfig['host'];
+            $_ENV['DB_PORT'] = $dbConfig['port'];
+            $_ENV['DB_DATABASE'] = $dbConfig['database'];
+            $_ENV['DB_USERNAME'] = $dbConfig['username'];
+            $_ENV['DB_PASSWORD'] = $dbConfig['password'];
+            $_SERVER['DB_CONNECTION'] = 'mysql';
+            $_SERVER['DB_HOST'] = $dbConfig['host'];
+            $_SERVER['DB_PORT'] = $dbConfig['port'];
+            $_SERVER['DB_DATABASE'] = $dbConfig['database'];
+            $_SERVER['DB_USERNAME'] = $dbConfig['username'];
+            $_SERVER['DB_PASSWORD'] = $dbConfig['password'];
+
             // 1. Set dynamic config in runtime and enforce MySQL as default
             config([
                 'app.name' => $request->app_name,
