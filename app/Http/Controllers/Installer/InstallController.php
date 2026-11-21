@@ -106,23 +106,10 @@ class InstallController extends Controller
     }
 
     /**
-     * AJAX Test Database Connection
+     * Helper to test PDO connection and database creation with friendly diagnostics
      */
-    public function testDatabase(Request $request)
+    private function testPdoConnection($host, $port, $database, $username, $password)
     {
-        $request->validate([
-            'host' => 'required',
-            'port' => 'required|numeric',
-            'database' => 'required',
-            'username' => 'required'
-        ]);
-
-        $host = $request->host;
-        $port = $request->port;
-        $database = $request->database;
-        $username = $request->username;
-        $password = $request->password ?? '';
-
         try {
             // First connect without database to verify host and user
             $dsnNoDb = "mysql:host={$host};port={$port};charset=utf8mb4";
@@ -141,16 +128,60 @@ class InstallController extends Controller
                 PDO::ATTR_TIMEOUT => 5
             ]);
 
+            return ['success' => true];
+        } catch (\PDOException $e) {
+            $msg = $e->getMessage();
+            if ($e->getCode() == 1045 || str_contains($msg, '1045') || str_contains($msg, 'Access denied')) {
+                if (str_contains($msg, 'using password: NO')) {
+                    $friendly = "Access denied: Your MySQL server requires a password for user '{$username}'. Please enter your MySQL password in the Password field.";
+                } else {
+                    $friendly = "Access denied: Incorrect password for MySQL user '{$username}'. Please check your password and try again.";
+                }
+            } elseif ($e->getCode() == 2002 || str_contains($msg, '2002') || str_contains($msg, 'refused') || str_contains($msg, 'not found')) {
+                $friendly = "Cannot connect to MySQL server at {$host}:{$port}. Please verify that your MySQL server/service is started.";
+            } else {
+                $friendly = "Database connection error: " . $msg;
+            }
+
+            return [
+                'success' => false,
+                'message' => $friendly,
+                'raw_error' => $msg,
+            ];
+        }
+    }
+
+    /**
+     * AJAX Test Database Connection
+     */
+    public function testDatabase(Request $request)
+    {
+        $request->validate([
+            'host' => 'required',
+            'port' => 'required|numeric',
+            'database' => 'required',
+            'username' => 'required'
+        ]);
+
+        $res = $this->testPdoConnection(
+            $request->host,
+            $request->port,
+            $request->database,
+            $request->username,
+            $request->password ?? ''
+        );
+
+        if ($res['success']) {
             return response()->json([
                 'status' => 200,
                 'message' => 'Connection verified successfully! Database is ready.'
             ]);
-        } catch (\PDOException $e) {
-            return response()->json([
-                'status' => 400,
-                'message' => 'Database connection failed: ' . $e->getMessage()
-            ], 422);
         }
+
+        return response()->json([
+            'status' => 400,
+            'message' => $res['message']
+        ], 422);
     }
 
     /**
@@ -164,6 +195,20 @@ class InstallController extends Controller
             'database' => 'required',
             'username' => 'required'
         ]);
+
+        $res = $this->testPdoConnection(
+            $request->host,
+            $request->port,
+            $request->database,
+            $request->username,
+            $request->password ?? ''
+        );
+
+        if (!$res['success']) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $res['message']);
+        }
 
         session([
             'install_db' => [
