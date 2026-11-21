@@ -23,12 +23,17 @@ export default function Blogs({ bloglist = [] }) {
                 </div>
             </div>
 
-            <div className="container py-5">
+            <div className="container py-5 flex-grow-1 d-flex flex-column justify-content-center">
                 {list.length === 0 ? (
-                    <div className="text-center py-5">
-                        <i className="bi bi-newspaper fs-1 text-muted"></i>
-                        <h4 className="mt-3 text-muted">No blog posts published yet.</h4>
-                        <Link href="/" className="btn btn-primary mt-3">Back to Home</Link>
+                    <div className="text-center py-5 my-auto">
+                        <div className="rounded-circle bg-light d-inline-flex p-4 mb-3 shadow-xs">
+                            <i className="bi bi-newspaper fs-1 text-primary"></i>
+                        </div>
+                        <h4 className="fw-bold text-dark">No Blog Posts Published Yet</h4>
+                        <p className="text-muted mx-auto" style={{ maxWidth: '420px' }}>
+                            We are currently preparing insightful articles, exam tips, and study resources. Check back soon!
+                        </p>
+                        <Link href="/" className="btn btn-primary rounded-pill px-4 py-2 mt-3 fw-semibold shadow-xs">Back to Home</Link>
                     </div>
                 ) : (
                     <div className="row g-4">
