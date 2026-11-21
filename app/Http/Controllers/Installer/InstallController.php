@@ -220,6 +220,16 @@ class InstallController extends Controller
             ]
         ]);
 
+        // Write verified database credentials immediately to .env so live server stays in sync
+        $this->updateEnv([
+            'DB_CONNECTION' => 'mysql',
+            'DB_HOST' => $request->host,
+            'DB_PORT' => $request->port,
+            'DB_DATABASE' => $request->database,
+            'DB_USERNAME' => $request->username,
+            'DB_PASSWORD' => $request->password ?? '',
+        ]);
+
         return redirect()->route('install.admin');
     }
 

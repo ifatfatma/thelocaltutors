@@ -10,6 +10,11 @@
         Configure your platform details and create your initial Super Admin administrator credentials.
     </p>
 
+    <div class="d-flex align-items-center justify-content-between p-2 px-3 mb-4 bg-light rounded-3 border small">
+        <span class="text-muted"><i class="bi bi-database text-primary me-1"></i> Connected Database:</span>
+        <span class="fw-semibold text-dark"><code>{{ $dbConfig['username'] }}</code> @ <code>{{ $dbConfig['host'] }}:{{ $dbConfig['port'] }}</code> (DB: <code>{{ $dbConfig['database'] }}</code>)</span>
+    </div>
+
     <form method="POST" action="{{ route('install.process') }}" id="installForm">
         @csrf
 

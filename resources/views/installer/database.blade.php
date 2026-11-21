@@ -40,7 +40,7 @@
 
             <div class="col-md-6">
                 <label class="form-label fw-semibold">Password</label>
-                <input type="password" name="password" id="db_pass" class="form-control" value="{{ old('password', $defaultPassword) }}" placeholder="Leave blank if no password" autocomplete="new-password">
+                <input type="password" name="password" id="db_pass" class="form-control" value="" placeholder="Leave blank (no password)" autocomplete="new-password">
                 <div class="form-text text-muted small">Default XAMPP password is empty (leave blank).</div>
             </div>
         </div>
