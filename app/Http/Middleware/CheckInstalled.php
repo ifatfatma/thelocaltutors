@@ -32,7 +32,7 @@ class CheckInstalled
                 return redirect()->route('install.index');
             }
         } else {
-            if ($request->is('install*')) {
+            if ($request->is('install*') && !$request->is('install/finish')) {
                 return redirect('/')->with('info', 'The application is already installed.');
             }
         }

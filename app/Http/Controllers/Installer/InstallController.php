@@ -240,6 +240,36 @@ class InstallController extends Controller
             'password' => env('DB_PASSWORD', ''),
         ];
 
+        // Sanity check database connection before showing admin setup
+        $res = $this->testPdoConnection(
+            $dbConfig['host'],
+            $dbConfig['port'],
+            $dbConfig['database'],
+            $dbConfig['username'],
+            $dbConfig['password']
+        );
+
+        // Auto-heal if a password was saved/autofilled but MySQL has no password (common XAMPP situation)
+        if (!$res['success'] && !empty($dbConfig['password'])) {
+            $emptyRes = $this->testPdoConnection(
+                $dbConfig['host'],
+                $dbConfig['port'],
+                $dbConfig['database'],
+                $dbConfig['username'],
+                ''
+            );
+            if ($emptyRes['success']) {
+                $dbConfig['password'] = '';
+                session(['install_db' => $dbConfig]);
+                $res = $emptyRes;
+            }
+        }
+
+        if (!$res['success']) {
+            return redirect()->route('install.database')
+                ->with('error', $res['message']);
+        }
+
         $defaultAppName = env('APP_NAME', 'The Local Tutors');
         $defaultAppUrl = request()->getSchemeAndHttpHost();
 
@@ -273,7 +303,56 @@ class InstallController extends Controller
             'password' => env('DB_PASSWORD', ''),
         ];
 
+        // Sanity check database connection before running migrations
+        $testRes = $this->testPdoConnection(
+            $dbConfig['host'],
+            $dbConfig['port'],
+            $dbConfig['database'],
+            $dbConfig['username'],
+            $dbConfig['password']
+        );
+
+        // Auto-heal if password was provided/autofilled but MySQL root has no password
+        if (!$testRes['success'] && !empty($dbConfig['password'])) {
+            $emptyRes = $this->testPdoConnection(
+                $dbConfig['host'],
+                $dbConfig['port'],
+                $dbConfig['database'],
+                $dbConfig['username'],
+                ''
+            );
+            if ($emptyRes['success']) {
+                $dbConfig['password'] = '';
+                session(['install_db' => $dbConfig]);
+                $testRes = $emptyRes;
+            }
+        }
+
+        if (!$testRes['success']) {
+            return redirect()->route('install.database')->with('error', $testRes['message']);
+        }
+
         try {
+            // Enforce process and superglobals environment variables for MySQL
+            putenv("DB_CONNECTION=mysql");
+            putenv("DB_HOST={$dbConfig['host']}");
+            putenv("DB_PORT={$dbConfig['port']}");
+            putenv("DB_DATABASE={$dbConfig['database']}");
+            putenv("DB_USERNAME={$dbConfig['username']}");
+            putenv("DB_PASSWORD={$dbConfig['password']}");
+            $_ENV['DB_CONNECTION'] = 'mysql';
+            $_ENV['DB_HOST'] = $dbConfig['host'];
+            $_ENV['DB_PORT'] = $dbConfig['port'];
+            $_ENV['DB_DATABASE'] = $dbConfig['database'];
+            $_ENV['DB_USERNAME'] = $dbConfig['username'];
+            $_ENV['DB_PASSWORD'] = $dbConfig['password'];
+            $_SERVER['DB_CONNECTION'] = 'mysql';
+            $_SERVER['DB_HOST'] = $dbConfig['host'];
+            $_SERVER['DB_PORT'] = $dbConfig['port'];
+            $_SERVER['DB_DATABASE'] = $dbConfig['database'];
+            $_SERVER['DB_USERNAME'] = $dbConfig['username'];
+            $_SERVER['DB_PASSWORD'] = $dbConfig['password'];
+
             // 1. Set dynamic config in runtime and enforce MySQL as default
             config([
                 'app.name' => $request->app_name,
