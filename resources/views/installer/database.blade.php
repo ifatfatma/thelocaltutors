@@ -12,6 +12,15 @@
 
     <div id="testAlert" class="d-none alert mb-4" role="alert"></div>
 
+    <div class="alert alert-light border small text-muted mb-4 d-flex align-items-start">
+        <i class="bi bi-info-circle-fill text-primary fs-5 me-2 mt-1"></i>
+        <div>
+            <strong>Hosting Tips:</strong><br>
+            • <strong>Local XAMPP:</strong> Use Username <code>root</code> and leave the Password blank.<br>
+            • <strong>cPanel / Live Hosting:</strong> Do not use <code>root</code>. Enter your full cPanel database name (e.g. <code>prefix_dbname</code>) and cPanel database username (e.g. <code>prefix_username</code>) with its password.
+        </div>
+    </div>
+
     <form method="POST" action="{{ route('install.database.save') }}" id="dbForm">
         @csrf
         <div class="row g-3 mb-4">

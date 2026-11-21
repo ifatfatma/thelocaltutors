@@ -111,34 +111,44 @@ class InstallController extends Controller
     private function testPdoConnection($host, $port, $database, $username, $password)
     {
         try {
-            // First connect without database to verify host and user
-            $dsnNoDb = "mysql:host={$host};port={$port};charset=utf8mb4";
-            $pdo = new PDO($dsnNoDb, $username, $password, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_TIMEOUT => 5
-            ]);
-
-            // Create database if not exists
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-
-            // Connect to database directly
-            $dsnWithDb = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
-            $pdoDb = new PDO($dsnWithDb, $username, $password, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_TIMEOUT => 5
-            ]);
-
-            return ['success' => true];
+            // 1. Try direct connection to the specified database first (essential for cPanel / restricted users)
+            try {
+                $dsnWithDb = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
+                $pdoDb = new PDO($dsnWithDb, $username, $password, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 5
+                ]);
+                return ['success' => true];
+            } catch (\PDOException $directEx) {
+                // If database doesn't exist yet (1049), attempt to create it (for local XAMPP/VPS where user has global CREATE privilege)
+                $directMsg = $directEx->getMessage();
+                if ($directEx->getCode() == 1049 || str_contains($directMsg, '1049') || str_contains($directMsg, 'Unknown database')) {
+                    $dsnNoDb = "mysql:host={$host};port={$port};charset=utf8mb4";
+                    $pdo = new PDO($dsnNoDb, $username, $password, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_TIMEOUT => 5
+                    ]);
+                    $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    return ['success' => true];
+                }
+                throw $directEx;
+            }
         } catch (\PDOException $e) {
             $msg = $e->getMessage();
             if ($e->getCode() == 1045 || str_contains($msg, '1045') || str_contains($msg, 'Access denied')) {
-                if (str_contains($msg, 'using password: NO')) {
-                    $friendly = "Access denied: Your MySQL server requires a password for user '{$username}'. Please enter your MySQL password in the Password field.";
+                if ($username === 'root' && (str_contains($msg, 'using password: NO') || str_contains($msg, 'using password: YES'))) {
+                    $friendly = "Access denied for 'root'. On cPanel hosting, 'root' is disabled — create a database & user in cPanel (e.g. prefix_username) and enter those credentials.";
+                } elseif (str_contains($msg, 'using password: NO')) {
+                    $friendly = "Access denied: MySQL server requires a password for user '{$username}'. Please enter your MySQL password in the Password field.";
                 } else {
-                    $friendly = "Access denied: Incorrect password for MySQL user '{$username}'. Please check your password and try again.";
+                    $friendly = "Access denied: Incorrect password for MySQL user '{$username}'. Please check your password.";
                 }
+            } elseif ($e->getCode() == 1049 || str_contains($msg, '1049') || str_contains($msg, 'Unknown database')) {
+                $friendly = "Database '{$database}' was not found. In cPanel, please create this database first under 'MySQL Databases'.";
+            } elseif ($e->getCode() == 1044 || str_contains($msg, '1044') || (str_contains($msg, 'Access denied') && str_contains($msg, 'to database'))) {
+                $friendly = "User '{$username}' does not have permission to access database '{$database}'. In cPanel, please add the user to the database with 'ALL PRIVILEGES'.";
             } elseif ($e->getCode() == 2002 || str_contains($msg, '2002') || str_contains($msg, 'refused') || str_contains($msg, 'not found')) {
-                $friendly = "Cannot connect to MySQL server at {$host}:{$port}. Please verify that your MySQL server/service is started.";
+                $friendly = "Cannot connect to MySQL server at {$host}:{$port}. Please verify the database host and that MySQL is running.";
             } else {
                 $friendly = "Database connection error: " . $msg;
             }
@@ -343,6 +353,10 @@ class InstallController extends Controller
         }
 
         try {
+            @ini_set('max_execution_time', '300');
+            @set_time_limit(300);
+            @ini_set('memory_limit', '512M');
+
             // Enforce process and superglobals environment variables for MySQL
             putenv("DB_CONNECTION=mysql");
             putenv("DB_HOST={$dbConfig['host']}");
