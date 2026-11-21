@@ -146,277 +146,45 @@ export default function Home({
     }, [searchQuery, allAvailableSubjects]);
 
     // -------------------------------------------------------------
-    // 2. Active Search & Filter State for Dedicated Results Grid
+    // Primary search bar submission -> Opens Search Results in a NEW TAB!
     // -------------------------------------------------------------
-    // Clean "All" & "Near Me" filter mode: strictly 'all' or 'near_me'
-    const [resultsFilterMode, setResultsFilterMode] = useState('all'); // 'all' (Default) vs 'near_me'
-
-    const [activeSearchFilters, setActiveSearchFilters] = useState({
-        keyword: '',
-        category: 'teacher',
-        subject: '0',
-        subjectName: '',
-        board: '0',
-        boardName: '',
-        radius: '0',
-        gender: '',
-        area: '',
-    });
-
-    // Check if user has active filters applied
-    const hasActiveFilters = useMemo(() => {
-        return (
-            resultsFilterMode === 'near_me' ||
-            !!activeSearchFilters.keyword ||
-            (activeSearchFilters.category && activeSearchFilters.category !== 'teacher') ||
-            (activeSearchFilters.subject && activeSearchFilters.subject !== '0') ||
-            (activeSearchFilters.board && activeSearchFilters.board !== '0') ||
-            (activeSearchFilters.radius && activeSearchFilters.radius !== '0') ||
-            !!activeSearchFilters.gender ||
-            !!activeSearchFilters.area
-        );
-    }, [resultsFilterMode, activeSearchFilters]);
-
-    // Primary search bar submission -> Updates Card-Box Grid below!
     const handlePrimarySearchSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setShowSuggestions(false);
         setIsCategoryDropdownOpen(false);
 
-        setActiveSearchFilters((prev) => ({
-            ...prev,
-            keyword: searchQuery.trim(),
-            category: primaryCategory,
-            subject: selectedSubjectId,
-            subjectName: selectedSubjectId !== '0' ? searchQuery.trim() : '',
-        }));
+        const params = new URLSearchParams();
+        params.set('lookingfor', primaryCategory || 'teacher');
+        if (searchQuery.trim()) {
+            params.set('keyword', searchQuery.trim());
+        }
+        if (selectedSubjectId && selectedSubjectId !== '0') {
+            params.set('search_subject', selectedSubjectId);
+        }
+        params.set('filter_mode', 'all');
 
-        // Smooth scroll to dedicated results grid
-        setTimeout(() => {
-            document.getElementById('tutorResultsSection')?.scrollIntoView({ behavior: 'smooth' });
-        }, 120);
+        window.open(`/search?${params.toString()}`, '_blank');
     };
 
-    // Handle suggestion selection
-    const handleSelectSuggestion = (suggestion, autoFilter = true) => {
+    // Handle suggestion selection -> Opens Search Results in a NEW TAB!
+    const handleSelectSuggestion = (suggestion) => {
         setSearchQuery(suggestion.name);
-        setSelectedSubjectId(suggestion.id);
+        setSelectedSubjectId(String(suggestion.id));
         setShowSuggestions(false);
 
-        if (autoFilter) {
-            setActiveSearchFilters((prev) => ({
-                ...prev,
-                keyword: suggestion.name,
-                subject: suggestion.id,
-                subjectName: suggestion.name,
-                category: primaryCategory,
-            }));
-
-            setTimeout(() => {
-                document.getElementById('tutorResultsSection')?.scrollIntoView({ behavior: 'smooth' });
-            }, 120);
+        const params = new URLSearchParams();
+        params.set('lookingfor', primaryCategory || 'teacher');
+        params.set('keyword', suggestion.name);
+        if (suggestion.id && suggestion.id !== '0') {
+            params.set('search_subject', String(suggestion.id));
         }
-    };
+        params.set('filter_mode', 'all');
 
-    // Clear all filters
-    const handleClearAllFilters = () => {
-        setActiveSearchFilters({
-            keyword: '',
-            category: 'teacher',
-            subject: '0',
-            subjectName: '',
-            board: '0',
-            boardName: '',
-            radius: '0',
-            gender: '',
-            area: '',
-        });
-        setSearchQuery('');
-        setSelectedSubjectId('0');
-        setResultsFilterMode('all');
-    };
-
-    // Remove single filter chip
-    const handleRemoveFilter = (filterKey) => {
-        if (filterKey === 'filterMode') {
-            setResultsFilterMode('all');
-        } else if (filterKey === 'keyword') {
-            setActiveSearchFilters((prev) => ({ ...prev, keyword: '', subjectName: '' }));
-            setSearchQuery('');
-            setSelectedSubjectId('0');
-        } else if (filterKey === 'category') {
-            setActiveSearchFilters((prev) => ({ ...prev, category: 'teacher' }));
-            setPrimaryCategory('teacher');
-        } else if (filterKey === 'subject') {
-            setActiveSearchFilters((prev) => ({ ...prev, subject: '0', subjectName: '' }));
-            setSelectedSubjectId('0');
-        } else if (filterKey === 'board') {
-            setActiveSearchFilters((prev) => ({ ...prev, board: '0', boardName: '' }));
-        } else if (filterKey === 'radius') {
-            setActiveSearchFilters((prev) => ({ ...prev, radius: '0' }));
-        } else if (filterKey === 'gender') {
-            setActiveSearchFilters((prev) => ({ ...prev, gender: '' }));
-        } else if (filterKey === 'area') {
-            setActiveSearchFilters((prev) => ({ ...prev, area: '' }));
-        }
+        window.open(`/search?${params.toString()}`, '_blank');
     };
 
     // -------------------------------------------------------------
-    // 3. Compact "What are you looking for?" Modal / Popup Form State
-    // -------------------------------------------------------------
-    const [showFilterModal, setShowFilterModal] = useState(false);
-    const [modalSubjectInput, setModalSubjectInput] = useState('');
-    const [showModalSubjectSuggestions, setShowModalSubjectSuggestions] = useState(false);
-
-    const [searchState, setSearchState] = useState({
-        lookingfor: 'teacher',
-        search_state: '0',
-        search_district: '0',
-        search_city: '0',
-        search_subject: '0',
-        search_board: '0',
-        search_gender: '',
-        search_radius: '0',
-        user_lat: '',
-        user_lng: '',
-    });
-
-    const [districts, setDistricts] = useState([]);
-    const [cities, setCities] = useState([]);
-    const [loadingDistricts, setLoadingDistricts] = useState(false);
-    const [loadingCities, setLoadingCities] = useState(false);
-    const [geoActive, setGeoActive] = useState(false);
-    const [loadingGeo, setLoadingGeo] = useState(false);
-    const [geoMsg, setGeoMsg] = useState('');
-
-    // Modal Subject auto-suggestions
-    const matchingModalSubjects = useMemo(() => {
-        const q = modalSubjectInput.trim().toLowerCase();
-        if (!q) return allAvailableSubjects.slice(0, 6);
-        return allAvailableSubjects
-            .filter((sub) =>
-                sub.name.toLowerCase().includes(q) ||
-                sub.category.toLowerCase().includes(q)
-            )
-            .slice(0, 8);
-    }, [modalSubjectInput, allAvailableSubjects]);
-
-    // Cascading location handlers
-    const handleStateChange = async (e) => {
-        const stateId = e.target.value;
-        setSearchState((prev) => ({ ...prev, search_state: stateId, search_district: '0', search_city: '0' }));
-        setDistricts([]);
-        setCities([]);
-
-        if (stateId && stateId !== '0') {
-            setLoadingDistricts(true);
-            try {
-                const res = await axios.get(`/get-districts?state_id=${stateId}`);
-                setDistricts(res.data || []);
-            } catch (err) {
-                try {
-                    const fallback = await axios.get(`/getDistrictAjax/${stateId}`);
-                    setDistricts(fallback.data || []);
-                } catch (e2) {
-                    console.error('Error fetching districts:', err);
-                }
-            } finally {
-                setLoadingDistricts(false);
-            }
-        }
-    };
-
-    const handleDistrictChange = async (e) => {
-        const distId = e.target.value;
-        setSearchState((prev) => ({ ...prev, search_district: distId, search_city: '0' }));
-        setCities([]);
-
-        if (distId && distId !== '0') {
-            setLoadingCities(true);
-            try {
-                const res = await axios.get(`/get-cities?district_id=${distId}`);
-                setCities(res.data || []);
-            } catch (err) {
-                try {
-                    const fallback = await axios.get(`/getCityAjax/${distId}`);
-                    setCities(fallback.data || []);
-                } catch (e2) {
-                    console.error('Error fetching cities:', err);
-                }
-            } finally {
-                setLoadingCities(false);
-            }
-        }
-    };
-
-    const handleUseCurrentLocation = () => {
-        if (!navigator.geolocation) {
-            setGeoMsg('Geolocation is not supported by your browser.');
-            return;
-        }
-
-        setLoadingGeo(true);
-        setGeoMsg('Detecting your GPS location...');
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude.toFixed(6);
-                const lng = position.coords.longitude.toFixed(6);
-
-                setSearchState((prev) => ({
-                    ...prev,
-                    search_radius: '1',
-                    user_lat: lat,
-                    user_lng: lng,
-                }));
-
-                setLoadingGeo(false);
-                setGeoActive(true);
-                setGeoMsg('📍 GPS Location acquired! Ready to find nearby tutors.');
-                axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
-                fetchNearbyShowcase(lat, lng);
-            },
-            (error) => {
-                setLoadingGeo(false);
-                setGeoActive(false);
-                let errText = 'Failed to get location.';
-                if (error.code === 1) {
-                    errText = 'Location permission denied. Please allow location access in your browser.';
-                } else if (error.code === 2) {
-                    errText = 'Location unavailable. Please check device GPS.';
-                } else if (error.code === 3) {
-                    errText = 'Location request timed out. Please try again.';
-                }
-                setGeoMsg(errText);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-    };
-
-    // Submitting modal updates the dedicated Card-Box Grid!
-    const handleModalSearchSubmit = (e) => {
-        e.preventDefault();
-        setShowFilterModal(false);
-
-        const boardObj = boards.find((b) => String(b.id) === String(searchState.search_board));
-        setActiveSearchFilters((prev) => ({
-            ...prev,
-            category: searchState.lookingfor,
-            subject: searchState.search_subject,
-            subjectName: modalSubjectInput.trim(),
-            board: searchState.search_board,
-            boardName: boardObj ? boardObj.name : '',
-            radius: searchState.search_radius,
-            gender: searchState.search_gender,
-        }));
-
-        setTimeout(() => {
-            document.getElementById('tutorResultsSection')?.scrollIntoView({ behavior: 'smooth' });
-        }, 120);
-    };
-
-    // -------------------------------------------------------------
-    // 4. Tutor Data & Dedicated Card-Box Grid Computation
+    // Tutor Showcase Data & Featured Slider Logic
     // -------------------------------------------------------------
     const [allTutors, setAllTutors] = useState(showcaseTeachers || []);
     const [nearbyTutors, setNearbyTutors] = useState(
@@ -427,6 +195,11 @@ export default function Home({
     const [activeArea, setActiveArea] = useState(userAreaName || 'Garden Reach, Kolkata');
     const [isDetecting, setIsDetecting] = useState(false);
     const [showcaseStatusMsg, setShowcaseStatusMsg] = useState('');
+    const [sliderFilterMode, setSliderFilterMode] = useState('all'); // 'all' vs 'near_me'
+    const [sliderIndex, setSliderIndex] = useState(0);
+    const [isAutoPlay, setIsAutoPlay] = useState(true);
+    const [touchStartX, setTouchStartX] = useState(null);
+    const [touchEndX, setTouchEndX] = useState(null);
 
     // Synchronize initial showcase props
     useEffect(() => {
@@ -440,106 +213,24 @@ export default function Home({
         }
     }, [showcaseTeachers, showcaseNearbyTeachers, userAreaName]);
 
-    // Dedicated Results Grid filtering:
-    // Default load behavior ("All" selected): Show tutors from "All", ordered so Near Me tutors appear first.
-    // Specific filter behavior ("Near Me" selected): Shows only Near Me tutors.
-    const filteredGridTutors = useMemo(() => {
-        let list = [...allTutors];
-
-        // 1. Proximity Filter ("All" vs "Near Me")
-        if (resultsFilterMode === 'near_me') {
-            list = list.filter((t) => t.distance !== null && t.distance !== undefined && Number(t.distance) <= 50);
-            list.sort((a, b) => Number(a.distance || 999) - Number(b.distance || 999));
-        } else {
-            // Default "all" mode: Near Me tutors appear first, ordered by distance ASC, then remaining tutors
-            list.sort((a, b) => {
-                const aDist = a.distance !== null && a.distance !== undefined ? Number(a.distance) : 9999;
-                const bDist = b.distance !== null && b.distance !== undefined ? Number(b.distance) : 9999;
-                const aIsNear = aDist <= 50 ? 0 : 1;
-                const bIsNear = bDist <= 50 ? 0 : 1;
-                if (aIsNear !== bIsNear) return aIsNear - bIsNear;
-                return aDist - bDist;
-            });
+    // Filter tutors shown in Featured Slider
+    const displayedShowcaseTutors = useMemo(() => {
+        if (sliderFilterMode === 'near_me') {
+            const near = nearbyTutors.length > 0 ? nearbyTutors : allTutors.filter((t) => t.distance !== null && Number(t.distance) <= 50);
+            return near.length > 0 ? near : allTutors.slice(0, 4);
         }
-
-        // 2. Keyword Filter
-        if (activeSearchFilters.keyword) {
-            const kw = activeSearchFilters.keyword.toLowerCase();
-            list = list.filter((t) =>
-                (t.name && t.name.toLowerCase().includes(kw)) ||
-                (t.description && t.description.toLowerCase().includes(kw)) ||
-                (t.subject_names && t.subject_names.toLowerCase().includes(kw)) ||
-                (t.address && t.address.toLowerCase().includes(kw)) ||
-                (t.board_names && t.board_names.toLowerCase().includes(kw)) ||
-                (t.qualification_name && t.qualification_name.toLowerCase().includes(kw))
-            );
-        }
-
-        // 3. Subject Filter
-        if (activeSearchFilters.subject && activeSearchFilters.subject !== '0') {
-            list = list.filter((t) => {
-                if (t.subjects) {
-                    const subArr = String(t.subjects).split(',').map((s) => s.trim());
-                    if (subArr.includes(String(activeSearchFilters.subject))) return true;
-                }
-                if (activeSearchFilters.subjectName && t.subject_names) {
-                    return t.subject_names.toLowerCase().includes(activeSearchFilters.subjectName.toLowerCase());
-                }
-                return false;
-            });
-        }
-
-        // 4. Board Filter
-        if (activeSearchFilters.board && activeSearchFilters.board !== '0') {
-            list = list.filter((t) => {
-                if (t.board) {
-                    const bArr = String(t.board).split(',').map((s) => s.trim());
-                    if (bArr.includes(String(activeSearchFilters.board))) return true;
-                }
-                if (activeSearchFilters.boardName && t.board_names) {
-                    return t.board_names.toLowerCase().includes(activeSearchFilters.boardName.toLowerCase());
-                }
-                return false;
-            });
-        }
-
-        // 5. Gender Filter
-        if (activeSearchFilters.gender) {
-            list = list.filter((t) => t.gender && t.gender.toLowerCase() === activeSearchFilters.gender.toLowerCase());
-        }
-
-        // 6. Radius Filter
-        if (activeSearchFilters.radius && activeSearchFilters.radius !== '0') {
-            const maxR = Number(activeSearchFilters.radius);
-            list = list.filter((t) => t.distance !== null && t.distance !== undefined && Number(t.distance) <= maxR);
-        }
-
-        // 7. Area Filter
-        if (activeSearchFilters.area) {
-            list = list.filter((t) => t.address && t.address.toLowerCase().includes(activeSearchFilters.area.toLowerCase()));
-        }
-
-        return list;
-    }, [allTutors, resultsFilterMode, activeSearchFilters]);
-
-    // -------------------------------------------------------------
-    // 5. Advanced Featured Tutor Slider State
-    // (Preserved strictly as the Featured Educators Showcase - NOT overwritten by search)
-    // -------------------------------------------------------------
-    const [sliderIndex, setSliderIndex] = useState(0);
-    const [isAutoPlay, setIsAutoPlay] = useState(true);
-    const [touchStartX, setTouchStartX] = useState(null);
-    const [touchEndX, setTouchEndX] = useState(null);
+        return allTutors;
+    }, [allTutors, nearbyTutors, sliderFilterMode]);
 
     // Split featured showcase tutors into pairs of 2 columns
     const featuredSlidePairs = useMemo(() => {
         const pairs = [];
-        const sourceList = allTutors.length > 0 ? allTutors : showcaseTeachers;
+        const sourceList = displayedShowcaseTutors.length > 0 ? displayedShowcaseTutors : (allTutors.length > 0 ? allTutors : showcaseTeachers);
         for (let i = 0; i < sourceList.length; i += 2) {
             pairs.push(sourceList.slice(i, i + 2));
         }
-        return pairs;
-    }, [allTutors, showcaseTeachers]);
+        return pairs.length > 0 ? pairs : [[...showcaseTeachers.slice(0, 2)]];
+    }, [displayedShowcaseTutors, allTutors, showcaseTeachers]);
 
     const totalFeaturedSlides = featuredSlidePairs.length;
 
@@ -923,39 +614,6 @@ export default function Home({
                                 </div>
                             )}
                         </div>
-
-                        {/* 2. COMPACT "What are you looking for?" Prompt Box (Popup Form label removed) */}
-                        <div className="mt-4 mx-auto text-start" style={{ maxWidth: '820px' }}>
-                            <div className="card border-0 shadow-xs rounded-4 p-3 bg-white border border-light-subtle">
-                                <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                                    <div className="d-flex align-items-center gap-3">
-                                        <div
-                                            className="bg-primary-subtle text-primary p-2 rounded-3 d-flex align-items-center justify-content-center"
-                                            style={{ width: '42px', height: '42px' }}
-                                        >
-                                            <i className="bi bi-sliders2 fs-5"></i>
-                                        </div>
-                                        <div>
-                                            <h6 className="fw-bold mb-0 text-dark">
-                                                What are you looking for?
-                                            </h6>
-                                            <p className="text-muted small mb-0">
-                                                Customize search by subject, board, radius distance, and location
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-xs"
-                                        onClick={() => setShowFilterModal(true)}
-                                    >
-                                        <i className="bi bi-funnel-fill"></i>
-                                        <span>Customize Search &amp; Filters</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* ============================================================== */}
@@ -985,21 +643,66 @@ export default function Home({
                                 <div className="d-flex align-items-center gap-2 flex-wrap">
                                     <span className="badge bg-primary text-white px-3 py-2 rounded-pill fw-semibold shadow-xs d-inline-flex align-items-center gap-1">
                                         <i className="bi bi-patch-check-fill text-warning"></i>
-                                        <span>Featured Educators Showcase</span>
+                                        <span>Top Verified Tutors</span>
                                     </span>
-                                    <span className="badge bg-light text-muted border small px-2 py-2 rounded-pill">
-                                        <i className="bi bi-geo-alt-fill text-danger me-1"></i>
-                                        {activeArea ? `Zone: ${activeArea}` : 'Kolkata Region'}
+                                    <span className="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-semibold small">
+                                        {displayedShowcaseTutors.length > 0
+                                            ? `${Math.min((sliderIndex + 1) * 2, displayedShowcaseTutors.length)} of ${displayedShowcaseTutors.length}`
+                                            : '0 of 0'}
                                     </span>
+                                    {activeArea && (
+                                        <span className="badge bg-light text-muted border small px-2 py-2 rounded-pill d-none d-sm-inline-flex align-items-center gap-1">
+                                            <i className="bi bi-geo-alt-fill text-danger"></i>
+                                            <span>{activeArea}</span>
+                                        </span>
+                                    )}
                                 </div>
 
-                                {/* Slider Navigation Controls */}
+                                {/* Slider Controls: All / Near Me Dropdown + Arrows */}
                                 <div className="d-flex align-items-center gap-2">
-                                    <span className="badge bg-white text-dark border px-3 py-2 rounded-pill small fw-bold shadow-2xs">
-                                        <span className="text-primary">{String(sliderIndex + 1).padStart(2, '0')}</span>
-                                        <span className="text-muted mx-1">/</span>
-                                        <span className="text-secondary">{String(totalFeaturedSlides).padStart(2, '0')}</span>
-                                    </span>
+                                    <div className="dropdown">
+                                        <button
+                                            className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 dropdown-toggle fw-semibold"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                        >
+                                            <i className="bi bi-crosshair text-primary"></i>
+                                            <span>{sliderFilterMode === 'near_me' ? 'Near Me' : 'All'}</span>
+                                        </button>
+                                        <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                            <li>
+                                                <button
+                                                    type="button"
+                                                    className={`dropdown-item small py-2 d-flex align-items-center justify-content-between ${
+                                                        sliderFilterMode === 'all' ? 'active fw-bold' : ''
+                                                    }`}
+                                                    onClick={() => {
+                                                        setSliderFilterMode('all');
+                                                        setSliderIndex(0);
+                                                    }}
+                                                >
+                                                    <span>All</span>
+                                                    <span className="badge bg-secondary-subtle text-secondary ms-2">{allTutors.length}</span>
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button
+                                                    type="button"
+                                                    className={`dropdown-item small py-2 d-flex align-items-center justify-content-between ${
+                                                        sliderFilterMode === 'near_me' ? 'active fw-bold' : ''
+                                                    }`}
+                                                    onClick={() => {
+                                                        setSliderFilterMode('near_me');
+                                                        setSliderIndex(0);
+                                                    }}
+                                                >
+                                                    <span>Near Me</span>
+                                                    <span className="badge bg-success-subtle text-success ms-2">{nearbyTutors.length}</span>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
 
                                     <div className="btn-group btn-group-sm">
                                         <button
@@ -1266,709 +969,6 @@ export default function Home({
                     </div>
                 </div>
             </section>
-
-            {/* ============================================================== */}
-            {/* 4. DEDICATED CARD-BOX GRID FOR SEARCH & FILTER RESULTS */}
-            {/* ============================================================== */}
-            <section id="tutorResultsSection" className="py-5 bg-white border-bottom">
-                <div className="container">
-                    {/* Results Section Header & Clean "All" / "Near Me" Filter Dropdown */}
-                    <div className="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-light">
-                        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                            <div>
-                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
-                                    Local Directory
-                                </span>
-                                <div className="d-flex align-items-center gap-2 mb-1">
-                                    <h3 className="fw-bold text-dark mb-0">Find Qualified Tutors Near You</h3>
-                                    <span className="badge bg-primary text-white rounded-pill px-3 py-1 fw-semibold">
-                                        {filteredGridTutors.length} Available
-                                    </span>
-                                </div>
-                                <p className="text-muted small mb-0">
-                                    {resultsFilterMode === 'near_me'
-                                        ? 'Displaying strictly tutors within your local regional area (sorted by distance)'
-                                        : 'Displaying all tutors with regional ("Near Me") educators prioritized first'}
-                                </p>
-                            </div>
-
-                            {/* Clean Filter Controls: Strictly "All" & "Near Me" */}
-                            <div className="d-flex flex-wrap align-items-center gap-2">
-                                <div className="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill border shadow-xs">
-                                    <i className="bi bi-filter-circle-fill text-primary small"></i>
-                                    <span className="small fw-semibold text-secondary">Filter:</span>
-                                    <select
-                                        className="form-select form-select-sm border-0 bg-transparent fw-bold text-dark ps-1 pe-4 py-0"
-                                        style={{ width: 'auto', cursor: 'pointer', fontSize: '0.88rem' }}
-                                        value={resultsFilterMode}
-                                        onChange={(e) => setResultsFilterMode(e.target.value)}
-                                        aria-label="Filter tutors by proximity"
-                                    >
-                                        <option value="all">All</option>
-                                        <option value="near_me">Near Me</option>
-                                    </select>
-                                </div>
-
-                                {/* Re-detect GPS Button */}
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-danger rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs"
-                                    onClick={() => {
-                                        if (navigator.geolocation) {
-                                            setIsDetecting(true);
-                                            navigator.geolocation.getCurrentPosition(
-                                                (pos) => fetchNearbyShowcase(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6)),
-                                                () => setIsDetecting(false),
-                                                { enableHighAccuracy: true, timeout: 8000 }
-                                            );
-                                        }
-                                    }}
-                                    disabled={isDetecting}
-                                    title="Re-detect GPS location"
-                                >
-                                    <i className={`bi bi-crosshair ${isDetecting ? 'spinner-border spinner-border-sm' : ''}`}></i>
-                                    <span>{isDetecting ? 'Detecting...' : 'Near Me (GPS)'}</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Quick Area Chips */}
-                        <div className="d-flex align-items-center gap-1 mt-3 pt-3 border-top flex-wrap">
-                            <span className="text-muted small me-2" style={{ fontSize: '0.8rem' }}>
-                                <i className="bi bi-pin-map text-primary me-1"></i>
-                                <strong>Quick Area:</strong>
-                            </span>
-                            {[
-                                { name: 'Garden Reach', lat: '22.531200', lng: '88.301500' },
-                                { name: 'Behala', lat: '22.498800', lng: '88.312900' },
-                                { name: 'Park Circus', lat: '22.541100', lng: '88.363900' },
-                                { name: 'Salt Lake', lat: '22.586700', lng: '88.417800' },
-                                { name: 'Howrah', lat: '22.602200', lng: '88.349800' },
-                            ].map((loc) => {
-                                const isSelected = activeArea && activeArea.toLowerCase().includes(loc.name.toLowerCase());
-                                return (
-                                    <button
-                                        key={loc.name}
-                                        type="button"
-                                        className={`btn py-0 px-2 rounded-pill border ${
-                                            isSelected ? 'btn-primary text-white shadow-xs' : 'btn-outline-secondary'
-                                        }`}
-                                        style={{ fontSize: '0.74rem', lineHeight: '1.7' }}
-                                        onClick={() => {
-                                            fetchNearbyShowcase(loc.lat, loc.lng, `${loc.name}, Kolkata`);
-                                            setActiveSearchFilters((prev) => ({ ...prev, area: loc.name }));
-                                        }}
-                                        title={`Show tutors nearest to ${loc.name}`}
-                                    >
-                                        {loc.name}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Active Filter Chips Bar */}
-                        {hasActiveFilters && (
-                            <div className="d-flex align-items-center gap-2 mt-3 pt-3 border-top flex-wrap">
-                                <span className="small text-muted fw-semibold">Active Filters:</span>
-
-                                {resultsFilterMode === 'near_me' && (
-                                    <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Filter: Near Me</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('filterMode')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.keyword && (
-                                    <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Keyword: "{activeSearchFilters.keyword}"</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('keyword')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.subjectName && (
-                                    <span className="badge bg-info-subtle text-info border border-info-subtle rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Subject: {activeSearchFilters.subjectName}</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('subject')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.boardName && (
-                                    <span className="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Board: {activeSearchFilters.boardName}</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('board')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.radius && activeSearchFilters.radius !== '0' && (
-                                    <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Radius: &le; {activeSearchFilters.radius} km</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('radius')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.gender && (
-                                    <span className="badge bg-light text-dark border rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Gender: {activeSearchFilters.gender}</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('gender')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                {activeSearchFilters.area && (
-                                    <span className="badge bg-light text-dark border rounded-pill py-1 px-3 d-inline-flex align-items-center gap-1 small">
-                                        <span>Area: {activeSearchFilters.area}</span>
-                                        <button
-                                            type="button"
-                                            className="btn-close ms-1"
-                                            style={{ fontSize: '0.55rem' }}
-                                            onClick={() => handleRemoveFilter('area')}
-                                            aria-label="Remove filter"
-                                        ></button>
-                                    </span>
-                                )}
-
-                                <button
-                                    type="button"
-                                    className="btn btn-link btn-sm text-danger text-decoration-none p-0 ms-2 small fw-semibold"
-                                    onClick={handleClearAllFilters}
-                                >
-                                    Clear All
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Dedicated Card-Box Grid */}
-                    {filteredGridTutors.length === 0 ? (
-                        <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-light">
-                            <i className="bi bi-person-x fs-1 text-muted mb-3"></i>
-                            <h4 className="fw-bold text-dark">No Tutors Matched Your Current Filters</h4>
-                            <p className="text-muted small mx-auto mb-4" style={{ maxWidth: '480px' }}>
-                                We couldn't find any educators matching the selected criteria. Try resetting the filters or switching back to "All".
-                            </p>
-                            <div className="d-flex justify-content-center gap-2">
-                                <button
-                                    type="button"
-                                    className="btn btn-primary rounded-pill px-4"
-                                    onClick={handleClearAllFilters}
-                                >
-                                    Reset All Filters
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary rounded-pill px-4"
-                                    onClick={() => setShowFilterModal(true)}
-                                >
-                                    Modify Search
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                            {filteredGridTutors.map((teacher, idx) => (
-                                <div key={teacher.user_id || teacher.id || idx} className="col">
-                                    <div
-                                        className="card h-100 border-0 shadow-sm rounded-4 p-4 text-center d-flex flex-column justify-content-between bg-white position-relative"
-                                        style={{
-                                            transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-                                        }}
-                                    >
-                                        <div>
-                                            {/* Photo & Online Ring */}
-                                            <div className="mx-auto mb-3 position-relative d-inline-block">
-                                                <img
-                                                    src={
-                                                        teacher.image
-                                                            ? teacher.image.startsWith('http')
-                                                                ? teacher.image
-                                                                : `/user/${teacher.image}`
-                                                            : '/front/img/noprofileimage.png'
-                                                    }
-                                                    onError={(e) => {
-                                                        e.target.src = '/front/img/noprofileimage.png';
-                                                    }}
-                                                    alt={teacher.name}
-                                                    className="rounded-circle shadow-xs border"
-                                                    style={{ width: '88px', height: '88px', objectFit: 'cover' }}
-                                                />
-                                                <span
-                                                    className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle"
-                                                    style={{ width: '15px', height: '15px' }}
-                                                    title="Active Educator"
-                                                />
-                                            </div>
-
-                                            {/* Name & Gender Badge */}
-                                            <h5 className="fw-bold text-dark mb-1 text-truncate" title={teacher.name}>
-                                                {teacher.name}
-                                            </h5>
-                                            <div className="d-flex align-items-center justify-content-center gap-1 mb-2">
-                                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1 px-2 small">
-                                                    <i className="bi bi-patch-check-fill text-primary me-1"></i>
-                                                    Verified Educator
-                                                </span>
-                                                {teacher.gender && (
-                                                    <span className="badge bg-light text-secondary border rounded-pill py-1 px-2 small">
-                                                        {teacher.gender}
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Distance Proximity Badge */}
-                                            {teacher.distance !== undefined && teacher.distance !== null && (
-                                                <div className="mb-3">
-                                                    <span
-                                                        className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1"
-                                                        style={{ fontSize: '0.78rem' }}
-                                                    >
-                                                        <i className="bi bi-geo-alt-fill me-1"></i>
-                                                        {Number(teacher.distance) < 0.1
-                                                            ? 'In your neighborhood'
-                                                            : Number(teacher.distance) < 1
-                                                            ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
-                                                            : `${Number(teacher.distance).toFixed(1)} km away`}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Address */}
-                                            {teacher.address && (
-                                                <div className="text-muted small mb-3 text-truncate" style={{ fontSize: '0.8rem' }}>
-                                                    <i className="bi bi-pin-map text-danger me-1"></i>
-                                                    {teacher.address}
-                                                </div>
-                                            )}
-
-                                            {/* Details Box */}
-                                            <div className="text-start bg-light rounded-3 p-3 mb-3 small">
-                                                {teacher.qualification_name && (
-                                                    <div className="mb-1">
-                                                        <strong className="text-secondary">Qualification:</strong>{' '}
-                                                        <span className="text-dark fw-medium">{teacher.qualification_name}</span>
-                                                    </div>
-                                                )}
-                                                {teacher.subject_names && (
-                                                    <div className="mb-1">
-                                                        <strong className="text-secondary">Subjects:</strong>{' '}
-                                                        <span className="text-dark fw-medium">{teacher.subject_names}</span>
-                                                    </div>
-                                                )}
-                                                {teacher.board_names && (
-                                                    <div className="mb-1">
-                                                        <strong className="text-secondary">Board:</strong>{' '}
-                                                        <span className="text-dark">{teacher.board_names}</span>
-                                                    </div>
-                                                )}
-                                                {teacher.teaching_mode_name && (
-                                                    <div className="mb-1">
-                                                        <strong className="text-secondary">Mode:</strong>{' '}
-                                                        <span className="text-dark">{teacher.teaching_mode_name}</span>
-                                                    </div>
-                                                )}
-                                                {teacher.timings && (
-                                                    <div>
-                                                        <strong className="text-secondary">Timings:</strong>{' '}
-                                                        <span className="text-dark">{teacher.timings}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Description Quote */}
-                                            {teacher.description && (
-                                                <p className="text-muted small mb-3 text-truncate-2 fst-italic" style={{ fontSize: '0.82rem' }}>
-                                                    "{teacher.description}"
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Card Actions */}
-                                        <div className="pt-3 border-top d-flex align-items-center justify-content-between gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => openTeacherModal(teacher)}
-                                                className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold flex-grow-1"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#homeTeacherModal"
-                                            >
-                                                <i className="bi bi-person-lines-fill me-1"></i>
-                                                View Profile
-                                            </button>
-
-                                            <Link
-                                                href={`/search?lookingfor=teacher&search_state=${teacher.state || 0}&search_city=${teacher.city || 0}&filter_mode=all`}
-                                                className="btn btn-primary btn-sm rounded-pill px-3 fw-semibold flex-grow-1"
-                                            >
-                                                Contact Tutor
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* View All in Directory Button */}
-                    <div className="text-center mt-5">
-                        <Link
-                            href="/search?lookingfor=teacher&filter_mode=all"
-                            className="btn btn-outline-primary btn-lg rounded-pill px-5 shadow-sm fw-semibold"
-                        >
-                            <span>Browse Full Tutors Directory</span>
-                            <i className="bi bi-arrow-right ms-2"></i>
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* ============================================================== */}
-            {/* COMPACT "What are you looking for?" MODAL / POPUP FORM */}
-            {/* ============================================================== */}
-            {showFilterModal && (
-                <div
-                    className="modal fade show d-block"
-                    tabIndex="-1"
-                    style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1060 }}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) setShowFilterModal(false);
-                    }}
-                >
-                    <div className="modal-dialog modal-dialog-centered modal-lg">
-                        <div className="modal-content border-0 rounded-4 shadow-2xl overflow-hidden">
-                            <div className="modal-header bg-light border-bottom py-3 px-4">
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="bg-primary text-white p-2 rounded-3 d-flex align-items-center justify-content-center"
-                                        style={{ width: '38px', height: '38px' }}
-                                    >
-                                        <i className="bi bi-search-heart fs-5"></i>
-                                    </div>
-                                    <div>
-                                        <h5 className="modal-title fw-bold text-dark mb-0">What are you looking for?</h5>
-                                        <p className="text-muted small mb-0">Customize your preferences to find the best local educators</p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    aria-label="Close"
-                                    onClick={() => setShowFilterModal(false)}
-                                ></button>
-                            </div>
-
-                            <div className="modal-body p-4">
-                                <form onSubmit={handleModalSearchSubmit}>
-                                    <div className="row g-3">
-                                        {/* 1. Category */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-dark mb-1">
-                                                <i className="bi bi-grid text-primary me-1"></i> Category
-                                            </label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.lookingfor}
-                                                onChange={(e) => setSearchState({ ...searchState, lookingfor: e.target.value })}
-                                            >
-                                                <option value="teacher">Tutors / Teachers</option>
-                                                <option value="coaching-center">Coaching Institutes</option>
-                                                <option value="schools">Schools</option>
-                                                <option value="college">Colleges</option>
-                                                <option value="university">Universities</option>
-                                                <option value="course">Courses &amp; Classes</option>
-                                            </select>
-                                        </div>
-
-                                        {/* 2. Subject Field with Dynamic Auto-Suggest Search */}
-                                        <div className="col-md-6 position-relative">
-                                            <label className="form-label small fw-bold text-dark mb-1 d-flex justify-content-between">
-                                                <span><i className="bi bi-book text-primary me-1"></i> Subject</span>
-                                                <span className="text-muted fw-normal small">Auto-suggest enabled</span>
-                                            </label>
-                                            <div className="position-relative">
-                                                <input
-                                                    type="text"
-                                                    className="form-control rounded-3 pe-4"
-                                                    placeholder="Type subject (e.g. Mathematics, Physics, NEET)..."
-                                                    value={modalSubjectInput}
-                                                    onChange={(e) => {
-                                                        setModalSubjectInput(e.target.value);
-                                                        setShowModalSubjectSuggestions(true);
-                                                    }}
-                                                    onFocus={() => setShowModalSubjectSuggestions(true)}
-                                                />
-                                                <i className="bi bi-search position-absolute end-0 top-50 translate-middle-y me-3 text-muted"></i>
-                                            </div>
-
-                                            {/* Auto-suggest dropdown in modal */}
-                                            {showModalSubjectSuggestions && matchingModalSubjects.length > 0 && (
-                                                <div
-                                                    className="position-absolute start-0 end-0 bg-white border rounded-3 shadow-lg p-1 mt-1"
-                                                    style={{ zIndex: 1070, maxHeight: '200px', overflowY: 'auto' }}
-                                                >
-                                                    {matchingModalSubjects.map((sub, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            type="button"
-                                                            className="btn btn-sm btn-light w-100 text-start py-1 px-2 border-0 mb-1 rounded-2 d-flex justify-content-between align-items-center"
-                                                            onClick={() => {
-                                                                setModalSubjectInput(sub.name);
-                                                                setSearchState((prev) => ({ ...prev, search_subject: sub.id }));
-                                                                setShowModalSubjectSuggestions(false);
-                                                            }}
-                                                        >
-                                                            <span className="small fw-semibold">{sub.name}</span>
-                                                            <span className="badge bg-secondary-subtle text-secondary small">
-                                                                {sub.category}
-                                                            </span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* 3. Search Distance / Radius */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-dark mb-1">
-                                                <i className="bi bi-compass text-primary me-1"></i> Search Distance / Radius
-                                            </label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_radius}
-                                                onChange={(e) => setSearchState({ ...searchState, search_radius: e.target.value })}
-                                            >
-                                                <option value="0">All Locations (City-wide / No limit)</option>
-                                                <option value="1">Within 1 KM (Immediate Neighborhood)</option>
-                                                <option value="2">Within 2 KM</option>
-                                                <option value="3">Within 3 KM</option>
-                                                <option value="5">Within 5 KM</option>
-                                                <option value="10">Within 10 KM</option>
-                                                <option value="25">Within 25 KM</option>
-                                                <option value="50">Within 50 KM (Regional)</option>
-                                            </select>
-                                        </div>
-
-                                        {/* 4. Board / Curriculum */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-dark mb-1">
-                                                <i className="bi bi-award text-primary me-1"></i> Board / Curriculum
-                                            </label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_board}
-                                                onChange={(e) => setSearchState({ ...searchState, search_board: e.target.value })}
-                                            >
-                                                <option value="0">All Educational Boards</option>
-                                                {boards.map((b) => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Location / GPS Auto-detect button */}
-                                        <div className="col-12">
-                                            <div className="card bg-light border-0 p-3 rounded-3">
-                                                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                                    <div>
-                                                        <span className="fw-semibold small text-dark d-block">
-                                                            <i className="bi bi-crosshair text-danger me-1"></i> Auto-Detect Your Location
-                                                        </span>
-                                                        <span className="text-muted" style={{ fontSize: '0.8rem' }}>
-                                                            Use GPS to immediately locate tutors within your chosen radius
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn btn-sm ${
-                                                            geoActive ? 'btn-success text-white' : 'btn-outline-primary'
-                                                        } rounded-pill px-3 fw-semibold`}
-                                                        onClick={handleUseCurrentLocation}
-                                                        disabled={loadingGeo}
-                                                    >
-                                                        {loadingGeo ? (
-                                                            <>
-                                                                <span className="spinner-border spinner-border-sm me-1"></span>
-                                                                <span>Acquiring GPS...</span>
-                                                            </>
-                                                        ) : geoActive ? (
-                                                            <>
-                                                                <i className="bi bi-check-circle-fill me-1"></i>
-                                                                <span>GPS Active ({activeArea})</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <i className="bi bi-geo-alt-fill me-1"></i>
-                                                                <span>Detect My Location</span>
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </div>
-                                                {geoMsg && (
-                                                    <div className={`mt-2 small fw-semibold ${geoActive ? 'text-success' : 'text-danger'}`}>
-                                                        {geoMsg}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Cascading State, District, City */}
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">State</label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_state}
-                                                onChange={handleStateChange}
-                                            >
-                                                <option value="0">Select State</option>
-                                                {states.map((s) => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">District</label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_district}
-                                                onChange={handleDistrictChange}
-                                                disabled={searchState.search_state === '0' || loadingDistricts}
-                                            >
-                                                <option value="0">
-                                                    {loadingDistricts ? 'Loading Districts...' : 'Select District'}
-                                                </option>
-                                                {districts.map((d) => (
-                                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">City / Area</label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_city}
-                                                onChange={(e) => setSearchState((prev) => ({ ...prev, search_city: e.target.value }))}
-                                                disabled={searchState.search_district === '0' || loadingCities}
-                                            >
-                                                <option value="0">
-                                                    {loadingCities ? 'Loading Cities...' : 'Select City / Area'}
-                                                </option>
-                                                {cities.map((c) => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Gender Preference */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-dark mb-1">Teacher Gender Preference</label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={searchState.search_gender}
-                                                onChange={(e) => setSearchState({ ...searchState, search_gender: e.target.value })}
-                                            >
-                                                <option value="">Any Gender</option>
-                                                <option value="Male">Male Tutor</option>
-                                                <option value="Female">Female Tutor</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Quick Subject Picks */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-dark mb-1">Quick Subject Picks</label>
-                                            <div className="d-flex flex-wrap gap-1">
-                                                {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Python', 'NEET'].map((name) => (
-                                                    <button
-                                                        key={name}
-                                                        type="button"
-                                                        className="btn btn-outline-secondary py-0 px-2 rounded-pill small"
-                                                        style={{ fontSize: '0.74rem', lineHeight: '1.7' }}
-                                                        onClick={() => {
-                                                            setModalSubjectInput(name);
-                                                            const match = EXTENSIVE_SUBJECTS.find((s) =>
-                                                                s.name.toLowerCase().includes(name.toLowerCase())
-                                                            );
-                                                            setSearchState((prev) => ({ ...prev, search_subject: match?.id || name }));
-                                                        }}
-                                                    >
-                                                        + {name}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="modal-footer border-0 px-0 pt-4 pb-0 d-flex justify-content-between">
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary rounded-pill px-4"
-                                            onClick={() => {
-                                                setSearchState({
-                                                    lookingfor: 'teacher',
-                                                    search_state: '0',
-                                                    search_district: '0',
-                                                    search_city: '0',
-                                                    search_subject: '0',
-                                                    search_board: '0',
-                                                    search_gender: '',
-                                                    search_radius: '0',
-                                                    user_lat: '',
-                                                    user_lng: '',
-                                                });
-                                                setModalSubjectInput('');
-                                            }}
-                                        >
-                                            Reset Filters
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="btn btn-primary rounded-pill px-5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2"
-                                        >
-                                            <i className="bi bi-search"></i>
-                                            <span>Search Tutors Now</span>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* ============================================================== */}
             {/* STATS BANNER: Modern Gradient Glassmorphism Showcase */}
             {/* ============================================================== */}

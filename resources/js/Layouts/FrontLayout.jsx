@@ -444,9 +444,6 @@ export default function FrontLayout({ children, title }) {
                         <div>
                             &copy; {new Date().getFullYear()} {settings?.name || 'The Local Tutors'}. All rights reserved.
                         </div>
-                        <div>
-                            Powered by Modern Laravel &amp; React
-                        </div>
                     </div>
                 </div>
             </footer>
