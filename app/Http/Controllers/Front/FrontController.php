@@ -663,6 +663,8 @@ class FrontController extends Controller
                 Session::put('longitude', (string)$userLng);
             }
 
+            $area = trim($request->area ?? $request->quick_area ?? '');
+
             $lists = User::select(
                 'users.*',
                 'teachers.id as tid',
@@ -674,11 +676,19 @@ class FrontController extends Controller
                 'teachers.city',
                 'teachers.board',
                 'teachers.subjects',
+                'teachers.experience',
+                'teachers.teaching_mode',
+                'teachers.timings',
                 'teachers.address',
                 'teachers.latitude',
                 'teachers.longitude')
                 ->join('teachers','users.id','=','teachers.user_id')
                 ->where('is_active',1);
+
+            // Area / Quick Area filter
+            if (!empty($area)) {
+                $lists = $lists->where('teachers.address', 'LIKE', "%{$area}%");
+            }
 
             // Keyword / Subject / Topic search
             if (!empty($keyword)) {
@@ -817,6 +827,9 @@ class FrontController extends Controller
             }
             $lists = $this->enrichTeacherLists($lists);
             $custom_lookups = CustomData::pluck('name', 'id')->toArray();
+            $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
+            $subjects = CustomData::where('key_name','subject')->where('parent_id',0)->orderBy('name','asc')->get();
+            $boards = CustomData::where('key_name','board')->where('parent_id',0)->orderBy('name','asc')->get();
             $searchdetails = [
                 'lookingfor' => $request->lookingfor ?? 'teacher',
                 'search_state' => $request->search_state ?? '0',
@@ -827,11 +840,12 @@ class FrontController extends Controller
                 'search_gender' => $request->search_gender ?? '',
                 'search_radius' => $radius,
                 'keyword' => $keyword,
+                'area' => $area,
                 'filter_mode' => $filterMode,
                 'user_lat' => $userLat,
                 'user_lng' => $userLng,
             ];
-            return Inertia::render('Front/SearchResults', compact('lists', 'custom_lookups', 'searchdetails'));
+            return Inertia::render('Front/SearchResults', compact('lists', 'custom_lookups', 'searchdetails', 'states', 'subjects', 'boards'));
         }
 
         public function showsearchresult(Request $request, $id){
@@ -913,6 +927,7 @@ class FrontController extends Controller
             $qualIds = [];
             $allSubIds = [];
             $allBoardIds = [];
+            $modeIds = [];
 
             foreach ($lists->getCollection() as $item) {
                 if (!empty($item->qualification)) {
@@ -924,9 +939,12 @@ class FrontController extends Controller
                 if (!empty($item->board)) {
                     $allBoardIds = array_merge($allBoardIds, explode(',', (string)$item->board));
                 }
+                if (!empty($item->teaching_mode)) {
+                    $modeIds = array_merge($modeIds, explode(',', (string)$item->teaching_mode));
+                }
             }
 
-            $idsToLookup = array_unique(array_filter(array_map('trim', array_merge($qualIds, $allSubIds, $allBoardIds))));
+            $idsToLookup = array_unique(array_filter(array_map('trim', array_merge($qualIds, $allSubIds, $allBoardIds, $modeIds))));
             $lookup = !empty($idsToLookup)
                 ? CustomData::whereIn('id', $idsToLookup)->pluck('name', 'id')->toArray()
                 : [];
@@ -954,6 +972,14 @@ class FrontController extends Controller
                     $item->board_names = !empty($names) ? implode(', ', $names) : '';
                 } else {
                     $item->board_names = '';
+                }
+
+                if (!empty($item->teaching_mode)) {
+                    $tIds = array_filter(array_map('trim', explode(',', (string)$item->teaching_mode)));
+                    $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $tIds));
+                    $item->teaching_mode_name = !empty($names) ? implode(', ', $names) : (is_numeric($item->teaching_mode) ? '' : $item->teaching_mode);
+                } else {
+                    $item->teaching_mode_name = '';
                 }
 
                 $item->distance = isset($item->distance) && !is_null($item->distance) ? round((float)$item->distance, 2) : null;
