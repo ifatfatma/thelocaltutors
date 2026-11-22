@@ -46,34 +46,37 @@ export default function FrontLayout({ children, title }) {
         : '/front/img/core-img/logo.png';
 
     return (
-        <div className="front-layout-root d-flex flex-column min-vh-100">
+        <div className="front-layout-root d-flex flex-column min-vh-100 bg-light">
             {/* Modern Header in Normal Flow with Sticky Top */}
             <header
-                className="sticky-top border-bottom bg-white"
+                className="sticky-top navbar-clean border-bottom"
                 id="header"
                 style={{
                     position: 'sticky',
                     top: 0,
                     zIndex: 1030,
-                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 2px 15px rgba(0, 0, 0, 0.05)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                    backdropFilter: 'blur(12px)',
+                    borderColor: '#e2e8f0',
+                    boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04)',
                 }}
             >
                 <nav className="navbar navbar-expand-lg navbar-light py-2">
                     <div className="container">
                         {/* Navbar Brand */}
-                        <Link className="navbar-brand d-flex align-items-center" href="/" onClick={closeAll}>
+                        <Link className="navbar-brand d-flex align-items-center gap-2" href="/" onClick={closeAll}>
                             {settings?.logo ? (
                                 <img
                                     src={logoUrl}
                                     alt={settings?.name || 'The Local Tutors'}
-                                    style={{ maxHeight: '52px', objectFit: 'contain' }}
+                                    style={{ maxHeight: '48px', objectFit: 'contain' }}
                                 />
                             ) : (
-                                <span className="fw-bold fs-4 text-primary d-flex align-items-center gap-2">
-                                    <i className="bi bi-mortarboard-fill text-primary"></i>
-                                    {settings?.name || 'The Local Tutors'}
+                                <span className="fw-bold fs-4 text-dark d-flex align-items-center gap-2">
+                                    <span className="p-2 bg-primary rounded-3 text-white d-inline-flex align-items-center justify-content-center" style={{ width: '38px', height: '38px' }}>
+                                        <i className="bi bi-mortarboard-fill fs-5"></i>
+                                    </span>
+                                    <span>{settings?.name || 'The Local Tutors'}</span>
                                 </span>
                             )}
                         </Link>
@@ -97,7 +100,7 @@ export default function FrontLayout({ children, title }) {
                         >
                             <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/" onClick={closeAll}>
+                                    <Link className="nav-link fw-semibold px-3 py-2 rounded-pill text-dark" href="/" onClick={closeAll}>
                                         Home
                                     </Link>
                                 </li>
@@ -106,7 +109,7 @@ export default function FrontLayout({ children, title }) {
                                 <li className="nav-item dropdown position-relative">
                                     <button
                                         type="button"
-                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 py-2 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setOpenDropdown(openDropdown === 'courses' ? null : 'courses');
@@ -116,28 +119,31 @@ export default function FrontLayout({ children, title }) {
                                         Courses
                                     </button>
                                     <ul
-                                        className={`dropdown-menu border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'courses' ? 'show' : ''}`}
+                                        className={`dropdown-menu border-0 shadow-lg rounded-4 p-2 ${openDropdown === 'courses' ? 'show' : ''}`}
                                         style={{
                                             display: openDropdown === 'courses' ? 'block' : 'none',
                                             visibility: openDropdown === 'courses' ? 'visible' : 'hidden',
                                             opacity: openDropdown === 'courses' ? 1 : 0,
                                             position: 'absolute',
                                             zIndex: 1060,
+                                            minWidth: '220px',
+                                            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
                                         }}
                                     >
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/all_course" onClick={closeAll}>
-                                                <i className="bi bi-grid me-2 text-primary"></i>All Courses
+                                            <Link className="dropdown-item py-2 px-3 fw-semibold rounded-3 d-flex align-items-center gap-2" href="/all_course" onClick={closeAll}>
+                                                <i className="bi bi-grid-fill text-primary"></i>
+                                                <span>All Courses</span>
                                             </Link>
                                         </li>
                                         {categories && categories.length > 0 && (
-                                            <li><hr className="dropdown-divider my-1" /></li>
+                                            <li><hr className="dropdown-divider my-2 opacity-50" /></li>
                                         )}
                                         {categories &&
                                             categories.map((cat) => (
                                                 <li key={cat.id}>
                                                     <Link
-                                                        className="dropdown-item py-2 small"
+                                                        className="dropdown-item py-2 px-3 small rounded-3"
                                                         href={`/course/${cat.id}/${cat.slug}`}
                                                         onClick={closeAll}
                                                     >
@@ -149,13 +155,13 @@ export default function FrontLayout({ children, title }) {
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/blogs" onClick={closeAll}>
+                                    <Link className="nav-link fw-semibold px-3 py-2 rounded-pill text-dark" href="/blogs" onClick={closeAll}>
                                         Blogs
                                     </Link>
                                 </li>
 
                                 <li className="nav-item">
-                                    <Link className="nav-link fw-semibold px-3 rounded-pill text-dark" href="/team" onClick={closeAll}>
+                                    <Link className="nav-link fw-semibold px-3 py-2 rounded-pill text-dark" href="/team" onClick={closeAll}>
                                         Teachers
                                     </Link>
                                 </li>
@@ -164,7 +170,7 @@ export default function FrontLayout({ children, title }) {
                                 <li className="nav-item dropdown position-relative">
                                     <button
                                         type="button"
-                                        className="nav-link dropdown-toggle fw-semibold px-3 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
+                                        className="nav-link dropdown-toggle fw-semibold px-3 py-2 rounded-pill text-dark border-0 bg-transparent d-flex align-items-center gap-1"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setOpenDropdown(openDropdown === 'about' ? null : 'about');
@@ -174,44 +180,46 @@ export default function FrontLayout({ children, title }) {
                                         About Us
                                     </button>
                                     <ul
-                                        className={`dropdown-menu border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'about' ? 'show' : ''}`}
+                                        className={`dropdown-menu border-0 shadow-lg rounded-4 p-2 ${openDropdown === 'about' ? 'show' : ''}`}
                                         style={{
                                             display: openDropdown === 'about' ? 'block' : 'none',
                                             visibility: openDropdown === 'about' ? 'visible' : 'hidden',
                                             opacity: openDropdown === 'about' ? 1 : 0,
                                             position: 'absolute',
                                             zIndex: 1060,
+                                            minWidth: '200px',
+                                            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1)',
                                         }}
                                     >
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/about" onClick={closeAll}>
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/about" onClick={closeAll}>
                                                 <i className="bi bi-info-circle me-2 text-primary"></i>About Us
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/ourmission" onClick={closeAll}>
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/ourmission" onClick={closeAll}>
                                                 <i className="bi bi-compass me-2 text-primary"></i>Our Mission
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/ourvision" onClick={closeAll}>
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/ourvision" onClick={closeAll}>
                                                 <i className="bi bi-eye me-2 text-primary"></i>Our Vision
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/faq" onClick={closeAll}>
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/faq" onClick={closeAll}>
                                                 <i className="bi bi-question-circle me-2 text-primary"></i>FAQ
                                             </Link>
                                         </li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/eventgallery" onClick={closeAll}>
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/eventgallery" onClick={closeAll}>
                                                 <i className="bi bi-images me-2 text-primary"></i>Gallery
                                             </Link>
                                         </li>
-                                        <li><hr className="dropdown-divider my-1" /></li>
+                                        <li><hr className="dropdown-divider my-2 opacity-50" /></li>
                                         <li>
-                                            <Link className="dropdown-item py-2 fw-medium" href="/contact" onClick={closeAll}>
-                                                <i className="bi bi-envelope me-2 text-primary"></i>Contact Us
+                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3 text-primary" href="/contact" onClick={closeAll}>
+                                                <i className="bi bi-envelope me-2"></i>Contact Us
                                             </Link>
                                         </li>
                                     </ul>
@@ -223,7 +231,7 @@ export default function FrontLayout({ children, title }) {
                                 {auth?.user ? (
                                     <div className="dropdown position-relative">
                                         <button
-                                            className="btn btn-light border rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-2 shadow-2xs"
+                                            className="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -236,7 +244,7 @@ export default function FrontLayout({ children, title }) {
                                             <i className="bi bi-chevron-down text-muted small" style={{ fontSize: '0.7rem' }}></i>
                                         </button>
                                         <ul
-                                            className={`dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 py-2 ${openDropdown === 'user' ? 'show' : ''}`}
+                                            className={`dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 ${openDropdown === 'user' ? 'show' : ''}`}
                                             style={{
                                                 display: openDropdown === 'user' ? 'block' : 'none',
                                                 visibility: openDropdown === 'user' ? 'visible' : 'hidden',
@@ -244,48 +252,50 @@ export default function FrontLayout({ children, title }) {
                                                 position: 'absolute',
                                                 right: 0,
                                                 zIndex: 1060,
+                                                minWidth: '220px',
+                                                boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1)',
                                             }}
                                         >
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/dashboard" onClick={closeAll}>
+                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard" onClick={closeAll}>
                                                     <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/myfavouritecourses" onClick={closeAll}>
+                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/myfavouritecourses" onClick={closeAll}>
                                                     <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/mycourses" onClick={closeAll}>
-                                                    <i className="bi bi-mortarboard me-2 text-success"></i>My Courses
+                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/mycourses" onClick={closeAll}>
+                                                    <i className="bi bi-journal-check me-2 text-success"></i>My Enrolled Courses
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/editprofile" onClick={closeAll}>
+                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/editprofile" onClick={closeAll}>
                                                     <i className="bi bi-pencil-square me-2 text-secondary"></i>Edit Profile
                                                 </Link>
                                             </li>
                                             <li>
-                                                <Link className="dropdown-item py-2 fw-medium" href="/changepassword" onClick={closeAll}>
+                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/changepassword" onClick={closeAll}>
                                                     <i className="bi bi-key me-2 text-warning"></i>Change Password
                                                 </Link>
                                             </li>
                                             {auth.user.roles?.includes('Admin') && (
                                                 <>
-                                                    <li><hr className="dropdown-divider my-1" /></li>
+                                                    <li><hr className="dropdown-divider my-2 opacity-50" /></li>
                                                     <li>
-                                                        <Link className="dropdown-item text-primary fw-bold py-2" href="/admin/home" onClick={closeAll}>
+                                                        <Link className="dropdown-item text-primary fw-bold py-2 px-3 rounded-3" href="/admin/home" onClick={closeAll}>
                                                             <i className="bi bi-shield-lock me-2"></i>Admin Dashboard
                                                         </Link>
                                                     </li>
                                                 </>
                                             )}
-                                            <li><hr className="dropdown-divider my-1" /></li>
+                                            <li><hr className="dropdown-divider my-2 opacity-50" /></li>
                                             <li>
                                                 <button
                                                     onClick={handleLogout}
-                                                    className="dropdown-item text-danger py-2 fw-medium"
+                                                    className="dropdown-item text-danger py-2 px-3 fw-medium rounded-3"
                                                 >
                                                     <i className="bi bi-box-arrow-right me-2"></i>Logout
                                                 </button>
@@ -294,10 +304,18 @@ export default function FrontLayout({ children, title }) {
                                     </div>
                                 ) : (
                                     <div className="d-flex align-items-center gap-2">
-                                        <Link href="/login" className="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold" onClick={closeAll}>
+                                        <Link
+                                            href="/login"
+                                            className="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2 fw-semibold border-secondary-subtle text-dark"
+                                            onClick={closeAll}
+                                        >
                                             Sign In
                                         </Link>
-                                        <Link href="/register" className="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-semibold shadow-xs" onClick={closeAll}>
+                                        <Link
+                                            href="/register"
+                                            className="btn btn-primary-gradient btn-sm rounded-pill px-4 py-2 fw-semibold"
+                                            onClick={closeAll}
+                                        >
                                             Join Now
                                         </Link>
                                     </div>
@@ -316,47 +334,52 @@ export default function FrontLayout({ children, title }) {
                 {children}
             </main>
 
-            {/* Footer */}
-            <footer className="footer-wrap bg-dark text-white pt-5 pb-3 mt-auto">
+            {/* Modern Premium Footer */}
+            <footer className="footer-clean text-light pt-5 pb-4 mt-auto">
                 <div className="container">
                     <div className="row gy-4 justify-content-between">
                         {/* Brand info */}
-                        <div className="col-12 col-md-4 col-lg-3">
-                            <div className="footer-about">
+                        <div className="col-12 col-md-4 col-lg-4">
+                            <div className="pe-lg-4">
                                 {settings?.logo ? (
                                     <img
                                         src={logoUrl}
                                         alt={settings?.name || 'The Local Tutors'}
-                                        style={{ maxHeight: '50px', objectFit: 'contain' }}
+                                        style={{ maxHeight: '46px', objectFit: 'contain' }}
                                         className="mb-3"
                                     />
                                 ) : (
-                                    <h5 className="text-white fw-bold mb-3">
-                                        {settings?.name || 'The Local Tutors'}
-                                    </h5>
+                                    <div className="d-flex align-items-center gap-2 mb-3">
+                                        <span className="p-2 bg-primary rounded-3 text-white d-inline-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
+                                            <i className="bi bi-mortarboard-fill fs-5"></i>
+                                        </span>
+                                        <h5 className="text-white fw-bold mb-0">
+                                            {settings?.name || 'The Local Tutors'}
+                                        </h5>
+                                    </div>
                                 )}
-                                <p className="text-secondary small mb-3">
+                                <p className="text-secondary small mb-3 lh-base">
                                     {settings?.description ||
-                                        'Connecting passionate learners with top local tutors and coaching institutes.'}
+                                        'Connecting students with verified local home tutors, online teachers, coaching institutes, and colleges across India.'}
                                 </p>
-                                <div className="d-flex gap-3 text-secondary fs-5">
+                                <div className="d-flex gap-3 fs-5">
                                     {settings?.facebook && (
-                                        <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-secondary">
+                                        <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-secondary text-hover-white">
                                             <i className="bi bi-facebook"></i>
                                         </a>
                                     )}
                                     {settings?.twitter && (
-                                        <a href={settings.twitter} target="_blank" rel="noreferrer" className="text-secondary">
+                                        <a href={settings.twitter} target="_blank" rel="noreferrer" className="text-secondary text-hover-white">
                                             <i className="bi bi-twitter-x"></i>
                                         </a>
                                     )}
                                     {settings?.linkedin && (
-                                        <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-secondary">
+                                        <a href={settings.linkedin} target="_blank" rel="noreferrer" className="text-secondary text-hover-white">
                                             <i className="bi bi-linkedin"></i>
                                         </a>
                                     )}
                                     {settings?.instagram && (
-                                        <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-secondary">
+                                        <a href={settings.instagram} target="_blank" rel="noreferrer" className="text-secondary text-hover-white">
                                             <i className="bi bi-instagram"></i>
                                         </a>
                                     )}
@@ -366,8 +389,8 @@ export default function FrontLayout({ children, title }) {
 
                         {/* Course Categories */}
                         <div className="col-6 col-md-4 col-lg-2">
-                            <h6 className="text-uppercase fw-bold mb-3 text-white">Categories</h6>
-                            <ul className="list-unstyled text-secondary small">
+                            <h6 className="footer-heading mb-3">Categories</h6>
+                            <ul className="list-unstyled text-secondary small mb-0">
                                 {categories && categories.slice(0, 6).map((cat) => (
                                     <li key={cat.id} className="mb-2">
                                         <Link
@@ -383,8 +406,8 @@ export default function FrontLayout({ children, title }) {
 
                         {/* Quick Links */}
                         <div className="col-6 col-md-4 col-lg-2">
-                            <h6 className="text-uppercase fw-bold mb-3 text-white">Quick Links</h6>
-                            <ul className="list-unstyled text-secondary small">
+                            <h6 className="footer-heading mb-3">Quick Links</h6>
+                            <ul className="list-unstyled text-secondary small mb-0">
                                 <li className="mb-2">
                                     <Link href="/about" className="text-secondary text-decoration-none">
                                         About Us
@@ -396,13 +419,13 @@ export default function FrontLayout({ children, title }) {
                                     </Link>
                                 </li>
                                 <li className="mb-2">
-                                    <Link href="/faq" className="text-secondary text-decoration-none">
-                                        FAQ
+                                    <Link href="/all_course" className="text-secondary text-decoration-none">
+                                        All Courses
                                     </Link>
                                 </li>
                                 <li className="mb-2">
-                                    <Link href="/eventgallery" className="text-secondary text-decoration-none">
-                                        Gallery
+                                    <Link href="/faq" className="text-secondary text-decoration-none">
+                                        FAQ
                                     </Link>
                                 </li>
                                 <li className="mb-2">
@@ -415,8 +438,8 @@ export default function FrontLayout({ children, title }) {
 
                         {/* Contact info */}
                         <div className="col-12 col-md-6 col-lg-3">
-                            <h6 className="text-uppercase fw-bold mb-3 text-white">Contact Info</h6>
-                            <ul className="list-unstyled text-secondary small">
+                            <h6 className="footer-heading mb-3">Contact</h6>
+                            <ul className="list-unstyled text-secondary small mb-0">
                                 {settings?.mobile && (
                                     <li className="mb-2 d-flex align-items-center gap-2">
                                         <i className="bi bi-telephone text-primary"></i>
@@ -439,10 +462,15 @@ export default function FrontLayout({ children, title }) {
                         </div>
                     </div>
 
-                    <hr className="border-secondary mt-4 mb-3" />
+                    <hr className="footer-divider my-4" />
                     <div className="d-flex flex-wrap justify-content-between align-items-center text-secondary small">
                         <div>
                             &copy; {new Date().getFullYear()} {settings?.name || 'The Local Tutors'}. All rights reserved.
+                        </div>
+                        <div className="d-flex gap-3">
+                            <Link href="/about" className="text-secondary text-decoration-none">Privacy</Link>
+                            <Link href="/about" className="text-secondary text-decoration-none">Terms</Link>
+                            <Link href="/contact" className="text-secondary text-decoration-none">Support</Link>
                         </div>
                     </div>
                 </div>

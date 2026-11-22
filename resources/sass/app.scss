@@ -1,8 +1,156 @@
-// Fonts
-@import url('https://fonts.bunny.net/css?family=Nunito');
+// ==========================================================================
+// Modern App Stylesheet (The Local Tutors)
+// ==========================================================================
+
+// Google Fonts: Inter
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 // Variables
 @import 'variables';
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+// ==========================================================================
+// Global Refinements & Utility Enhancements
+// ==========================================================================
+
+body {
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #1e293b;
+    background-color: #f8fafc;
+}
+
+// Brand gradient text
+.text-gradient-primary {
+    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+// Custom modern cards
+.card-modern {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.03);
+        border-color: #cbd5e1;
+    }
+}
+
+// Modern soft badges (ensuring proper contrast over Bootstrap .badge defaults)
+.badge-soft-primary {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    --bs-badge-color: #1d4ed8 !important;
+    border: 1px solid rgba(29, 78, 216, 0.22) !important;
+}
+
+.badge-soft-success {
+    background-color: #ecfdf5 !important;
+    color: #059669 !important;
+    --bs-badge-color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.22) !important;
+}
+
+.badge-soft-info {
+    background-color: #f0f9ff !important;
+    color: #0284c7 !important;
+    --bs-badge-color: #0284c7 !important;
+    border: 1px solid rgba(2, 132, 199, 0.22) !important;
+}
+
+.badge-soft-warning {
+    background-color: #fffbeb !important;
+    color: #d97706 !important;
+    --bs-badge-color: #d97706 !important;
+    border: 1px solid rgba(245, 158, 11, 0.22) !important;
+}
+
+// Sleek Pill Button
+.btn-pill {
+    border-radius: 9999px;
+    padding-left: 1.35rem;
+    padding-right: 1.35rem;
+}
+
+// Premium Primary Button with soft glow
+.btn-primary-gradient {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+// Hero background styling
+.hero-wrapper {
+    background: radial-gradient(1200px 500px at 50% -50px, #eff6ff 0%, #f8fafc 100%);
+}
+
+// Custom Glassmorphism Navbar
+.navbar-clean {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+// Dark Navy Footer
+.footer-clean {
+    background-color: #0f172a;
+    color: #94a3b8;
+
+    a {
+        color: #94a3b8;
+        transition: color 0.18s ease;
+
+        &:hover {
+            color: #ffffff;
+        }
+    }
+
+    .footer-heading {
+        color: #f8fafc;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .footer-divider {
+        border-color: #1e293b;
+    }
+}
+
+// Clean Scrollbar
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

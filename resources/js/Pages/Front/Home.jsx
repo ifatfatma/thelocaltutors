@@ -425,12 +425,13 @@ export default function Home({
             {/* ============================================================== */}
             {/* HERO SECTION: Custom Category Selector & Sleek Search Pill */}
             {/* ============================================================== */}
-            <section className="hero-section py-4 py-lg-5 bg-light position-relative overflow-hidden border-bottom">
+            <section className="hero-section py-5 hero-wrapper position-relative overflow-hidden border-bottom">
                 <div className="container">
                     {/* 1. HERO HEADER: Heading & Subheading */}
                     <div className="text-center mx-auto mb-4" style={{ maxWidth: '850px' }}>
-                        <span className="badge bg-primary-subtle text-primary fw-bold mb-2 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1 shadow-xs">
-                            <i className="bi bi-patch-check-fill text-primary"></i> Top Rated Learning Platform
+                        <span className="badge badge-soft-primary text-primary fw-semibold mb-3 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 shadow-2xs">
+                            <i className="bi bi-patch-check-fill text-primary"></i>
+                            <span>Top Rated Learning Platform</span>
                         </span>
                         <h1 className="display-5 fw-bold text-dark lh-sm mb-2">
                             Find the Perfect <span className="text-primary">Tutor</span> in Your Local Area
@@ -440,7 +441,7 @@ export default function Home({
                         </p>
 
                         {/* PRIMARY SEARCH BAR: Custom Category Dropdown & Auto-Suggestions */}
-                        <div className="position-relative mx-auto text-start" style={{ maxWidth: '820px', zIndex: 30 }} ref={searchBarRef}>
+                        <div className="position-relative mx-auto text-start" style={{ maxWidth: '850px', zIndex: 30 }} ref={searchBarRef}>
                             <form
                                 onSubmit={handlePrimarySearchSubmit}
                                 className="shadow-lg rounded-pill bg-white p-2 border d-flex flex-wrap align-items-center gap-2"
@@ -529,7 +530,7 @@ export default function Home({
                                     <input
                                         type="text"
                                         className="form-control border-0 shadow-none py-2 ps-1"
-                                        placeholder="Search subject, course, or topic (e.g. Mathematics, Physics, NEET)..."
+                                        placeholder="Search subject or course (e.g. Mathematics, Physics, NEET)..."
                                         value={searchQuery}
                                         onChange={(e) => {
                                             setSearchQuery(e.target.value);
@@ -557,7 +558,7 @@ export default function Home({
                                 {/* Search Button */}
                                 <button
                                     type="submit"
-                                    className="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm"
+                                    className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
                                     style={{ minHeight: '44px' }}
                                 >
                                     <span>Search</span>
@@ -622,7 +623,7 @@ export default function Home({
                     {/* ============================================================== */}
                     <div className="mt-4">
                         <div
-                            className="card shadow-sm border-0 rounded-4 p-3 p-md-4 bg-white position-relative overflow-hidden"
+                            className="card card-modern p-3 p-md-4 position-relative overflow-hidden"
                             onMouseEnter={() => setIsAutoPlay(false)}
                             onMouseLeave={() => setIsAutoPlay(true)}
                             onTouchStart={handleTouchStart}
@@ -633,8 +634,8 @@ export default function Home({
                             <div
                                 className="position-absolute top-0 start-0 end-0"
                                 style={{
-                                    height: '4px',
-                                    background: 'linear-gradient(90deg, #0d6efd, #0dcaf0)',
+                                    height: '3px',
+                                    background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)',
                                 }}
                             />
 
@@ -975,7 +976,7 @@ export default function Home({
             <section
                 className="stats-section py-5 text-white position-relative overflow-hidden"
                 style={{
-                    background: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 50%, #052c65 100%)',
+                    backgroundColor: '#0f172a',
                 }}
             >
                 <div className="container position-relative" style={{ zIndex: 2 }}>
@@ -1093,60 +1094,73 @@ export default function Home({
                 <div className="container">
                     <div className="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
                         <div>
-                            <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
+                            <span className="badge badge-soft-primary rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
                                 Curated Learning
                             </span>
                             <h2 className="fw-bold text-dark mb-1">Featured Courses &amp; Classes</h2>
-                            <p className="text-muted small mb-0">Learn from experienced educators across all disciplines</p>
+                            <p className="text-secondary small mb-0">Learn from experienced educators across all disciplines</p>
                         </div>
-                        <Link href="/courses" className="btn btn-outline-primary rounded-pill px-4 fw-semibold shadow-xs">
+                        <Link href="/all_course" className="btn btn-outline-primary rounded-pill px-4 fw-semibold">
                             <span>View All Courses</span>
                             <i className="bi bi-arrow-right ms-2"></i>
                         </Link>
                     </div>
 
                     <div className="row g-4">
-                        {courses.map((course) => (
-                            <div key={course.id} className="col-md-6 col-lg-4">
-                                <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column bg-white">
-                                    <div className="position-relative">
-                                        <img
-                                            src={course.image ? `/course/${course.image}` : '/front/img/default-course.png'}
-                                            onError={(e) => {
-                                                e.target.src = '/front/img/default-course.png';
-                                            }}
-                                            alt={course.title}
-                                            className="card-img-top"
-                                            style={{ height: '200px', objectFit: 'cover' }}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
-                                            onClick={() => handleToggleFav(course.id)}
-                                            title="Bookmark course"
-                                        >
-                                            <i className="bi bi-heart text-danger"></i>
-                                        </button>
-                                    </div>
-                                    <div className="card-body p-4 d-flex flex-column">
-                                        <h5 className="fw-bold mb-2">
-                                            <Link href={`/course-detail/${course.id}/${course.slug}`} className="text-dark text-decoration-none">
-                                                {course.title}
-                                            </Link>
-                                        </h5>
-                                        <p className="text-muted small flex-grow-1">{course.short_desc}</p>
-                                        <div className="d-flex justify-content-between align-items-center pt-3 border-top">
-                                            <span className="fw-bold text-primary fs-5">
-                                                {course.price > 0 ? `₹${course.price}` : 'Free'}
-                                            </span>
-                                            <Link href={`/course-detail/${course.id}/${course.slug}`} className="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
-                                                Enroll Now
-                                            </Link>
+                        {courses.map((course) => {
+                            const courseTitle = course.title || course.name || 'Certified Course';
+                            return (
+                                <div key={course.id} className="col-md-6 col-lg-4">
+                                    <div className="card card-modern h-100 overflow-hidden d-flex flex-column">
+                                        <div className="position-relative overflow-hidden" style={{ height: '200px', backgroundColor: '#e2e8f0' }}>
+                                            <img
+                                                src={course.image ? `/course/${course.image}` : '/front/img/noimage.jpg'}
+                                                onError={(e) => {
+                                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&auto=format&fit=crop&q=60';
+                                                }}
+                                                alt={courseTitle}
+                                                className="w-100 h-100 object-fit-cover"
+                                            />
+                                            {course.category?.title && (
+                                                <span className="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill small fw-semibold">
+                                                    {course.category.title}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="btn btn-white bg-white rounded-circle position-absolute top-0 end-0 m-3 p-2 shadow-sm border-0 d-flex align-items-center justify-content-center"
+                                                style={{ width: '34px', height: '34px' }}
+                                                onClick={() => handleToggleFav(course.id)}
+                                                title="Save course"
+                                            >
+                                                <i className="bi bi-heart text-danger"></i>
+                                            </button>
+                                        </div>
+                                        <div className="card-body p-4 d-flex flex-column flex-grow-1">
+                                            <h5 className="fw-bold mb-2">
+                                                <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="text-dark text-decoration-none text-hover-primary">
+                                                    {courseTitle}
+                                                </Link>
+                                            </h5>
+                                            <p className="text-secondary small flex-grow-1 mb-3">
+                                                {course.short_desc || course.short_description || (course.description ? course.description.replace(/<[^>]*>?/gm, '').substring(0, 95) + '...' : 'Interactive curriculum with comprehensive notes and practice sessions.')}
+                                            </p>
+                                            <div className="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                                <div>
+                                                    <span className="text-muted small d-block">Fee</span>
+                                                    <span className="fw-bold text-primary fs-5">
+                                                        {course.price > 0 ? `₹${course.price}` : 'Free'}
+                                                    </span>
+                                                </div>
+                                                <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold">
+                                                    View Course
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </section>
@@ -1170,7 +1184,7 @@ export default function Home({
                         <div className="row g-4">
                             {blogs.slice(0, 3).map((blog) => (
                                 <div key={blog.id} className="col-md-4">
-                                    <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                                    <div className="card card-modern h-100 overflow-hidden">
                                         <img
                                             src={blog.image ? `/blog/${blog.image}` : '/front/img/default-blog.png'}
                                             onError={(e) => {
@@ -1178,16 +1192,16 @@ export default function Home({
                                             }}
                                             alt={blog.title}
                                             className="card-img-top"
-                                            style={{ height: '180px', objectFit: 'cover' }}
+                                            style={{ height: '190px', objectFit: 'cover' }}
                                         />
-                                        <div className="card-body p-4">
+                                        <div className="card-body p-4 d-flex flex-column">
                                             <h6 className="fw-bold mb-2">
-                                                <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-dark text-decoration-none">
+                                                <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-dark text-decoration-none text-hover-primary">
                                                     {blog.title}
                                                 </Link>
                                             </h6>
-                                            <p className="text-muted small mb-3">{blog.short_desc}</p>
-                                            <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-primary fw-semibold small text-decoration-none">
+                                            <p className="text-secondary small mb-3 flex-grow-1">{blog.short_desc}</p>
+                                            <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-primary fw-semibold small text-decoration-none mt-auto">
                                                 Read Article &rarr;
                                             </Link>
                                         </div>
