@@ -509,7 +509,7 @@ class FrontController extends Controller
         } 
 
         public function course_details(Request $request, $courseid){
-            $course_details = Course::with('teacher.user','faq','feedback.user')->where('id',$courseid)->first();
+            $course_details = Course::with('teacher','faq','feedback.user')->where('id',$courseid)->first();
             $coursecategories = CourseCategory::withcount('courses')->where('is_active',1)->orderBy('title','asc')->get();
             $feedbacklist = CourseFeedback::with('user')->where('course_id',$courseid)->where('is_active',1)->orderBy('id','desc')->get();
             return Inertia::render('Front/CourseDetails', compact('course_details','coursecategories','feedbacklist'));
@@ -517,7 +517,7 @@ class FrontController extends Controller
 
         public function course_list(Request $request,$catid){ 
             $coursecategory = CourseCategory::where('id',$catid)->first();
-            $courselist = Course::with('teacher.user')->where('category_id',$catid)->paginate(30);
+            $courselist = Course::with('teacher')->where('category_id',$catid)->paginate(30);
             return Inertia::render('Front/CourseList', compact('courselist','coursecategory'));
         }
 

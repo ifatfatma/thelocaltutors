@@ -8,21 +8,31 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
+
+    protected $appends = ['title'];
+
+    /**
+     * Accessor so $course->title returns $course->name transparently
+     */
+    public function getTitleAttribute()
+    {
+        return $this->attributes['name'] ?? ($this->attributes['title'] ?? '');
+    }
 
     public function teacher(){
-        return $this->hasOne(User::class,'id','teacher_id');
+        return $this->hasOne(User::class, 'id', 'teacher_id');
     }
-    public function faq(){
-        return $this->hasMany(Faq::class,'id','is_active');
-    }
-    public function category(){
-        return $this->hasOne(CourseCategory::class,'id','category_id');
-    }
-    public function feedback(){
-        return $this->hasMany(CourseFeedback::class,'id','course_id');
-    }
-    
 
-   
+    public function faq(){
+        return $this->hasMany(Faq::class, 'id', 'is_active');
+    }
+
+    public function category(){
+        return $this->hasOne(CourseCategory::class, 'id', 'category_id');
+    }
+
+    public function feedback(){
+        return $this->hasMany(CourseFeedback::class, 'id', 'course_id');
+    }
 }

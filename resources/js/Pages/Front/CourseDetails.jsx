@@ -69,8 +69,8 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                     <span className="badge bg-light text-primary mb-2">Course Details</span>
                     <h1 className="fw-bold mb-3">{course_details.title}</h1>
                     <div className="d-flex align-items-center gap-3 text-white-50 small">
-                        {course_details.teacher?.user?.name && (
-                            <span><i className="bi bi-person me-1"></i>Instructor: {course_details.teacher.user.name}</span>
+                        {(course_details.teacher?.name || course_details.teacher?.user?.name) && (
+                            <span><i className="bi bi-person me-1"></i>Instructor: {course_details.teacher?.name || course_details.teacher?.user?.name}</span>
                         )}
                         <span><i className="bi bi-tag me-1"></i>Price: {course_details.price ? `₹${course_details.price}` : 'Free'}</span>
                     </div>
