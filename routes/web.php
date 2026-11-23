@@ -23,6 +23,7 @@ use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CourseFaqController;
 use App\Http\Controllers\Installer\InstallController;
+use App\Http\Controllers\TeacherDemoController;
 
 // Web Installer Routes
 Route::prefix('install')->name('install.')->group(function () {
@@ -54,6 +55,12 @@ Route::get('getDistrictAjax/{id}', [CustomDataController::class, 'getDistrictAja
 Route::get('getCityAjax/{id}', [CustomDataController::class, 'getDistrictAjax'])->name('customdata.ajax.get.cities');
 //message
 Route::get('messages/view/{id}',[ContactUsController::class,'view'])->name('messages.view');
+Route::get('teacher-demos', [TeacherDemoController::class, 'adminIndex'])->name('admin.teacher_demos.index');
+Route::post('teacher-demos/{id}/status', [TeacherDemoController::class, 'adminUpdateStatus'])->name('admin.teacher_demos.status');
+Route::delete('teacher-demos/{id}', [TeacherDemoController::class, 'adminDestroy'])->name('admin.teacher_demos.destroy');
+Route::post('demo-shares/create', [TeacherDemoController::class, 'adminShareDemo'])->name('admin.demo_shares.create');
+Route::get('demo-shares', [TeacherDemoController::class, 'adminSharesList'])->name('admin.demo_shares.index');
+Route::delete('demo-shares/{id}', [TeacherDemoController::class, 'adminShareDelete'])->name('admin.demo_shares.destroy');
 Route::get('coursefeedback',[CourseController::class,'coursefeedback'])->name('coursefeedback.list');
 Route::get('coursefeedback/accept/{id}',[CourseController::class,'acceptcoursefeedback'])->name('coursefeedback.accept');
 Route::delete('feedback/{id}/delete',[CourseController::class,'destroycoursefeedback'])->name('coursefeedback.destroy');
@@ -112,6 +119,8 @@ Route::get('/shop_dtails',[FrontController::class, 'shop_dtails'])->name('front.
 Route::get('/shop',[FrontController::class, 'shop'])->name('front.shop');
 Route::get('/studentinterface',[FrontController::class, 'studentinterface'])->name('front.studentinterface');
 Route::get('/search',[FrontController::class, 'search'])->name('front.search');
+Route::get('/demo-view/{token}', [TeacherDemoController::class, 'publicDemoView'])->name('front.demo.view');
+Route::post('/demo-view/{token}/confirm', [TeacherDemoController::class, 'confirmDemoBooking'])->name('front.demo.confirm');
 
 Route::get('/team',[FrontController::class, 'team'])->name('front.team');
 Route::get('/get_lonlat',[FrontController::class, 'get_lonlat'])->name('front.get_lonlat');
@@ -138,6 +147,9 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::get('/changepassword',[FrontController::class, 'changepassword'])->name('front.changepassword');
     Route::get('/myfavouritecourses',[FrontController::class, 'myfavouritecourses'])->name('front.myfavouritecourses'); 
     Route::get('/mycourses',[FrontController::class, 'mycourses'])->name('front.mycourses'); 
+    Route::get('/dashboard/demos', [TeacherDemoController::class, 'teacherIndex'])->name('front.dashboard.demos');
+    Route::post('/dashboard/demos', [TeacherDemoController::class, 'teacherStore'])->name('front.dashboard.demos.store');
+    Route::delete('/dashboard/demos/{id}', [TeacherDemoController::class, 'teacherDestroy'])->name('front.dashboard.demos.destroy');
     Route::post('ChangePasswordPost',[FontDashboardController::class,'ChangePasswordPost'])->name('front.changepassword.post'); 
     Route::post('/logout',[FontDashboardController::class, 'logout'])->name('front.logout');
 

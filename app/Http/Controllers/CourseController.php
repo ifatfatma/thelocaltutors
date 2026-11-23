@@ -64,15 +64,18 @@ class CourseController extends Controller
         $course->image = $imageName;
         }
         $course->category_id  = $request->category_id??0;
-        $course->slug         = Str::slug($request->name);
         $course->name         = $request->name??'';
         $course->duration     = $request->duration??0;
         $course->price        = $request->price??0;
-        $course->teaching_mode= !empty($request->teaching_mode)?implode(',',$request->teaching_mode):NULL;
+        if (is_array($request->teaching_mode)) {
+            $course->teaching_mode = implode(',', $request->teaching_mode);
+        } else {
+            $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
+        }
         $course->teacher_id   = $request->teacher_id??0;
         $course->description  = $request->description??'';
         $course->youtube_url  =$request->youtube_url??'';
-        $course->is_active    = $request->is_active??0;
+        $course->is_active    = $request->has('is_active') ? $request->is_active : 1;
         $course->save();
         return redirect()->back()->withSuccess('Course added successfully.');
         
@@ -122,15 +125,18 @@ class CourseController extends Controller
         $course->image = $imageName;
         }
         $course->category_id  = $request->category_id??0;
-        $course->slug         = Str::slug($request->name);
         $course->name         = $request->name??'';
         $course->duration     = $request->duration??0;
         $course->price        = $request->price??0;
-        $course->teaching_mode= !empty($request->teaching_mode)?implode(',',$request->teaching_mode):NULL;
+        if (is_array($request->teaching_mode)) {
+            $course->teaching_mode = implode(',', $request->teaching_mode);
+        } else {
+            $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
+        }
         $course->teacher_id   = $request->teacher_id??0;
         $course->description  = $request->description??'';
         $course->youtube_url  = $request->youtube_url??'';
-        $course->is_active    = $request->is_active??0;
+        $course->is_active    = $request->has('is_active') ? $request->is_active : 1;
         $course->save();
         return redirect()->back()->withSuccess('Course updated successfully.');
     }

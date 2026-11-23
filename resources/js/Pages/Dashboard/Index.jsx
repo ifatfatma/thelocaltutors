@@ -8,6 +8,13 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
 
     const quickLinks = [
         {
+            title: 'Recorded Demo Sessions',
+            desc: 'Submit and manage sample teaching video previews for interested students and parents.',
+            href: '/dashboard/demos',
+            icon: 'bi-camera-video-fill',
+            color: 'primary',
+        },
+        {
             title: 'Edit Profile',
             desc: 'Update your contact information, location, and teaching profile details.',
             href: '/editprofile',

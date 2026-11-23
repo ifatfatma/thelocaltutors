@@ -10,7 +10,9 @@ class Course extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $appends = ['title'];
+    protected $guarded = [];
+
+    protected $appends = ['title', 'slug'];
 
     /**
      * Accessor so $course->title returns $course->name transparently
@@ -18,6 +20,14 @@ class Course extends Model
     public function getTitleAttribute()
     {
         return $this->attributes['name'] ?? ($this->attributes['title'] ?? '');
+    }
+
+    /**
+     * Accessor so $course->slug returns a clean URL slug from name
+     */
+    public function getSlugAttribute()
+    {
+        return \Illuminate\Support\Str::slug($this->attributes['name'] ?? 'course');
     }
 
     public function teacher(){

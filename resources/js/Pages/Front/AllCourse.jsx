@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
+import { cleanExcerpt, formatPrice } from '../../Utils/text';
 import axios from 'axios';
 
 export default function AllCourse({ courses, categories = [] }) {
@@ -18,17 +19,21 @@ export default function AllCourse({ courses, categories = [] }) {
 
     return (
         <FrontLayout>
-            <Head title="Browse Courses - The Local Tutors" />
+            <Head>
+                <title>All Courses &amp; Specialized Batches - The Local Tutors</title>
+                <meta name="description" content="Explore certified academic courses in TIF Core Mathematics, Science, CBSE, ICSE, WBBSE boards, Artificial Intelligence, and Basic Computer skills with free demo classes." />
+            </Head>
 
             {/* Modern Clean Header */}
             <div className="bg-white border-bottom py-5 hero-wrapper">
                 <div className="container text-center">
-                    <span className="badge badge-soft-primary text-primary px-3 py-2 rounded-pill fw-semibold mb-3 d-inline-flex align-items-center gap-1">
-                        <i className="bi bi-journal-code"></i> Explore Certified Courses
+                    <span className="badge badge-soft-primary text-primary px-3 py-2 rounded-pill fw-semibold mb-3 d-inline-flex align-items-center gap-2 shadow-2xs">
+                        <i className="bi bi-journal-code text-primary"></i>
+                        <span>Explore Certified Courses &amp; Batches</span>
                     </span>
-                    <h1 className="fw-bold display-6 text-dark mb-2">Academic & Professional Courses</h1>
-                    <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '600px' }}>
-                        Learn from certified local instructors and subject experts with customized batches and one-on-one sessions.
+                    <h1 className="fw-bold display-6 text-dark mb-2">Academic &amp; Specialized Courses</h1>
+                    <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '640px' }}>
+                        Learn from verified local instructors with customized 1-on-1 home tuition and small-group online batches. Transparent INR pricing with free trial demo classes available.
                     </p>
                     <nav aria-label="breadcrumb">
                         <ol className="breadcrumb justify-content-center mb-0 small">
@@ -83,20 +88,26 @@ export default function AllCourse({ courses, categories = [] }) {
                     <div className="row g-4">
                         {courseList.map((course) => {
                             const courseTitle = course.title || course.name || 'Specialized Course';
+                            const cleanDesc = cleanExcerpt(
+                                course.short_description || course.description,
+                                110,
+                                'Structured curriculum with conceptual clarity, weekly revision worksheets, and comprehensive board preparation.'
+                            );
+
                             return (
                                 <div key={course.id} className="col-md-6 col-lg-4">
                                     <div className="card card-modern h-100 overflow-hidden d-flex flex-column">
                                         <div className="position-relative overflow-hidden" style={{ height: '210px', backgroundColor: '#e2e8f0' }}>
                                             <img
-                                                src={course.image ? `/course/${course.image}` : '/front/img/noimage.jpg'}
-                                                alt={courseTitle}
+                                                src={course.image && course.image.startsWith('http') ? course.image : (course.image ? `/course/${course.image}` : '/front/img/noimage.jpg')}
+                                                alt={`Course banner for ${courseTitle}`}
                                                 className="w-100 h-100 object-fit-cover transition-transform"
                                                 onError={(e) => {
                                                     e.currentTarget.src = 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&auto=format&fit=crop&q=60';
                                                 }}
                                             />
                                             {course.category?.title && (
-                                                <span className="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill small fw-semibold">
+                                                <span className="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill small fw-semibold">
                                                     {course.category.title}
                                                 </span>
                                             )}
@@ -104,13 +115,25 @@ export default function AllCourse({ courses, categories = [] }) {
                                                 onClick={() => handleFav(course.id)}
                                                 className="btn btn-white bg-white rounded-circle position-absolute top-0 end-0 m-3 p-2 shadow-sm border-0 d-flex align-items-center justify-content-center"
                                                 style={{ width: '36px', height: '36px' }}
-                                                title="Save Course"
+                                                title="Save Course to Favourites"
                                             >
                                                 <i className="bi bi-heart text-danger"></i>
                                             </button>
                                         </div>
 
                                         <div className="card-body p-4 d-flex flex-column flex-grow-1">
+                                            {/* Mode & Duration Badges */}
+                                            <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                                <span className="badge bg-light text-secondary border small">
+                                                    <i className="bi bi-geo-alt me-1"></i>{course.teaching_mode || 'Home / Online'}
+                                                </span>
+                                                {course.duration && (
+                                                    <span className="badge bg-light text-secondary border small">
+                                                        <i className="bi bi-clock me-1"></i>{course.duration} mins / session
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             <h5 className="fw-bold mb-2">
                                                 <Link
                                                     href={`/course_details/${course.id}/${course.slug || 'detail'}`}
@@ -119,15 +142,20 @@ export default function AllCourse({ courses, categories = [] }) {
                                                     {courseTitle}
                                                 </Link>
                                             </h5>
-                                            <p className="text-secondary small flex-grow-1 mb-3 line-clamp-2">
-                                                {course.short_description || (course.description ? course.description.replace(/<[^>]*>?/gm, '').substring(0, 110) + '...' : 'Interactive curriculum with comprehensive notes and practice sessions.')}
+                                            <p className="text-secondary small flex-grow-1 mb-3">
+                                                {cleanDesc}
                                             </p>
 
-                                            <div className="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                            <div className="d-flex justify-content-between align-items-end pt-3 border-top mt-auto">
                                                 <div>
-                                                    <span className="text-muted small d-block">Fee</span>
-                                                    <span className="fw-bold text-primary fs-5">
-                                                        {course.price ? `₹${course.price}` : 'Free'}
+                                                    <div className="d-flex align-items-baseline gap-1">
+                                                        <span className="fw-bold text-primary fs-5">
+                                                            {course.price ? `₹${Number(course.price).toLocaleString('en-IN')}` : 'Free'}
+                                                        </span>
+                                                        {course.price > 0 && <span className="text-muted small">/ month</span>}
+                                                    </div>
+                                                    <span className="badge badge-soft-success text-success small d-inline-block mt-1">
+                                                        <i className="bi bi-patch-check me-1"></i>Trial Class Available
                                                     </span>
                                                 </div>
                                                 <Link

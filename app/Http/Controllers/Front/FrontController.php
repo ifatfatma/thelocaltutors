@@ -167,6 +167,7 @@ class FrontController extends Controller
                 $courses = Course::with('category')->where('is_active',1)->latest('id')->take(6)->get();
                 $blogs = Common::blogs();
                 $teachers = Common::teachers();
+                $testimonials = TeacherReview::with(['student', 'teacher.user'])->latest('id')->take(6)->get();
                 $stats = [
                     'courses' => Common::coursecount(),
                     'teachers' => Common::teacherscount(),
@@ -205,7 +206,7 @@ class FrontController extends Controller
             }
 
             return Inertia::render('Front/Home', compact(
-                'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'stats', 'states', 'subjects', 'boards',
+                'pageData', 'popularCategories', 'courses', 'blogs', 'teachers', 'testimonials', 'stats', 'states', 'subjects', 'boards',
                 'showcaseTeachers', 'showcaseNearbyTeachers', 'isShowcaseNearby', 'userAreaName', 'showcaseCounts'
             ));
         }
@@ -713,13 +714,20 @@ class FrontController extends Controller
             }
 
             if(!empty($request->search_state) && $request->search_state !== '0'){
-                $lists = $lists->where('teachers.state',$request->search_state);
+                $lists = $lists->where(function($q) use ($request) {
+                    $q->where('teachers.state', $request->search_state)
+                      ->orWhere('teachers.state', 'LIKE', "%{$request->search_state}%");
+                });
             }
             if(!empty($request->search_district) && $request->search_district !== '0'){
-                $lists = $lists->where('teachers.district',$request->search_district);
+                $lists = $lists->where('teachers.district', $request->search_district);
             }
             if(!empty($request->search_city) && $request->search_city !== '0'){
-                $lists = $lists->where('teachers.city',$request->search_city);
+                $lists = $lists->where(function($q) use ($request) {
+                    $q->where('teachers.city', $request->search_city)
+                      ->orWhere('teachers.city', 'LIKE', "%{$request->search_city}%")
+                      ->orWhere('teachers.address', 'LIKE', "%{$request->search_city}%");
+                });
             }
             if(!empty($request->search_board) && $request->search_board !== '0'){
                 $board = $request->search_board;
@@ -1016,32 +1024,51 @@ class FrontController extends Controller
 
         public function contactpost(Request $request){
             $validator = Validator::make($request->all(), [
-                'name' => 'required',
-                'email' => 'required',
-                'phone' => 'required',
-                'message' => 'required',
+                'name' => 'required|string|max:190',
+                'phone' => 'required|string|max:30',
+                'email' => 'nullable|email|max:190',
+                'message' => 'nullable|string',
+            ], [
+                'name.required' => trans('Please provide your name.'),
+                'phone.required' => trans('Please provide your phone or WhatsApp number.'),
+            ]);
 
-
-                ],[
-                'name.required' => trans('This field is required!'),
-                'email.required' => trans('This field is required!'),
-                'phone.required' => trans('This field is required!'),
-                'message.required' => trans('This field is required!'),
-
-                ]
-            );
-            if($validator->fails()) {
-                return ['status'=>400,'message'=>$validator->errors()->first()];
+            if ($validator->fails()) {
+                return ['status' => 400, 'message' => $validator->errors()->first()];
             }
 
+            // Build structured inquiry message if extra fields are passed
+            $parts = [];
+            if ($request->filled('student_class')) {
+                $parts[] = "Class/Level: " . strip_tags($request->student_class);
+            }
+            if ($request->filled('course_subject')) {
+                $parts[] = "Subject/Course: " . strip_tags($request->course_subject);
+            }
+            if ($request->filled('learning_mode')) {
+                $parts[] = "Preferred Mode: " . strip_tags($request->learning_mode);
+            }
+            if ($request->filled('teacher_name')) {
+                $parts[] = "Educator: " . strip_tags($request->teacher_name);
+            }
+            if ($request->filled('message')) {
+                $parts[] = "Notes: " . strip_tags($request->message);
+            }
+
+            $formattedMessage = !empty($parts) ? implode("\n", $parts) : ($request->message ?? 'Inquiry via website');
+
             $data = new ContactUs;
-            $data->name = !empty($request->name)?$request->name:'';
-            $data->email = !empty($request->email)?$request->email:'';
-            $data->phone = !empty($request->phone)?$request->phone:'';
-            $data->message = !empty($request->message)?$request->message:'';
-            $data->is_read = !empty($request->is_read)?$request->is_read:0;
+            $data->name = $request->name;
+            $data->email = $request->email ?: 'inquiry@thelocaltutors.com';
+            $data->phone = $request->phone;
+            $data->message = $formattedMessage;
+            $data->is_read = 0;
             $data->save();
-            return ["status"=>200,"message"=>trans('Message successfully sent!')];
+
+            return [
+                'status' => 200,
+                'message' => 'Thank you! Your inquiry has been received. Our coordinator will contact you on WhatsApp / Phone within 2 hours.'
+            ];
         }
 
         

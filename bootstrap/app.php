@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->validateCsrfTokens(except: [
             'install/*',
+            'contactpost',
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\CheckInstalled::class,

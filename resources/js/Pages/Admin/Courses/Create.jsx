@@ -7,6 +7,7 @@ export default function Create({ teacherlist = [], coursecatlist = [] }) {
         name: '',
         category_id: coursecatlist[0]?.id || '',
         teacher_id: teacherlist[0]?.id || '',
+        teaching_mode: 'Home / Online',
         price: '0',
         duration: '',
         description: '',
@@ -72,6 +73,19 @@ export default function Create({ teacherlist = [], coursecatlist = [] }) {
                                 {teacherlist.map((t) => (
                                     <option key={t.id} value={t.id}>{t.name}</option>
                                 ))}
+                            </select>
+                        </div>
+
+                        <div className="col-md-4">
+                            <label className="form-label fw-semibold">Teaching Mode *</label>
+                            <select
+                                className="form-select"
+                                value={form.teaching_mode}
+                                onChange={(e) => setForm({ ...form, teaching_mode: e.target.value })}
+                            >
+                                <option value="Home / Online">Both (Home &amp; Online)</option>
+                                <option value="Home Tuition">Home Tuition (Offline)</option>
+                                <option value="Interactive Online">Interactive Online</option>
                             </select>
                         </div>
 

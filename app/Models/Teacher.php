@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Teacher extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'gender',        
         'description',
@@ -37,10 +38,41 @@ class Teacher extends Model
         'type',
     ];
 
+    protected $appends = ['qualification_name', 'teaching_mode_name', 'subject_names', 'board_names'];
+
     public function qualificationname(){
-     return $this->hasOne(CustomData::class,'id','qualification');
+        return $this->hasOne(CustomData::class, 'id', 'qualification');
     }
+
     public function user(){
-    return $this->hasOne(User::class,'id','user_id');
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
+    public function getQualificationNameAttribute() {
+        if (!$this->qualification) return 'Master Degree / Qualified Educator';
+        $item = CustomData::find($this->qualification);
+        return $item ? $item->name : $this->qualification;
+    }
+
+    public function getTeachingModeNameAttribute() {
+        if (!$this->teaching_mode) return 'Home & Online Tuition';
+        $item = CustomData::find($this->teaching_mode);
+        return $item ? $item->name : $this->teaching_mode;
+    }
+
+    public function getSubjectNamesAttribute() {
+        if (!$this->subjects) return 'Mathematics & Science';
+        $ids = array_filter(explode(',', (string)$this->subjects));
+        if (empty($ids)) return 'All Academic Subjects';
+        $names = CustomData::whereIn('id', $ids)->pluck('name')->toArray();
+        return !empty($names) ? implode(', ', $names) : 'Mathematics, Science, English';
+    }
+
+    public function getBoardNamesAttribute() {
+        if (!$this->board) return 'CBSE / ICSE / WBBSE';
+        $ids = array_filter(explode(',', (string)$this->board));
+        if (empty($ids)) return 'All Boards';
+        $names = CustomData::whereIn('id', $ids)->pluck('name')->toArray();
+        return !empty($names) ? implode(', ', $names) : 'CBSE, ICSE, WBBSE';
     }
 }

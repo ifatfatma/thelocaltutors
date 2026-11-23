@@ -1,0 +1,1 @@
+function i(e){return!e||typeof e!="string"?"":e.replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&lt;/gi,"<").replace(/&gt;/gi,">").replace(/\s+/g," ").trim()}function l(e,t=105,c=""){const r=i(e);return r?r.length<=t?r:r.substring(0,t).trim()+"...":c}export{l as c};

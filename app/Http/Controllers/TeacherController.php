@@ -181,11 +181,11 @@ class TeacherController extends Controller
         $user->whatsapp      = $request->whatsapp ?? '';
         $user->experience    = $request->experience ?? '';
         $user->qualification = is_array($request->qualification) ? implode(',', $request->qualification) : ($request->qualification ?? null);
-        $user->address       = $request->address ?? '';
-        $user->district      = $request->district ?? 0;
-        $user->city          = $request->city ?? 0;
-        $user->state         = $request->state ?? 0;
-        $user->pincode       = $request->pincode ?? '';
+        $user->address       = $request->address ? trim((string)$request->address) : '';
+        $user->district      = $request->district ? trim((string)$request->district) : '';
+        $user->city          = $request->city ? trim((string)$request->city) : '';
+        $user->state         = $request->state ? trim((string)$request->state) : '';
+        $user->pincode       = $request->pincode ? trim((string)$request->pincode) : '';
         $user->teaching_mode = is_array($request->teaching_mode) ? implode(',', $request->teaching_mode) : ($request->teaching_mode ?? null);
         $user->board         = is_array($request->board) ? implode(',', $request->board) : ($request->board ?? null);
         $user->subjects      = is_array($request->subjects) ? implode(',', $request->subjects) : ($request->subjects ?? null);

@@ -9,6 +9,9 @@ export default function Contact() {
         name: '',
         email: '',
         phone: '',
+        student_class: 'Class 9–10',
+        course_subject: 'Mathematics & Science',
+        learning_mode: 'Home Tuition (In-person)',
         message: '',
     });
     const [loading, setLoading] = useState(false);
@@ -24,31 +27,53 @@ export default function Contact() {
         try {
             const res = await axios.post('/contactpost', form);
             if (res.data.status === 200) {
-                setSuccessMsg(res.data.message || 'Your message has been sent successfully!');
-                setForm({ name: '', email: '', phone: '', message: '' });
+                setSuccessMsg(res.data.message || 'Your inquiry has been received! Our coordinator will contact you shortly.');
+                setForm({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    student_class: 'Class 9–10',
+                    course_subject: 'Mathematics & Science',
+                    learning_mode: 'Home Tuition (In-person)',
+                    message: '',
+                });
             } else {
-                setErrorMsg(res.data.message || 'Failed to send message.');
+                setErrorMsg(res.data.message || 'Failed to submit inquiry.');
             }
         } catch (err) {
-            setErrorMsg('An error occurred. Please try again.');
+            setErrorMsg('An error occurred while submitting. Please call or WhatsApp us directly.');
         } finally {
             setLoading(false);
         }
     };
 
+    const phoneNumber = settings?.mobile || '7003578764';
+    const emailAddress = settings?.email || 'info@thelocaltutors.com';
+    const officeAddress = settings?.address || '88/1 Shyambazar Street, Kolkata - 700004, West Bengal';
+
     return (
         <FrontLayout>
-            <Head title="Contact Us" />
+            <Head>
+                <title>Contact &amp; Book Trial Class - The Local Tutors</title>
+                <meta name="description" content="Inquire about verified home tutors and online batches in Kolkata. Contact our academic coordinator for free trial classes, fee structures, and customized study plans." />
+            </Head>
 
-            <div className="bg-primary text-white py-5">
+            <div className="bg-white border-bottom py-5 hero-wrapper">
                 <div className="container text-center">
-                    <h1 className="fw-bold mb-2">Contact Us</h1>
+                    <span className="badge badge-soft-primary text-primary px-3 py-2 rounded-pill fw-semibold mb-3 d-inline-flex align-items-center gap-2 shadow-2xs">
+                        <i className="bi bi-chat-dots-fill text-primary"></i>
+                        <span>Dedicated Academic Support</span>
+                    </span>
+                    <h1 className="fw-bold display-6 text-dark mb-2">Get in Touch &amp; Book a Trial</h1>
+                    <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '640px' }}>
+                        Need an experienced home tutor or online coaching? Fill out the quick inquiry form below or connect instantly with our Kolkata coordinator on WhatsApp.
+                    </p>
                     <nav aria-label="breadcrumb">
-                        <ol className="breadcrumb justify-content-center mb-0">
+                        <ol className="breadcrumb justify-content-center mb-0 small">
                             <li className="breadcrumb-item">
-                                <Link href="/" className="text-white-50 text-decoration-none">Home</Link>
+                                <Link href="/" className="text-secondary text-decoration-none">Home</Link>
                             </li>
-                            <li className="breadcrumb-item active text-white" aria-current="page">Contact Us</li>
+                            <li className="breadcrumb-item active text-primary fw-semibold" aria-current="page">Contact Us</li>
                         </ol>
                     </nav>
                 </div>
@@ -56,62 +81,100 @@ export default function Contact() {
 
             <div className="container py-5">
                 <div className="row gy-5">
-                    {/* Left: Contact Info */}
+                    {/* Left: Contact Info & Local Trust Signals */}
                     <div className="col-lg-5">
-                        <span className="badge bg-primary-subtle text-primary fw-bold mb-2">Get In Touch</span>
-                        <h2 className="fw-bold text-dark mb-4">We'd Love to Hear From You</h2>
-                        <p className="text-muted mb-4">
-                            Have questions about our tutors, coaching courses, or need help getting started?
-                            Reach out to our team anytime.
+                        <span className="badge badge-soft-success text-success fw-bold mb-2 px-3 py-1 rounded-pill small">
+                            Local Support Helpline
+                        </span>
+                        <h2 className="fw-bold text-dark mb-3">Speak with Our Academic Coordinator</h2>
+                        <p className="text-secondary mb-4">
+                            We match your child with verified local educators tailored to their syllabus (CBSE, ICSE, WBBSE), learning pace, and neighborhood.
                         </p>
 
-                        <div className="d-flex flex-column gap-3">
-                            <div className="d-flex align-items-start gap-3">
-                                <div className="btn btn-primary rounded-circle p-2 text-white flex-shrink-0">
-                                    <i className="bi bi-geo-alt fs-5"></i>
+                        <div className="d-flex flex-column gap-3 mb-4">
+                            <div className="d-flex align-items-start gap-3 p-3 bg-white rounded-3 border shadow-2xs">
+                                <div className="p-2 bg-primary-subtle text-primary rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style={{ width: '42px', height: '42px' }}>
+                                    <i className="bi bi-telephone-fill"></i>
                                 </div>
                                 <div>
-                                    <h6 className="fw-bold mb-1">Our Location</h6>
-                                    <p className="text-muted small mb-0">{settings?.address || 'Local Tutoring Center, India'}</p>
+                                    <h6 className="fw-bold text-dark mb-1">Direct Call &amp; WhatsApp</h6>
+                                    <a href={`tel:${phoneNumber}`} className="text-dark fw-semibold text-decoration-none d-block">
+                                        +91 {phoneNumber}
+                                    </a>
+                                    <a
+                                        href={`https://wa.me/91${phoneNumber}?text=Hello%20The%20Local%20Tutors,%20I%20would%20like%20to%20inquire%20about%20a%20tutor`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-success small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1 mt-1"
+                                    >
+                                        <i className="bi bi-whatsapp"></i> Chat on WhatsApp (Fast response)
+                                    </a>
                                 </div>
                             </div>
 
-                            <div className="d-flex align-items-start gap-3">
-                                <div className="btn btn-primary rounded-circle p-2 text-white flex-shrink-0">
-                                    <i className="bi bi-telephone fs-5"></i>
+                            <div className="d-flex align-items-start gap-3 p-3 bg-white rounded-3 border shadow-2xs">
+                                <div className="p-2 bg-info-subtle text-info rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style={{ width: '42px', height: '42px' }}>
+                                    <i className="bi bi-envelope-fill"></i>
                                 </div>
                                 <div>
-                                    <h6 className="fw-bold mb-1">Call Us</h6>
-                                    <p className="text-muted small mb-0">{settings?.mobile || '+91 98765 43210'}</p>
+                                    <h6 className="fw-bold text-dark mb-1">Official Email</h6>
+                                    <a href={`mailto:${emailAddress}`} className="text-secondary small text-decoration-none">
+                                        {emailAddress}
+                                    </a>
                                 </div>
                             </div>
 
-                            <div className="d-flex align-items-start gap-3">
-                                <div className="btn btn-primary rounded-circle p-2 text-white flex-shrink-0">
-                                    <i className="bi bi-envelope fs-5"></i>
+                            <div className="d-flex align-items-start gap-3 p-3 bg-white rounded-3 border shadow-2xs">
+                                <div className="p-2 bg-warning-subtle text-warning-emphasis rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style={{ width: '42px', height: '42px' }}>
+                                    <i className="bi bi-geo-alt-fill"></i>
                                 </div>
                                 <div>
-                                    <h6 className="fw-bold mb-1">Email Us</h6>
-                                    <p className="text-muted small mb-0">{settings?.email || 'support@thelocaltutors.com'}</p>
+                                    <h6 className="fw-bold text-dark mb-1">Registered Address</h6>
+                                    <p className="text-secondary small mb-0">{officeAddress}</p>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Pan-India Tutoring Coverage */}
+                        <div className="p-4 bg-light rounded-4 border">
+                            <h6 className="fw-bold text-dark mb-2">
+                                <i className="bi bi-geo-alt-fill text-danger me-2"></i>Pan-India Tutoring Coverage
+                            </h6>
+                            <p className="text-secondary small mb-2">
+                                Verified 1-on-1 home tutors and online mentors available across all Indian states and major cities:
+                            </p>
+                            <div className="d-flex flex-wrap gap-2">
+                                {['All States & UTs', 'Delhi NCR', 'Mumbai', 'Kolkata', 'Bengaluru', 'Hyderabad', 'Pune', 'Chennai', 'Jaipur', 'Lucknow', 'Ahmedabad', 'Patna'].map((area) => (
+                                    <span key={area} className="badge bg-white text-secondary border small px-2 py-1 rounded-pill">
+                                        {area}
+                                    </span>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Right: Contact Form */}
+                    {/* Right: Comprehensive Quick Inquiry Form */}
                     <div className="col-lg-7">
-                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                            <h4 className="fw-bold mb-4">Send Us a Message</h4>
+                        <div className="card card-modern p-4 p-md-5">
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <h4 className="fw-bold text-dark mb-0">Quick Inquiry &amp; Demo Request</h4>
+                                <span className="badge badge-soft-success text-success small px-2 py-1 rounded-pill">
+                                    Free Demo Class
+                                </span>
+                            </div>
+                            <p className="text-secondary small mb-4">
+                                Fill in the details below. Our academic team will analyze your requirements and recommend matched tutors within 2 hours.
+                            </p>
 
                             {successMsg && (
-                                <div className="alert alert-success d-flex align-items-center mb-4">
+                                <div className="alert alert-success d-flex align-items-center mb-4 rounded-3">
                                     <i className="bi bi-check-circle-fill me-2 fs-5"></i>
                                     <div>{successMsg}</div>
                                 </div>
                             )}
 
                             {errorMsg && (
-                                <div className="alert alert-danger d-flex align-items-center mb-4">
+                                <div className="alert alert-danger d-flex align-items-center mb-4 rounded-3">
                                     <i className="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                                     <div>{errorMsg}</div>
                                 </div>
@@ -120,11 +183,11 @@ export default function Contact() {
                             <form onSubmit={handleSubmit}>
                                 <div className="row g-3">
                                     <div className="col-md-6">
-                                        <label className="form-label fw-semibold">Your Name *</label>
+                                        <label className="form-label small fw-semibold">Parent / Student Name *</label>
                                         <input
                                             type="text"
                                             className="form-control"
-                                            placeholder="Enter your name"
+                                            placeholder="e.g. Ramesh Ghosh"
                                             value={form.name}
                                             onChange={(e) => setForm({ ...form, name: e.target.value })}
                                             required
@@ -132,49 +195,94 @@ export default function Contact() {
                                     </div>
 
                                     <div className="col-md-6">
-                                        <label className="form-label fw-semibold">Your Email *</label>
+                                        <label className="form-label small fw-semibold">Phone / WhatsApp Number *</label>
                                         <input
-                                            type="email"
+                                            type="tel"
                                             className="form-control"
-                                            placeholder="name@example.com"
-                                            value={form.email}
-                                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="col-12">
-                                        <label className="form-label fw-semibold">Phone Number *</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            placeholder="Enter your mobile number"
+                                            placeholder="10-digit mobile number"
                                             value={form.phone}
                                             onChange={(e) => setForm({ ...form, phone: e.target.value })}
                                             required
                                         />
                                     </div>
 
+                                    <div className="col-md-6">
+                                        <label className="form-label small fw-semibold">Student Class / Grade *</label>
+                                        <select
+                                            className="form-select"
+                                            value={form.student_class}
+                                            onChange={(e) => setForm({ ...form, student_class: e.target.value })}
+                                            required
+                                        >
+                                            <option value="Class 1–5">Class 1–5 (Primary Foundation)</option>
+                                            <option value="Class 6–8">Class 6–8 (Middle School)</option>
+                                            <option value="Class 9–10">Class 9–10 (CBSE / ICSE / WBBSE Board)</option>
+                                            <option value="Class 11–12">Class 11–12 (Science / Commerce / Arts)</option>
+                                            <option value="NEET / JEE">Competitive (NEET / JEE / Entrance)</option>
+                                            <option value="Computer / Skill">Basic Computer / AI / Coding</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <label className="form-label small fw-semibold">Preferred Learning Mode *</label>
+                                        <select
+                                            className="form-select"
+                                            value={form.learning_mode}
+                                            onChange={(e) => setForm({ ...form, learning_mode: e.target.value })}
+                                            required
+                                        >
+                                            <option value="Home Tuition (In-person)">1-on-1 Home Tuition (At Doorstep)</option>
+                                            <option value="Interactive 1-on-1 Online">Interactive 1-on-1 Online</option>
+                                            <option value="Small Batch Online">Small Batch Group</option>
+                                            <option value="Either Mode">Either Mode Suitable</option>
+                                        </select>
+                                    </div>
+
                                     <div className="col-12">
-                                        <label className="form-label fw-semibold">Message *</label>
-                                        <textarea
-                                            rows="5"
+                                        <label className="form-label small fw-semibold">Subjects / Courses Required *</label>
+                                        <input
+                                            type="text"
                                             className="form-control"
-                                            placeholder="Write your query or message here..."
+                                            placeholder="e.g. TIF Core Mathematics, Class 10 Science, Artificial Intelligence, Spoken English"
+                                            value={form.course_subject}
+                                            onChange={(e) => setForm({ ...form, course_subject: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold">Email Address (Optional)</label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            placeholder="name@email.com (optional)"
+                                            value={form.email}
+                                            onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold">City, State, Locality &amp; Specific Requirements</label>
+                                        <textarea
+                                            rows="3"
+                                            className="form-control"
+                                            placeholder="Mention your City, State, Pin Code, Locality, preferred schedule (morning/evening), or specific weak areas."
                                             value={form.message}
                                             onChange={(e) => setForm({ ...form, message: e.target.value })}
-                                            required
                                         ></textarea>
                                     </div>
 
                                     <div className="col-12 mt-4">
                                         <button
                                             type="submit"
-                                            className="btn btn-primary px-4 py-2 fw-semibold"
+                                            className="btn btn-primary-gradient px-4 py-2 fw-semibold w-100"
                                             disabled={loading}
                                         >
-                                            {loading ? 'Sending...' : 'Send Message'}
+                                            {loading ? 'Submitting Inquiry...' : 'Submit Inquiry & Request Free Trial'}
                                         </button>
+                                        <p className="text-muted small text-center mt-2 mb-0">
+                                            <i className="bi bi-shield-lock me-1"></i>Your information is private and never shared with third parties.
+                                        </p>
                                     </div>
                                 </div>
                             </form>
