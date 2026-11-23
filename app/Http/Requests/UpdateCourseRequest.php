@@ -25,13 +25,12 @@ class UpdateCourseRequest extends FormRequest
             'name'=>'required|string|max:192',
             'duration'=>'nullable',
             'price'=>'nullable',
-            'teacher_id'=>'required',
-            'teaching_mode'=>'required|max:192',
+            'teacher_id'=>'nullable',
+            'teaching_mode'=>'nullable',
             'description'=>'nullable|string',
             'youtube_url'=>'nullable|string',
             'is_active'=>'nullable',
             'image'    => 'nullable|image|mimes:jpg,jpeg,png,webp'
-
         ];
     }
 }

@@ -5,7 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title inertia>{{ config('app.name', 'The Local Tutors') }}</title>
+    <title inertia>{{ config('app.name', 'The Local Tutors') }} - Verified Home & Online Tutors in Kolkata</title>
+    <meta name="description" content="Find qualified, background-verified local home tutors and online educators across Kolkata and West Bengal. Specialized 1-on-1 tutoring in TIF Core Mathematics, Science, CBSE, ICSE, WBBSE boards, Artificial Intelligence, and Basic Computer skills.">
+    <meta name="keywords" content="The Local Tutors, home tutor kolkata, private tutor salt lake, online tutor behala, math tutor CBSE, ICSE chemistry teacher, WBBSE tuition, TIF core mathematics, AI courses for students, basic computer course">
+    <meta name="author" content="The Local Tutors">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="The Local Tutors">
+    <meta property="og:title" content="The Local Tutors - Verified Home & Online Educators">
+    <meta property="og:description" content="Connect with verified home tutors, private mentors, and coaching institutes across Kolkata. Personalized 1-on-1 and small batch tuition for all school boards.">
+    <meta property="og:url" content="{{ url('/') }}">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Local Tutors - Find Qualified Mentors Near You">
+    <meta name="twitter:description" content="Verified home & online personal tutors for CBSE, ICSE, WBBSE, Core Mathematics, and Computer Skills.">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ url()->current() }}">
 
     <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="57x57" href="{{ asset('favicon/apple-icon-57x57.png') }}">
@@ -17,7 +37,7 @@
     <link rel="apple-touch-icon" sizes="144x144" href="{{ asset('favicon/apple-icon-144x144.png') }}">
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('favicon/apple-icon-152x152.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-icon-180x180.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192"  href="{{ asset('favicon/android-icon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon/android-icon-192x192.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon/favicon-96x96.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">

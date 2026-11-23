@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import IndiaLocationSelector from '../../../Components/IndiaLocationSelector';
 import axios from 'axios';
 
 export default function UpdateMore({
@@ -187,75 +188,21 @@ export default function UpdateMore({
                             />
                         </div>
 
-                        <div className="col-md-4">
-                            <label className="form-label fw-semibold">State</label>
-                            <select
-                                className="form-select"
-                                value={form.state}
-                                onChange={handleStateChange}
-                            >
-                                <option value="0">Select State</option>
-                                {states.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-4">
-                            <label className="form-label fw-semibold">District</label>
-                            <select
-                                className="form-select"
-                                value={form.district}
-                                onChange={handleDistrictChange}
-                            >
-                                <option value="0">Select District</option>
-                                {districts.map((d) => (
-                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-4">
-                            <label className="form-label fw-semibold">City</label>
-                            <select
-                                className="form-select"
-                                value={form.city}
-                                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                            >
-                                <option value="0">Select City</option>
-                                {cities.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="col-md-6">
-                            <label className="form-label fw-semibold">Street / Locality</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={form.street}
-                                onChange={(e) => setForm({ ...form, street: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="col-md-6">
-                            <label className="form-label fw-semibold">Pincode</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={form.pincode}
-                                onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-                            />
-                        </div>
-
                         <div className="col-12">
-                            <label className="form-label fw-semibold">Full Address</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={form.address}
-                                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                            <h6 className="fw-bold text-dark border-bottom pb-2 mb-3">Pan-India Location &amp; Address</h6>
+                            <IndiaLocationSelector
+                                stateValue={form.state}
+                                cityValue={form.city}
+                                areaValue={form.address}
+                                pincodeValue={form.pincode}
+                                onStateChange={(st) => setForm((prev) => ({ ...prev, state: st, city: '' }))}
+                                onCityChange={(ct) => setForm((prev) => ({ ...prev, city: ct }))}
+                                onAreaChange={(ar) => setForm((prev) => ({ ...prev, address: ar }))}
+                                onPincodeChange={(pin) => setForm((prev) => ({ ...prev, pincode: pin }))}
+                                stateColClass="col-md-6"
+                                cityColClass="col-md-6"
+                                areaColClass="col-md-8"
+                                pincodeColClass="col-md-4"
                             />
                         </div>
 

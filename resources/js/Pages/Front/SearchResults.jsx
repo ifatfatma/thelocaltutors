@@ -2,6 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
+import { cleanExcerpt } from '../../Utils/text';
+import { STATES_LIST, getCitiesForState } from '../../Utils/indiaLocations';
 import axios from 'axios';
 
 const CATEGORIES = [
@@ -283,26 +285,11 @@ export default function SearchResults({
             .slice(0, 8);
     }, [modalSubjectInput, allAvailableSubjects]);
 
-    const handleStateChange = async (e) => {
-        const stateId = e.target.value;
-        setModalForm((prev) => ({ ...prev, search_state: stateId, search_district: '0', search_city: '0' }));
-        setDistricts([]);
-        setCities([]);
-
-        if (stateId && stateId !== '0') {
-            setLoadingDistricts(true);
-            try {
-                const res = await axios.get(`/get-districts?state_id=${stateId}`);
-                setDistricts(res.data || []);
-            } catch (err) {
-                try {
-                    const fallback = await axios.get(`/getDistrictAjax/${stateId}`);
-                    setDistricts(fallback.data || []);
-                } catch (e2) {}
-            } finally {
-                setLoadingDistricts(false);
-            }
-        }
+    const handleStateChange = (e) => {
+        const stateName = e.target.value;
+        setModalForm((prev) => ({ ...prev, search_state: stateName, search_district: '0', search_city: '0' }));
+        const stateCities = getCitiesForState(stateName);
+        setCities(stateCities.map((c, idx) => ({ id: c, name: c })));
     };
 
     const handleDistrictChange = async (e) => {
@@ -1028,7 +1015,7 @@ export default function SearchResults({
                                             className="text-muted small fst-italic text-truncate-2 mb-3 px-1"
                                             style={{ fontSize: '0.82rem' }}
                                         >
-                                            "{teacher.description}"
+                                            "{cleanExcerpt(teacher.description, 120)}"
                                         </p>
                                     )}
 
@@ -1256,51 +1243,34 @@ export default function SearchResults({
                                             </div>
                                         </div>
 
-                                        {/* Cascading State, District, City */}
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">State</label>
+                                        {/* Pan-India State & City */}
+                                        <div className="col-md-6">
+                                            <label className="form-label small fw-bold text-dark mb-1">State / UT</label>
                                             <select
                                                 className="form-select rounded-3"
                                                 value={modalForm.search_state}
                                                 onChange={handleStateChange}
                                             >
-                                                <option value="0">Select State</option>
-                                                {states.map((s) => (
-                                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                                <option value="0">All States &amp; UTs</option>
+                                                {STATES_LIST.map((s) => (
+                                                    <option key={s} value={s}>{s}</option>
                                                 ))}
                                             </select>
                                         </div>
 
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">District</label>
-                                            <select
-                                                className="form-select rounded-3"
-                                                value={modalForm.search_district}
-                                                onChange={handleDistrictChange}
-                                                disabled={modalForm.search_state === '0' || loadingDistricts}
-                                            >
-                                                <option value="0">
-                                                    {loadingDistricts ? 'Loading...' : 'Select District'}
-                                                </option>
-                                                {districts.map((d) => (
-                                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-4">
-                                            <label className="form-label small fw-bold text-dark mb-1">City / Area</label>
+                                        <div className="col-md-6">
+                                            <label className="form-label small fw-bold text-dark mb-1">City / District</label>
                                             <select
                                                 className="form-select rounded-3"
                                                 value={modalForm.search_city}
                                                 onChange={(e) => setModalForm({ ...modalForm, search_city: e.target.value })}
-                                                disabled={modalForm.search_district === '0' || loadingCities}
+                                                disabled={modalForm.search_state === '0' || modalForm.search_state === ''}
                                             >
                                                 <option value="0">
-                                                    {loadingCities ? 'Loading...' : 'Select City'}
+                                                    {modalForm.search_state === '0' ? 'First select State' : 'All Cities in State'}
                                                 </option>
                                                 {cities.map((c) => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                    <option key={c.id || c.name} value={c.name || c.id}>{c.name || c.id}</option>
                                                 ))}
                                             </select>
                                         </div>

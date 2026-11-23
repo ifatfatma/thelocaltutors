@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
+import IndiaLocationSelector from '../../Components/IndiaLocationSelector';
 import axios from 'axios';
 
 export default function EditProfile({
@@ -14,7 +15,7 @@ export default function EditProfile({
     days = [],
 }) {
     const { auth } = usePage().props;
-    const isTeacher = auth?.user?.type === 'teacher';
+    const isTeacher = auth?.user?.type === 'teacher' || !!teacherdetails?.id;
 
     const [form, setForm] = useState({
         name: userdetails?.name || '',
@@ -25,22 +26,31 @@ export default function EditProfile({
         experience: teacherdetails?.experience || '',
         description: teacherdetails?.description || '',
         address: teacherdetails?.address || '',
-        state: teacherdetails?.state || '0',
-        district: teacherdetails?.district || '0',
-        city: teacherdetails?.city || '0',
+        state: teacherdetails?.state || '',
+        district: teacherdetails?.district || '',
+        city: teacherdetails?.city || '',
         pincode: teacherdetails?.pincode || '',
         latitude: teacherdetails?.latitude || '',
         longitude: teacherdetails?.longitude || '',
-        qualification: teacherdetails?.qualification ? teacherdetails.qualification.split(',') : [],
-        teaching_mode: teacherdetails?.teaching_mode ? teacherdetails.teaching_mode.split(',') : [],
-        board: teacherdetails?.board ? teacherdetails.board.split(',') : [],
-        subjects: teacherdetails?.subjects ? teacherdetails.subjects.split(',') : [],
-        days: teacherdetails?.days ? teacherdetails.days.split(',') : [],
+        timings: teacherdetails?.timings || '',
+        qualification: teacherdetails?.qualification
+            ? (Array.isArray(teacherdetails.qualification) ? teacherdetails.qualification : teacherdetails.qualification.split(',').map(s => s.trim()))
+            : [],
+        teaching_mode: teacherdetails?.teaching_mode
+            ? (Array.isArray(teacherdetails.teaching_mode) ? teacherdetails.teaching_mode : teacherdetails.teaching_mode.split(',').map(s => s.trim()))
+            : [],
+        board: teacherdetails?.board
+            ? (Array.isArray(teacherdetails.board) ? teacherdetails.board : teacherdetails.board.split(',').map(s => s.trim()))
+            : [],
+        subjects: teacherdetails?.subjects
+            ? (Array.isArray(teacherdetails.subjects) ? teacherdetails.subjects : teacherdetails.subjects.split(',').map(s => s.trim()))
+            : [],
+        days: teacherdetails?.days
+            ? (Array.isArray(teacherdetails.days) ? teacherdetails.days : teacherdetails.days.split(',').map(s => s.trim()))
+            : [],
     });
 
     const [imageFile, setImageFile] = useState(null);
-    const [districts, setDistricts] = useState([]);
-    const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [detectingLocation, setDetectingLocation] = useState(false);
@@ -50,13 +60,13 @@ export default function EditProfile({
         if (!navigator.geolocation) {
             setLocationStatus({
                 type: 'warning',
-                text: 'Geolocation is not supported by your browser. You can still enter coordinates manually.',
+                text: 'Geolocation is not supported by your browser. You can enter coordinates or your area manually.',
             });
             return;
         }
 
         setDetectingLocation(true);
-        setLocationStatus({ type: 'info', text: 'Detecting your current location...' });
+        setLocationStatus({ type: 'info', text: 'Detecting your serving location...' });
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -72,18 +82,18 @@ export default function EditProfile({
                 setDetectingLocation(false);
                 setLocationStatus({
                     type: 'success',
-                    text: `Current serving location detected: ${lat}, ${lng} (Accuracy: ~${accuracy}m). Click "Save Profile" below to persist.`,
+                    text: `Serving location detected: ${lat}, ${lng} (~${accuracy}m accuracy). Click "Save Profile" below to persist.`,
                 });
 
                 axios.get(`/savelatlong/${lat}/${lng}`).catch(() => {});
             },
             (error) => {
                 setDetectingLocation(false);
-                let msg = 'Unable to retrieve location.';
+                let msg = 'Unable to retrieve GPS location.';
                 if (error.code === 1) {
-                    msg = 'Location permission was denied. Please allow location access in your browser or enter coordinates manually.';
+                    msg = 'Location permission was denied. Please allow location access or select your Pan-India State and City below.';
                 } else if (error.code === 2) {
-                    msg = 'Location unavailable. Please check your network/GPS connection or enter coordinates manually.';
+                    msg = 'GPS location unavailable. Please select your State, City, and PIN code below.';
                 } else if (error.code === 3) {
                     msg = 'Location request timed out. Please try again.';
                 }
@@ -93,61 +103,14 @@ export default function EditProfile({
         );
     };
 
-    useEffect(() => {
-        if (form.state && form.state !== '0') {
-            axios.get(`/get-districts?state_id=${form.state}`).then((res) => {
-                setDistricts(res.data || []);
-            }).catch(() => {
-                axios.get(`/getDistrictAjax/${form.state}`).then((res) => setDistricts(res.data || []));
-            });
-        }
-        if (form.district && form.district !== '0') {
-            axios.get(`/get-cities?district_id=${form.district}`).then((res) => {
-                setCities(res.data || []);
-            }).catch(() => {
-                axios.get(`/getCityAjax/${form.district}`).then((res) => setCities(res.data || []));
-            });
-        }
-    }, []);
-
-    const handleStateChange = async (e) => {
-        const sId = e.target.value;
-        setForm((prev) => ({ ...prev, state: sId, district: '0', city: '0' }));
-        setDistricts([]);
-        setCities([]);
-        if (sId && sId !== '0') {
-            try {
-                const res = await axios.get(`/get-districts?state_id=${sId}`);
-                setDistricts(res.data || []);
-            } catch {
-                const res = await axios.get(`/getDistrictAjax/${sId}`);
-                setDistricts(res.data || []);
-            }
-        }
-    };
-
-    const handleDistrictChange = async (e) => {
-        const dId = e.target.value;
-        setForm((prev) => ({ ...prev, district: dId, city: '0' }));
-        setCities([]);
-        if (dId && dId !== '0') {
-            try {
-                const res = await axios.get(`/get-cities?district_id=${dId}`);
-                setCities(res.data || []);
-            } catch {
-                const res = await axios.get(`/getCityAjax/${dId}`);
-                setCities(res.data || []);
-            }
-        }
-    };
-
     const handleMultiSelect = (field, value) => {
-        const current = [...(form[field] || [])];
-        const idx = current.indexOf(value);
+        const strVal = String(value);
+        const current = [...(form[field] || [])].map(String);
+        const idx = current.indexOf(strVal);
         if (idx > -1) {
             current.splice(idx, 1);
         } else {
-            current.push(value);
+            current.push(strVal);
         }
         setForm({ ...form, [field]: current });
     };
@@ -175,10 +138,12 @@ export default function EditProfile({
             });
             setStatusMsg({ type: 'success', text: res.data?.message || 'Profile updated successfully!' });
             setImageFile(null);
-            router.reload();
+            setTimeout(() => {
+                router.reload();
+            }, 800);
         } catch (err) {
             console.error(err);
-            const msg = err.response?.data?.message || 'Error updating profile. Please check input.';
+            const msg = err.response?.data?.message || 'Error updating profile. Please check your inputs.';
             setStatusMsg({ type: 'danger', text: msg });
         } finally {
             setLoading(false);
@@ -187,29 +152,66 @@ export default function EditProfile({
 
     return (
         <FrontLayout>
-            <Head title="Edit Profile" />
+            <Head title="Edit Profile & Tutoring Location - The Local Tutors" />
 
-            <div className="bg-primary text-white py-4">
+            {/* Clean Header */}
+            <div className="bg-white border-bottom py-4 hero-wrapper">
                 <div className="container">
-                    <h2 className="fw-bold mb-1">Edit Profile</h2>
-                    <p className="text-white-50 mb-0">Update your account information and preferences</p>
+                    <nav aria-label="breadcrumb" className="mb-2">
+                        <ol className="breadcrumb mb-0 small">
+                            <li className="breadcrumb-item">
+                                <Link href="/" className="text-secondary text-decoration-none">Home</Link>
+                            </li>
+                            <li className="breadcrumb-item">
+                                <Link href="/dashboard" className="text-secondary text-decoration-none">Dashboard</Link>
+                            </li>
+                            <li className="breadcrumb-item active text-primary fw-semibold" aria-current="page">
+                                Edit Profile
+                            </li>
+                        </ol>
+                    </nav>
+                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h2 className="fw-bold text-dark mb-1">
+                                {isTeacher ? 'Teacher Profile & Pan-India Location' : 'Edit Profile'}
+                            </h2>
+                            <p className="text-secondary small mb-0">
+                                Keep your personal contact information, teaching credentials, and Pan-India service location up to date.
+                            </p>
+                        </div>
+                        {isTeacher && (
+                            <Link
+                                href="/dashboard/demos"
+                                className="btn btn-outline-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-2"
+                            >
+                                <i className="bi bi-camera-video-fill"></i>
+                                <span>Recorded Demo Sessions</span>
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
 
             <div className="container py-5">
                 <div className="row justify-content-center">
                     <div className="col-lg-10">
-                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                        <div className="card card-modern p-4 p-md-5 border-0 shadow-sm">
                             {statusMsg.text && (
-                                <div className={`alert alert-${statusMsg.type} mb-4`}>
-                                    {statusMsg.text}
+                                <div className={`alert alert-${statusMsg.type} mb-4 d-flex align-items-center gap-2 rounded-3`}>
+                                    <i className={`bi ${statusMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} fs-5`}></i>
+                                    <div>{statusMsg.text}</div>
                                 </div>
                             )}
 
                             <form onSubmit={handleSubmit}>
-                                <h5 className="fw-bold text-dark border-bottom pb-2 mb-4">Basic Information</h5>
-                                <div className="row g-3 mb-4">
-                                    <div className="col-md-4 text-center mb-3">
+                                {/* Basic Information */}
+                                <h5 className="fw-bold text-dark border-bottom pb-2 mb-4 d-flex align-items-center gap-2">
+                                    <i className="bi bi-person-circle text-primary"></i>
+                                    <span>Personal &amp; Contact Information</span>
+                                </h5>
+
+                                <div className="row g-4 mb-4">
+                                    <div className="col-md-3 text-center">
                                         <img
                                             src={
                                                 imageFile
@@ -218,13 +220,16 @@ export default function EditProfile({
                                                     ? `/user/${userdetails.image}`
                                                     : '/front/img/noprofileimage.png'
                                             }
-                                            alt="Avatar"
-                                            className="rounded-circle shadow-sm mb-3"
+                                            alt="Profile Avatar"
+                                            className="rounded-circle shadow-xs border border-2 mb-3"
                                             style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                                            onError={(e) => {
+                                                e.target.src = '/front/img/noprofileimage.png';
+                                            }}
                                         />
                                         <div>
-                                            <label className="btn btn-outline-secondary btn-sm">
-                                                Change Photo
+                                            <label className="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                                <i className="bi bi-camera me-1"></i>Change Photo
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -235,10 +240,10 @@ export default function EditProfile({
                                         </div>
                                     </div>
 
-                                    <div className="col-md-8">
+                                    <div className="col-md-9">
                                         <div className="row g-3">
                                             <div className="col-sm-6">
-                                                <label className="form-label fw-semibold">Name *</label>
+                                                <label className="form-label small fw-semibold text-secondary">Full Name *</label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
@@ -249,7 +254,7 @@ export default function EditProfile({
                                             </div>
 
                                             <div className="col-sm-6">
-                                                <label className="form-label fw-semibold">Email *</label>
+                                                <label className="form-label small fw-semibold text-secondary">Email Address *</label>
                                                 <input
                                                     type="email"
                                                     className="form-control"
@@ -260,229 +265,325 @@ export default function EditProfile({
                                             </div>
 
                                             <div className="col-sm-6">
-                                                <label className="form-label fw-semibold">Mobile Number *</label>
+                                                <label className="form-label small fw-semibold text-secondary">Mobile Number (Calling) *</label>
                                                 <input
-                                                    type="text"
+                                                    type="tel"
                                                     className="form-control"
+                                                    placeholder="10-digit mobile number"
                                                     value={form.mobile}
                                                     onChange={(e) => setForm({ ...form, mobile: e.target.value })}
                                                     required
                                                 />
                                             </div>
 
-                                            {isTeacher && (
-                                                <div className="col-sm-6">
-                                                    <label className="form-label fw-semibold">WhatsApp Number</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-control"
-                                                        value={form.whatsapp}
-                                                        onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="col-sm-6">
+                                                <label className="form-label small fw-semibold text-secondary">WhatsApp Number</label>
+                                                <input
+                                                    type="tel"
+                                                    className="form-control"
+                                                    placeholder="WhatsApp number for instant demo requests"
+                                                    value={form.whatsapp}
+                                                    onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {isTeacher && (
-                                    <>
-                                        <h5 className="fw-bold text-dark border-bottom pb-2 mb-4 mt-4">
-                                            Teacher Profile &amp; Tutoring Details
-                                        </h5>
+                                {/* Pan-India Location Section */}
+                                <h5 className="fw-bold text-dark border-bottom pb-2 mb-3 mt-4 d-flex align-items-center gap-2">
+                                    <i className="bi bi-geo-alt-fill text-danger"></i>
+                                    <span>Pan-India Location &amp; Tutoring Coverage</span>
+                                </h5>
+                                <p className="text-secondary small mb-3">
+                                    Select your State/UT and City. This ensures students and parents in your region can match with you for doorstep home tuition or online classes.
+                                </p>
 
-                                        <div className="row g-3 mb-4">
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">Gender</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={form.gender}
-                                                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                                                >
-                                                    <option value="Male">Male</option>
-                                                    <option value="Female">Female</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
+                                <div className="p-3 p-md-4 bg-light rounded-4 border mb-4">
+                                    <IndiaLocationSelector
+                                        stateValue={form.state}
+                                        cityValue={form.city}
+                                        areaValue={form.address}
+                                        pincodeValue={form.pincode}
+                                        onStateChange={(st) => setForm((prev) => ({ ...prev, state: st, city: '' }))}
+                                        onCityChange={(ct) => setForm((prev) => ({ ...prev, city: ct }))}
+                                        onAreaChange={(ar) => setForm((prev) => ({ ...prev, address: ar }))}
+                                        onPincodeChange={(pin) => setForm((prev) => ({ ...prev, pincode: pin }))}
+                                        required={isTeacher}
+                                        stateLabel="State / Union Territory"
+                                        cityLabel="City / District"
+                                        areaLabel="Area / Neighborhood / Street Address"
+                                        pincodeLabel="PIN Code (6 digits)"
+                                    />
+
+                                    {/* Geolocation / GPS Coordinates */}
+                                    <div className="mt-4 pt-3 border-top">
+                                        <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                            <div>
+                                                <span className="fw-bold small text-dark d-block">
+                                                    <i className="bi bi-crosshair text-primary me-1"></i>Proximity Matching Coordinates (Optional)
+                                                </span>
+                                                <span className="text-muted small">
+                                                    Enables "Near Me" radius matching for students within 1–15 km of your location.
+                                                </span>
                                             </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                                                onClick={handleDetectServingLocation}
+                                                disabled={detectingLocation}
+                                            >
+                                                {detectingLocation ? 'Detecting GPS...' : 'Use Current Location'}
+                                            </button>
+                                        </div>
 
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">Experience (Years)</label>
-                                                <input
-                                                    type="number"
-                                                    className="form-control"
-                                                    value={form.experience}
-                                                    onChange={(e) => setForm({ ...form, experience: e.target.value })}
-                                                />
+                                        {locationStatus.text && (
+                                            <div className={`alert alert-${locationStatus.type} py-2 px-3 small mb-2`}>
+                                                {locationStatus.text}
                                             </div>
+                                        )}
 
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">Pincode</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    value={form.pincode}
-                                                    onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-                                                />
-                                            </div>
-
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">State</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={form.state}
-                                                    onChange={handleStateChange}
-                                                >
-                                                    <option value="0">Select State</option>
-                                                    {states.map((s) => (
-                                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">District</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={form.district}
-                                                    onChange={handleDistrictChange}
-                                                >
-                                                    <option value="0">Select District</option>
-                                                    {districts.map((d) => (
-                                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div className="col-md-4">
-                                                <label className="form-label fw-semibold">City</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={form.city}
-                                                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                                                >
-                                                    <option value="0">Select City</option>
-                                                    {cities.map((c) => (
-                                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div className="col-12">
-                                                <label className="form-label fw-semibold">Address</label>
+                                        <div className="row g-2">
+                                            <div className="col-sm-6">
                                                 <input
                                                     type="text"
-                                                    className="form-control"
-                                                    value={form.address}
-                                                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                                                    className="form-control form-control-sm bg-white"
+                                                    placeholder="Latitude (e.g. 22.545120)"
+                                                    value={form.latitude}
+                                                    onChange={(e) => setForm({ ...form, latitude: e.target.value })}
                                                 />
                                             </div>
-
-                                            {/* Serving Location & Geolocation */}
-                                            <div className="col-12 mt-3">
-                                                <div className="p-3 bg-light rounded-4 border">
-                                                    <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                                                        <div>
-                                                            <h6 className="fw-bold mb-1 text-dark d-flex align-items-center">
-                                                                <i className="bi bi-geo-alt-fill text-danger me-2 fs-5"></i>
-                                                                Serving Location &amp; Coordinates
-                                                            </h6>
-                                                            <p className="text-muted small mb-0">
-                                                                Save your current physical location where you provide tutoring. Students searching within 1 km or nearby will discover your profile based on these coordinates.
-                                                            </p>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm"
-                                                            onClick={handleDetectServingLocation}
-                                                            disabled={detectingLocation}
-                                                        >
-                                                            {detectingLocation ? (
-                                                                <>
-                                                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                                    <span>Detecting GPS...</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <i className="bi bi-crosshair"></i>
-                                                                    <span>Detect / Use My Current Location</span>
-                                                                </>
-                                                            )}
-                                                        </button>
-                                                    </div>
-
-                                                    {locationStatus.text && (
-                                                        <div className={`alert alert-${locationStatus.type} py-2 px-3 small mb-3`}>
-                                                            {locationStatus.text}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="row g-2">
-                                                        <div className="col-sm-6">
-                                                            <label className="form-label small fw-semibold text-secondary">
-                                                                Serving Latitude
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control form-control-sm"
-                                                                placeholder="e.g. 22.545120"
-                                                                value={form.latitude}
-                                                                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                                                            />
-                                                        </div>
-                                                        <div className="col-sm-6">
-                                                            <label className="form-label small fw-semibold text-secondary">
-                                                                Serving Longitude
-                                                            </label>
-                                                            <input
-                                                                type="text"
-                                                                className="form-control form-control-sm"
-                                                                placeholder="e.g. 88.305430"
-                                                                value={form.longitude}
-                                                                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {form.latitude && form.longitude && (
-                                                        <div className="mt-2 text-end">
-                                                            <a
-                                                                href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="text-decoration-none small text-primary fw-semibold"
-                                                            >
-                                                                <i className="bi bi-box-arrow-up-right me-1"></i> Preview on Google Maps
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="col-12">
-                                                <label className="form-label fw-semibold">About / Bio</label>
-                                                <textarea
-                                                    rows="3"
-                                                    className="form-control"
-                                                    value={form.description}
-                                                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                                    placeholder="Introduce yourself to prospective students and parents..."
-                                                ></textarea>
+                                            <div className="col-sm-6">
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm bg-white"
+                                                    placeholder="Longitude (e.g. 88.305430)"
+                                                    value={form.longitude}
+                                                    onChange={(e) => setForm({ ...form, longitude: e.target.value })}
+                                                />
                                             </div>
                                         </div>
-                                    </>
-                                )}
+                                    </div>
+                                </div>
 
-                                <div className="mt-4 pt-3 border-top d-flex gap-3">
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary px-4 py-2 fw-semibold"
-                                        disabled={loading}
-                                    >
-                                        {loading ? 'Saving Changes...' : 'Save Profile'}
-                                    </button>
-                                    <Link href="/dashboard" className="btn btn-outline-secondary px-4 py-2">
-                                        Back to Dashboard
-                                    </Link>
+                                {/* Teacher-Specific Qualifications & Pedagogy */}
+                                <h5 className="fw-bold text-dark border-bottom pb-2 mb-3 mt-4 d-flex align-items-center gap-2">
+                                    <i className="bi bi-mortarboard-fill text-primary"></i>
+                                    <span>Teaching Qualifications, Mode &amp; Subjects</span>
+                                </h5>
+
+                                <div className="row g-3 mb-4">
+                                    <div className="col-md-4">
+                                        <label className="form-label small fw-semibold text-secondary">Gender</label>
+                                        <select
+                                            className="form-select"
+                                            value={form.gender}
+                                            onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                                        >
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="col-md-4">
+                                        <label className="form-label small fw-semibold text-secondary">Teaching Experience (Years)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="50"
+                                            className="form-control"
+                                            placeholder="e.g. 5"
+                                            value={form.experience}
+                                            onChange={(e) => setForm({ ...form, experience: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="col-md-4">
+                                        <label className="form-label small fw-semibold text-secondary">Timings / Availability</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="e.g. 5 PM - 8 PM (Mon-Sat)"
+                                            value={form.timings}
+                                            onChange={(e) => setForm({ ...form, timings: e.target.value })}
+                                        />
+                                    </div>
+
+                                    {/* Teaching Mode */}
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold text-secondary d-block">
+                                            Teaching Mode (Select all that apply)
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {modes.length > 0 ? (
+                                                modes.map((m) => {
+                                                    const isChecked = form.teaching_mode.includes(String(m.id)) || form.teaching_mode.includes(m.name);
+                                                    return (
+                                                        <label
+                                                            key={m.id}
+                                                            className={`btn btn-sm rounded-pill px-3 py-2 border ${
+                                                                isChecked ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                            }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                className="d-none"
+                                                                checked={isChecked}
+                                                                onChange={() => handleMultiSelect('teaching_mode', m.id)}
+                                                            />
+                                                            <i className={`bi ${isChecked ? 'bi-check2' : 'bi-plus'} me-1`}></i>
+                                                            {m.name}
+                                                        </label>
+                                                    );
+                                                })
+                                            ) : (
+                                                ['Home Tuition (Doorstep)', 'Online 1-on-1', 'Both (Home & Online)'].map((m) => {
+                                                    const isChecked = form.teaching_mode.includes(m);
+                                                    return (
+                                                        <label
+                                                            key={m}
+                                                            className={`btn btn-sm rounded-pill px-3 py-2 border ${
+                                                                isChecked ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                            }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                className="d-none"
+                                                                checked={isChecked}
+                                                                onChange={() => handleMultiSelect('teaching_mode', m)}
+                                                            />
+                                                            <i className={`bi ${isChecked ? 'bi-check2' : 'bi-plus'} me-1`}></i>
+                                                            {m}
+                                                        </label>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Qualifications */}
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold text-secondary d-block">
+                                            Highest Qualifications
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {qualifications.map((q) => {
+                                                const isChecked = form.qualification.includes(String(q.id)) || form.qualification.includes(q.name);
+                                                return (
+                                                    <label
+                                                        key={q.id}
+                                                        className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                            isChecked ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="d-none"
+                                                            checked={isChecked}
+                                                            onChange={() => handleMultiSelect('qualification', q.id)}
+                                                        />
+                                                        {q.name}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Subjects Taught */}
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold text-secondary d-block">
+                                            Subjects Taught
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {subjects.map((sub) => {
+                                                const isChecked = form.subjects.includes(String(sub.id)) || form.subjects.includes(sub.name);
+                                                return (
+                                                    <label
+                                                        key={sub.id}
+                                                        className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                            isChecked ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="d-none"
+                                                            checked={isChecked}
+                                                            onChange={() => handleMultiSelect('subjects', sub.id)}
+                                                        />
+                                                        {sub.name}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Boards & Classes Taught */}
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold text-secondary d-block">
+                                            School Boards Covered
+                                        </label>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {boards.map((b) => {
+                                                const isChecked = form.board.includes(String(b.id)) || form.board.includes(b.name);
+                                                return (
+                                                    <label
+                                                        key={b.id}
+                                                        className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                            isChecked ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className="d-none"
+                                                            checked={isChecked}
+                                                            onChange={() => handleMultiSelect('board', b.id)}
+                                                        />
+                                                        {b.name}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Bio / Teaching Methodology */}
+                                    <div className="col-12">
+                                        <label className="form-label small fw-semibold text-secondary">
+                                            Teacher Bio &amp; Pedagogy (Displayed on your Public Profile)
+                                        </label>
+                                        <textarea
+                                            rows="4"
+                                            className="form-control"
+                                            value={form.description}
+                                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                            placeholder="Highlight your academic degree, teaching style, past student board examination results, and approach to conceptual clarity..."
+                                        ></textarea>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold shadow-sm"
+                                            disabled={loading}
+                                        >
+                                            {loading ? 'Saving Profile...' : 'Save Profile Changes'}
+                                        </button>
+                                        <Link href="/dashboard" className="btn btn-outline-secondary rounded-pill px-4 py-2">
+                                            Cancel
+                                        </Link>
+                                    </div>
+
+                                    {isTeacher && (
+                                        <Link
+                                            href="/dashboard/demos"
+                                            className="btn btn-light border rounded-pill px-3 py-2 small text-secondary d-inline-flex align-items-center gap-1"
+                                        >
+                                            <i className="bi bi-camera-video text-primary"></i>
+                                            <span>Manage Demo Video Submissions</span>
+                                        </Link>
+                                    )}
                                 </div>
                             </form>
                         </div>

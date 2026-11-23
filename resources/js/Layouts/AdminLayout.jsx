@@ -18,6 +18,8 @@ export default function AdminLayout({ children, title }) {
         { label: 'Roles', href: '/admin/roles', icon: 'bi-shield-check' },
         { label: 'Users', href: '/admin/users', icon: 'bi-people' },
         { label: 'Teachers', href: '/admin/teacher', icon: 'bi-mortarboard' },
+        { label: 'Teacher Demos', href: '/admin/teacher-demos', icon: 'bi-camera-video' },
+        { label: 'Shared Demo Links', href: '/admin/demo-shares', icon: 'bi-share' },
         { label: 'Teacher Reviews', href: '/admin/teacher_review', icon: 'bi-star' },
         { label: 'Courses', href: '/admin/course', icon: 'bi-book' },
         { label: 'Course Categories', href: '/admin/course_category', icon: 'bi-tags' },

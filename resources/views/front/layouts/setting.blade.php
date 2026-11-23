@@ -307,7 +307,7 @@
                                             <p><span class="icon-incoming-call"></span> + 1 (246) 333-0088</p>
                                         </li>
                                         <li>
-                                            <p><span class="icon-email"></span> alma.lawson@example.com</p>
+                                            <p><span class="icon-email"></span> info@thelocaltutors.com</p>
                                         </li>
                                         <li>
                                             <p><span class="icon-map"></span> 4140 Parker Rd. Allentown, New Mexico

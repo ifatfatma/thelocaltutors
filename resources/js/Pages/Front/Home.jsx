@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
+import { cleanExcerpt } from '../../Utils/text';
 import axios from 'axios';
 
 /**
@@ -86,6 +87,7 @@ export default function Home({
     courses = [],
     blogs = [],
     teachers = [],
+    testimonials = [],
     stats = { courses: 0, teachers: 0, students: 0 },
     states = [],
     subjects = [],
@@ -192,7 +194,7 @@ export default function Home({
             ? showcaseNearbyTeachers
             : showcaseTeachers.filter((t) => t.distance !== null && Number(t.distance) <= 50)
     );
-    const [activeArea, setActiveArea] = useState(userAreaName || 'Garden Reach, Kolkata');
+    const [activeArea, setActiveArea] = useState(userAreaName || 'All India (Home & Online)');
     const [isDetecting, setIsDetecting] = useState(false);
     const [showcaseStatusMsg, setShowcaseStatusMsg] = useState('');
     const [sliderFilterMode, setSliderFilterMode] = useState('all'); // 'all' vs 'near_me'
@@ -418,6 +420,47 @@ export default function Home({
         }
     };
 
+    // Quick Inquiry Form State
+    const [quickInquiry, setQuickInquiry] = useState({
+        name: '',
+        phone: '',
+        student_class: 'Class 9–10',
+        course_subject: 'TIF Core Mathematics & Science',
+        learning_mode: '1-on-1 Home Tuition',
+        message: '',
+    });
+    const [inquirySubmitting, setInquirySubmitting] = useState(false);
+    const [inquirySuccess, setInquirySuccess] = useState('');
+    const [inquiryError, setInquiryError] = useState('');
+
+    const handleQuickInquirySubmit = async (e) => {
+        e.preventDefault();
+        setInquirySubmitting(true);
+        setInquirySuccess('');
+        setInquiryError('');
+
+        try {
+            const res = await axios.post('/contactpost', quickInquiry);
+            if (res.data.status === 200) {
+                setInquirySuccess(res.data.message || 'Trial inquiry received! Our coordinator will contact you promptly.');
+                setQuickInquiry({
+                    name: '',
+                    phone: '',
+                    student_class: 'Class 9–10',
+                    course_subject: 'TIF Core Mathematics & Science',
+                    learning_mode: '1-on-1 Home Tuition',
+                    message: '',
+                });
+            } else {
+                setInquiryError(res.data.message || 'Submission failed.');
+            }
+        } catch (err) {
+            setInquiryError('Could not submit inquiry. Please check your details and try again.');
+        } finally {
+            setInquirySubmitting(false);
+        }
+    };
+
     return (
         <FrontLayout>
             <Head title="Home - Find Expert Tutors Near You" />
@@ -429,9 +472,17 @@ export default function Home({
                 <div className="container">
                     {/* 1. HERO HEADER: Heading & Subheading */}
                     <div className="text-center mx-auto mb-4" style={{ maxWidth: '850px' }}>
-                        <span className="badge badge-soft-primary text-primary fw-semibold mb-3 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 shadow-2xs">
+                        <span
+                            className="mb-3 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 shadow-2xs fw-semibold"
+                            style={{
+                                backgroundColor: '#eff6ff',
+                                color: '#1d4ed8',
+                                border: '1px solid rgba(29, 78, 216, 0.22)',
+                                fontSize: '0.85rem',
+                            }}
+                        >
                             <i className="bi bi-patch-check-fill text-primary"></i>
-                            <span>Top Rated Learning Platform</span>
+                            <span className="text-primary">Top Rated Learning Platform</span>
                         </span>
                         <h1 className="display-5 fw-bold text-dark lh-sm mb-2">
                             Find the Perfect <span className="text-primary">Tutor</span> in Your Local Area
@@ -971,7 +1022,7 @@ export default function Home({
                 </div>
             </section>
             {/* ============================================================== */}
-            {/* STATS BANNER: Modern Gradient Glassmorphism Showcase */}
+            {/* VALUE PILLARS & CONCRETE OFFERINGS (Replaces generic counters) */}
             {/* ============================================================== */}
             <section
                 className="stats-section py-5 text-white position-relative overflow-hidden"
@@ -983,66 +1034,62 @@ export default function Home({
                     <div className="row g-3 g-lg-4 text-center">
                         <div className="col-6 col-lg-3">
                             <div
-                                className="p-3 p-lg-4 rounded-4 h-100"
+                                className="p-3 p-lg-4 rounded-4 h-100 d-flex flex-column justify-content-center"
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(8px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-primary mb-3 shadow-sm">
-                                    <i className="bi bi-journal-bookmark-fill fs-4"></i>
+                                <div className="d-inline-flex p-3 rounded-circle bg-white text-primary mb-3 shadow-sm mx-auto">
+                                    <i className="bi bi-book-half fs-4"></i>
                                 </div>
-                                <h2 className="fw-bold mb-1 text-white">{stats.courses || 120}+</h2>
-                                <p className="text-white-50 mb-0 small fw-medium">Active Courses</p>
+                                <h5 className="fw-bold mb-1 text-white">CBSE, ICSE &amp; WBBSE</h5>
+                                <p className="text-white-50 mb-0 small">Comprehensive Board &amp; Syllabus Coverage</p>
                             </div>
                         </div>
                         <div className="col-6 col-lg-3">
                             <div
-                                className="p-3 p-lg-4 rounded-4 h-100"
+                                className="p-3 p-lg-4 rounded-4 h-100 d-flex flex-column justify-content-center"
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(8px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-success mb-3 shadow-sm">
-                                    <i className="bi bi-person-check-fill fs-4"></i>
+                                <div className="d-inline-flex p-3 rounded-circle bg-white text-success mb-3 shadow-sm mx-auto">
+                                    <i className="bi bi-person-workspace fs-4"></i>
                                 </div>
-                                <h2 className="fw-bold mb-1 text-white">{stats.teachers || 250}+</h2>
-                                <p className="text-white-50 mb-0 small fw-medium">Verified Teachers</p>
+                                <h5 className="fw-bold mb-1 text-white">1-on-1 Home &amp; Online</h5>
+                                <p className="text-white-50 mb-0 small">Flexible Personalized Learning Modes</p>
                             </div>
                         </div>
                         <div className="col-6 col-lg-3">
                             <div
-                                className="p-3 p-lg-4 rounded-4 h-100"
+                                className="p-3 p-lg-4 rounded-4 h-100 d-flex flex-column justify-content-center"
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(8px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-warning mb-3 shadow-sm">
-                                    <i className="bi bi-people-fill fs-4"></i>
+                                <div className="d-inline-flex p-3 rounded-circle bg-white text-warning mb-3 shadow-sm mx-auto">
+                                    <i className="bi bi-shield-check fs-4"></i>
                                 </div>
-                                <h2 className="fw-bold mb-1 text-white">{stats.students || 1500}+</h2>
-                                <p className="text-white-50 mb-0 small fw-medium">Enrolled Students</p>
+                                <h5 className="fw-bold mb-1 text-white">100% Verified Tutors</h5>
+                                <p className="text-white-50 mb-0 small">Background, Degree &amp; ID Checked</p>
                             </div>
                         </div>
                         <div className="col-6 col-lg-3">
                             <div
-                                className="p-3 p-lg-4 rounded-4 h-100"
+                                className="p-3 p-lg-4 rounded-4 h-100 d-flex flex-column justify-content-center"
                                 style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(8px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.18)',
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-info mb-3 shadow-sm">
-                                    <i className="bi bi-patch-check-fill fs-4"></i>
+                                <div className="d-inline-flex p-3 rounded-circle bg-white text-info mb-3 shadow-sm mx-auto">
+                                    <i className="bi bi-graph-up-arrow fs-4"></i>
                                 </div>
-                                <h2 className="fw-bold mb-1 text-white">99%</h2>
-                                <p className="text-white-50 mb-0 small fw-medium">Success &amp; Satisfaction</p>
+                                <h5 className="fw-bold mb-1 text-white">Structured Guidance</h5>
+                                <p className="text-white-50 mb-0 small">Monthly Progress Reports to Parents</p>
                             </div>
                         </div>
                     </div>
@@ -1050,45 +1097,7 @@ export default function Home({
             </section>
 
             {/* ============================================================== */}
-            {/* TEMPORARILY HIDDEN PER USER REQUEST: POPULAR CATEGORIES */}
-            {/* ============================================================== */}
-            {/*
-            <section className="categories-section py-5">
-                <div className="container">
-                    <div className="text-center mb-5">
-                        <span className="text-primary fw-bold text-uppercase small">Top Categories</span>
-                        <h2 className="fw-bold text-dark">Explore by Course Category</h2>
-                    </div>
-
-                    <div className="row g-4 justify-content-center">
-                        {popularCategories.map((cat) => (
-                            <div key={cat.id} className="col-6 col-md-4 col-lg-3">
-                                <Link
-                                    href={`/course/${cat.id}/${cat.slug}`}
-                                    className="card h-100 text-center border-0 shadow-sm rounded-4 p-4 text-decoration-none hover-shadow transition"
-                                >
-                                    <div className="mx-auto mb-3">
-                                        <img
-                                            src={cat.image ? `/course_category/${cat.image}` : '/front/img/default-cat.png'}
-                                            onError={(e) => {
-                                                e.target.src = '/front/img/default-cat.png';
-                                            }}
-                                            alt={cat.name}
-                                            style={{ width: '60px', height: '60px', objectFit: 'contain' }}
-                                        />
-                                    </div>
-                                    <h6 className="fw-bold text-dark mb-1">{cat.name}</h6>
-                                    <p className="text-muted small mb-0">{cat.courses_count || 0} Courses</p>
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-            */}
-
-            {/* ============================================================== */}
-            {/* FEATURED COURSES: Modern Header & Cards */}
+            {/* FEATURED COURSES: Modern Header & Cards with Clean Excerpts */}
             {/* ============================================================== */}
             <section className="courses-section py-5 bg-light">
                 <div className="container">
@@ -1097,8 +1106,8 @@ export default function Home({
                             <span className="badge badge-soft-primary rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
                                 Curated Learning
                             </span>
-                            <h2 className="fw-bold text-dark mb-1">Featured Courses &amp; Classes</h2>
-                            <p className="text-secondary small mb-0">Learn from experienced educators across all disciplines</p>
+                            <h2 className="fw-bold text-dark mb-1">Featured Courses &amp; Specialized Batches</h2>
+                            <p className="text-secondary small mb-0">TIF Core Mathematics, Artificial Intelligence, Basic Computer Skills, and Board Preparation</p>
                         </div>
                         <Link href="/all_course" className="btn btn-outline-primary rounded-pill px-4 fw-semibold">
                             <span>View All Courses</span>
@@ -1106,61 +1115,316 @@ export default function Home({
                         </Link>
                     </div>
 
-                    <div className="row g-4">
-                        {courses.map((course) => {
-                            const courseTitle = course.title || course.name || 'Certified Course';
-                            return (
-                                <div key={course.id} className="col-md-6 col-lg-4">
-                                    <div className="card card-modern h-100 overflow-hidden d-flex flex-column">
-                                        <div className="position-relative overflow-hidden" style={{ height: '200px', backgroundColor: '#e2e8f0' }}>
-                                            <img
-                                                src={course.image ? `/course/${course.image}` : '/front/img/noimage.jpg'}
-                                                onError={(e) => {
-                                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&auto=format&fit=crop&q=60';
-                                                }}
-                                                alt={courseTitle}
-                                                className="w-100 h-100 object-fit-cover"
-                                            />
-                                            {course.category?.title && (
-                                                <span className="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill small fw-semibold">
-                                                    {course.category.title}
-                                                </span>
-                                            )}
-                                            <button
-                                                type="button"
-                                                className="btn btn-white bg-white rounded-circle position-absolute top-0 end-0 m-3 p-2 shadow-sm border-0 d-flex align-items-center justify-content-center"
-                                                style={{ width: '34px', height: '34px' }}
-                                                onClick={() => handleToggleFav(course.id)}
-                                                title="Save course"
-                                            >
-                                                <i className="bi bi-heart text-danger"></i>
-                                            </button>
-                                        </div>
-                                        <div className="card-body p-4 d-flex flex-column flex-grow-1">
-                                            <h5 className="fw-bold mb-2">
-                                                <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="text-dark text-decoration-none text-hover-primary">
-                                                    {courseTitle}
-                                                </Link>
-                                            </h5>
-                                            <p className="text-secondary small flex-grow-1 mb-3">
-                                                {course.short_desc || course.short_description || (course.description ? course.description.replace(/<[^>]*>?/gm, '').substring(0, 95) + '...' : 'Interactive curriculum with comprehensive notes and practice sessions.')}
-                                            </p>
-                                            <div className="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
-                                                <div>
-                                                    <span className="text-muted small d-block">Fee</span>
-                                                    <span className="fw-bold text-primary fs-5">
-                                                        {course.price > 0 ? `₹${course.price}` : 'Free'}
+                    {courses && courses.length > 0 ? (
+                        <div className="row g-4">
+                            {courses.map((course) => {
+                                const courseTitle = course.title || course.name || 'Certified Course';
+                                const cleanDesc = cleanExcerpt(
+                                    course.short_desc || course.short_description || course.description,
+                                    105,
+                                    'Structured conceptual learning with weekly worksheets, doubt clearance, and board exam focus.'
+                                );
+
+                                return (
+                                    <div key={course.id} className="col-md-6 col-lg-4">
+                                        <div className="card card-modern h-100 overflow-hidden d-flex flex-column">
+                                            <div className="position-relative overflow-hidden" style={{ height: '200px', backgroundColor: '#e2e8f0' }}>
+                                                <img
+                                                    src={course.image && course.image.startsWith('http') ? course.image : (course.image ? `/course/${course.image}` : '/front/img/noimage.jpg')}
+                                                    onError={(e) => {
+                                                        e.currentTarget.src = 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&auto=format&fit=crop&q=60';
+                                                    }}
+                                                    alt={`Course thumbnail for ${courseTitle}`}
+                                                    className="w-100 h-100 object-fit-cover"
+                                                />
+                                                {course.category?.title && (
+                                                    <span className="badge bg-white text-dark shadow-sm position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill small fw-semibold">
+                                                        {course.category.title}
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-white bg-white rounded-circle position-absolute top-0 end-0 m-3 p-2 shadow-sm border-0 d-flex align-items-center justify-content-center"
+                                                    style={{ width: '34px', height: '34px' }}
+                                                    onClick={() => handleToggleFav(course.id)}
+                                                    title="Save course"
+                                                >
+                                                    <i className="bi bi-heart text-danger"></i>
+                                                </button>
+                                            </div>
+                                            <div className="card-body p-4 d-flex flex-column flex-grow-1">
+                                                <div className="d-flex align-items-center gap-2 mb-2">
+                                                    <span className="badge bg-light text-secondary border small">
+                                                        <i className="bi bi-geo-alt me-1"></i>{course.teaching_mode || 'Home / Online'}
+                                                    </span>
+                                                    <span className="badge badge-soft-success text-success small">
+                                                        <i className="bi bi-patch-check me-1"></i>Free Trial Demo
                                                     </span>
                                                 </div>
-                                                <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold">
-                                                    View Course
-                                                </Link>
+
+                                                <h5 className="fw-bold mb-2">
+                                                    <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="text-dark text-decoration-none text-hover-primary">
+                                                        {courseTitle}
+                                                    </Link>
+                                                </h5>
+                                                <p className="text-secondary small flex-grow-1 mb-3">
+                                                    {cleanDesc}
+                                                </p>
+
+                                                <div className="d-flex justify-content-between align-items-end pt-3 border-top mt-auto">
+                                                    <div>
+                                                        <div className="d-flex align-items-baseline gap-1">
+                                                            <span className="fw-bold text-primary fs-5">
+                                                                {course.price > 0 ? `₹${Number(course.price).toLocaleString('en-IN')}` : 'Free'}
+                                                            </span>
+                                                            {course.price > 0 && <span className="text-muted small">/ month</span>}
+                                                        </div>
+                                                    </div>
+                                                    <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold">
+                                                        View Details
+                                                    </Link>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-4 border p-4 p-md-5 text-center my-2 shadow-2xs">
+                            <div className="p-3 bg-primary-subtle text-primary rounded-circle d-inline-flex mb-3">
+                                <i className="bi bi-journal-plus fs-2"></i>
+                            </div>
+                            <h4 className="fw-bold text-dark mb-2">New Courses Launching Soon</h4>
+                            <p className="text-secondary small mb-4 mx-auto" style={{ maxWidth: '540px' }}>
+                                New courses are being added soon — book a demo or contact us for custom subject tutoring with our verified educators.
+                            </p>
+                            <div className="d-flex flex-wrap justify-content-center gap-2">
+                                <a href="#inquiry-form" className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold">
+                                    <i className="bi bi-calendar-check me-2"></i>Book a Free Trial Session
+                                </a>
+                                <Link href="/contact" className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                                    <i className="bi bi-telephone me-2"></i>Contact Us for Custom Tutoring
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* ============================================================== */}
+            {/* VERIFIED STUDENT & PARENT TESTIMONIALS (DYNAMIC ONLY) */}
+            {/* ============================================================== */}
+            {testimonials && testimonials.length > 0 && (
+                <section className="testimonials-section py-5 bg-white border-top border-bottom">
+                    <div className="container">
+                        <div className="text-center mb-5">
+                            <span className="badge badge-soft-primary text-primary rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
+                                Verified Feedback
+                            </span>
+                            <h2 className="fw-bold text-dark mb-1">What Parents &amp; Students Say</h2>
+                            <p className="text-secondary small mb-0 mx-auto" style={{ maxWidth: '600px' }}>
+                                Real experiences from students and parents learning with verified tutors
+                            </p>
+                        </div>
+
+                        <div className="row g-4">
+                            {testimonials.map((review) => {
+                                const reviewerName = review.student?.name || 'Verified Student';
+                                const reviewerInitials = reviewerName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+                                const teacherName = review.teacher?.user?.name || 'Verified Tutor';
+                                const rating = review.teacher_rating || 5;
+
+                                return (
+                                    <div key={review.id} className="col-md-4">
+                                        <div className="card card-modern h-100 p-4 d-flex flex-column">
+                                            <div className="d-flex align-items-center gap-1 text-warning mb-3">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <i
+                                                        key={i}
+                                                        className={`bi ${i < rating ? 'bi-star-fill text-warning' : 'bi-star text-muted'}`}
+                                                    ></i>
+                                                ))}
+                                                <span className="text-dark small fw-bold ms-2">{Number(rating).toFixed(1)}</span>
+                                            </div>
+                                            <p className="text-secondary small flex-grow-1 fst-italic mb-3">
+                                                "{review.teacher_review}"
+                                            </p>
+                                            <div className="d-flex align-items-center gap-3 pt-3 border-top mt-auto">
+                                                <div
+                                                    className="p-2 bg-primary-subtle text-primary rounded-circle fw-bold d-flex align-items-center justify-content-center"
+                                                    style={{ width: '40px', height: '40px' }}
+                                                >
+                                                    {reviewerInitials}
+                                                </div>
+                                                <div>
+                                                    <h6 className="fw-bold text-dark mb-0 small">{reviewerName}</h6>
+                                                    <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                        Student of {teacherName}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* ============================================================== */}
+            {/* QUICK INQUIRY / BOOKING TRIAL FORM SECTION */}
+            {/* ============================================================== */}
+            <section id="inquiry-form" className="inquiry-section py-5 bg-light position-relative">
+                <div className="container">
+                    <div className="row gy-4 align-items-center">
+                        <div className="col-lg-5">
+                            <span className="badge badge-soft-success text-success px-3 py-1 rounded-pill small fw-semibold mb-2">
+                                Direct Matching Service
+                            </span>
+                            <h2 className="fw-bold text-dark mb-3">Book a Free Trial Session with a Local Educator</h2>
+                            <p className="text-secondary mb-4">
+                                Tell us your child's grade, board, and learning needs. Our academic team matches you with vetted teachers in your neighborhood within 2 hours.
+                            </p>
+
+                            <div className="p-3 bg-white rounded-3 border mb-3 d-flex align-items-center gap-3">
+                                <div className="p-2 bg-success-subtle text-success rounded-circle">
+                                    <i className="bi bi-shield-check fs-5"></i>
                                 </div>
-                            );
-                        })}
+                                <div>
+                                    <span className="text-muted small d-block">Trial Session Guarantee:</span>
+                                    <span className="text-dark fw-bold">100% Free Consultation &bull; Verified Mentors</span>
+                                </div>
+                            </div>
+
+                            <div className="p-3 bg-white rounded-3 border">
+                                <span className="text-muted small d-block mb-1">
+                                    <i className="bi bi-geo-alt-fill text-danger me-1"></i>Pan-India Doorstep &amp; Online Coverage:
+                                </span>
+                                <div className="d-flex flex-wrap gap-1">
+                                    {['All States & UTs', 'Delhi NCR', 'Mumbai', 'Kolkata', 'Bengaluru', 'Hyderabad', 'Pune', 'Chennai'].map((loc) => (
+                                        <span key={loc} className="badge bg-light text-secondary border small">
+                                            {loc}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-lg-7">
+                            <div className="card card-modern p-4 p-md-5">
+                                <h4 className="fw-bold text-dark mb-1">Request Callback &amp; Demo Class</h4>
+                                <p className="text-secondary small mb-4">Fast confirmation &bull; No upfront commitment required</p>
+
+                                {inquirySuccess ? (
+                                    <div className="p-4 bg-success-subtle text-success rounded-4 text-center">
+                                        <i className="bi bi-check2-circle fs-1 mb-2 d-block"></i>
+                                        <h5 className="fw-bold">Trial Request Received!</h5>
+                                        <p className="small mb-3">{inquirySuccess}</p>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-primary-gradient rounded-pill px-4"
+                                            onClick={() => setInquirySuccess('')}
+                                        >
+                                            Submit Another Inquiry
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleQuickInquirySubmit}>
+                                        {inquiryError && <div className="alert alert-danger small py-2 mb-3">{inquiryError}</div>}
+
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label className="form-label small fw-semibold">Parent / Student Name *</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Enter your name"
+                                                    value={quickInquiry.name}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, name: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="col-md-6">
+                                                <label className="form-label small fw-semibold">Phone / WhatsApp Number *</label>
+                                                <input
+                                                    type="tel"
+                                                    className="form-control"
+                                                    placeholder="10-digit mobile number"
+                                                    value={quickInquiry.phone}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, phone: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="col-md-6">
+                                                <label className="form-label small fw-semibold">Student Class / Grade *</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={quickInquiry.student_class}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, student_class: e.target.value })}
+                                                >
+                                                    <option value="Class 1–5">Class 1–5 (Primary)</option>
+                                                    <option value="Class 6–8">Class 6–8 (Middle School)</option>
+                                                    <option value="Class 9–10">Class 9–10 (Board Exam)</option>
+                                                    <option value="Class 11–12">Class 11–12 (Higher Secondary)</option>
+                                                    <option value="Competitive & Skills">Competitive / Basic Computer / AI</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="col-md-6">
+                                                <label className="form-label small fw-semibold">Preferred Mode *</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={quickInquiry.learning_mode}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, learning_mode: e.target.value })}
+                                                >
+                                                    <option value="1-on-1 Home Tuition">1-on-1 Home Tuition (At Doorstep)</option>
+                                                    <option value="Interactive 1-on-1 Online">Interactive 1-on-1 Online</option>
+                                                    <option value="Small Batch Online">Small Batch Group</option>
+                                                    <option value="Either Mode">Either Mode Suitable</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="col-12">
+                                                <label className="form-label small fw-semibold">Subject / Course Required *</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="e.g. TIF Core Mathematics, Class 10 Science, AI & Coding, Basic Computer"
+                                                    value={quickInquiry.course_subject}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, course_subject: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="col-12">
+                                                <label className="form-label small fw-semibold">Your State, City, Locality / Notes (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="e.g. State, City, PIN Code, Locality (preferred timings 5 PM)"
+                                                    value={quickInquiry.message}
+                                                    onChange={(e) => setQuickInquiry({ ...quickInquiry, message: e.target.value })}
+                                                />
+                                            </div>
+
+                                            <div className="col-12 mt-3">
+                                                <button
+                                                    type="submit"
+                                                    className="btn btn-primary-gradient py-2 fw-semibold w-100"
+                                                    disabled={inquirySubmitting}
+                                                >
+                                                    {inquirySubmitting ? 'Submitting Request...' : 'Book Free Trial Class'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1172,42 +1436,56 @@ export default function Home({
                 <section className="blogs-section py-5 bg-white">
                     <div className="container">
                         <div className="text-center mb-5">
-                            <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
+                            <span className="badge badge-soft-primary rounded-pill px-3 py-1 fw-bold small text-uppercase mb-2 d-inline-block">
                                 Academic Insights
                             </span>
                             <h2 className="fw-bold text-dark mb-1">Latest Educational Guides &amp; Insights</h2>
-                            <p className="text-muted small mb-0 mx-auto" style={{ maxWidth: '580px' }}>
-                                Exam preparation strategies, study methodologies, and subject advice from experienced educators
+                            <p className="text-secondary small mb-0 mx-auto" style={{ maxWidth: '580px' }}>
+                                Exam preparation strategies, TIF Core Mathematics fundamentals, and modern tech skills from experienced educators
                             </p>
                         </div>
 
                         <div className="row g-4">
-                            {blogs.slice(0, 3).map((blog) => (
-                                <div key={blog.id} className="col-md-4">
-                                    <div className="card card-modern h-100 overflow-hidden">
-                                        <img
-                                            src={blog.image ? `/blog/${blog.image}` : '/front/img/default-blog.png'}
-                                            onError={(e) => {
-                                                e.target.src = '/front/img/default-blog.png';
-                                            }}
-                                            alt={blog.title}
-                                            className="card-img-top"
-                                            style={{ height: '190px', objectFit: 'cover' }}
-                                        />
-                                        <div className="card-body p-4 d-flex flex-column">
-                                            <h6 className="fw-bold mb-2">
-                                                <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-dark text-decoration-none text-hover-primary">
-                                                    {blog.title}
+                            {blogs.slice(0, 3).map((blog) => {
+                                const cleanBlogDesc = cleanExcerpt(
+                                    blog.short_desc || blog.short_description || blog.description,
+                                    100,
+                                    'Helpful insights and actionable study tips from our educator network.'
+                                );
+
+                                return (
+                                    <div key={blog.id} className="col-md-4">
+                                        <div className="card card-modern h-100 overflow-hidden d-flex flex-column">
+                                            <img
+                                                src={blog.image && blog.image.startsWith('http') ? blog.image : (blog.image ? `/blog/${blog.image}` : '/front/img/default-blog.png')}
+                                                onError={(e) => {
+                                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&auto=format&fit=crop&q=80';
+                                                }}
+                                                alt={`Article thumbnail for ${blog.title}`}
+                                                className="card-img-top"
+                                                style={{ height: '190px', objectFit: 'cover' }}
+                                            />
+                                            <div className="card-body p-4 d-flex flex-column flex-grow-1">
+                                                <span className="text-muted small mb-2 d-flex align-items-center gap-1" style={{ fontSize: '0.75rem' }}>
+                                                    <i className="bi bi-calendar-event"></i>
+                                                    <span>{blog.date || 'Recent Guide'}</span>
+                                                </span>
+                                                <h6 className="fw-bold mb-2">
+                                                    <Link href={`/blog_details/${blog.id}`} className="text-dark text-decoration-none text-hover-primary">
+                                                        {blog.title}
+                                                    </Link>
+                                                </h6>
+                                                <p className="text-secondary small mb-3 flex-grow-1">
+                                                    {cleanBlogDesc}
+                                                </p>
+                                                <Link href={`/blog_details/${blog.id}`} className="text-primary fw-semibold small text-decoration-none mt-auto">
+                                                    Read Article &rarr;
                                                 </Link>
-                                            </h6>
-                                            <p className="text-secondary small mb-3 flex-grow-1">{blog.short_desc}</p>
-                                            <Link href={`/blog/${blog.id}/${blog.slug}`} className="text-primary fw-semibold small text-decoration-none mt-auto">
-                                                Read Article &rarr;
-                                            </Link>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </section>
