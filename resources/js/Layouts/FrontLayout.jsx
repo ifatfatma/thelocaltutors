@@ -228,81 +228,88 @@ export default function FrontLayout({ children, title }) {
 
                             {/* Right Side: Auth / CTA */}
                             <div className="d-flex align-items-center gap-2">
-                                {auth?.user ? (
-                                    <div className="dropdown position-relative">
-                                        <button
-                                            className="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenDropdown(openDropdown === 'user' ? null : 'user');
-                                            }}
-                                            aria-expanded={openDropdown === 'user'}
-                                        >
-                                            <i className="bi bi-person-circle text-primary fs-5"></i>
-                                            <span className="small">{auth.user.name || 'Account'}</span>
-                                            <i className="bi bi-chevron-down text-muted small" style={{ fontSize: '0.7rem' }}></i>
-                                        </button>
-                                        <ul
-                                            className={`dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 ${openDropdown === 'user' ? 'show' : ''}`}
-                                            style={{
-                                                display: openDropdown === 'user' ? 'block' : 'none',
-                                                visibility: openDropdown === 'user' ? 'visible' : 'hidden',
-                                                opacity: openDropdown === 'user' ? 1 : 0,
-                                                position: 'absolute',
-                                                right: 0,
-                                                zIndex: 1060,
-                                                minWidth: '220px',
-                                                boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1)',
-                                            }}
-                                        >
-                                            <li>
-                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard" onClick={closeAll}>
-                                                    <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
-                                                </Link>
-                                            </li>
-                                            <li>
-                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/myfavouritecourses" onClick={closeAll}>
-                                                    <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
-                                                </Link>
-                                            </li>
-                                            <li>
-                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/mycourses" onClick={closeAll}>
-                                                    <i className="bi bi-journal-check me-2 text-success"></i>My Enrolled Courses
-                                                </Link>
-                                            </li>
-                                            <li>
-                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/editprofile" onClick={closeAll}>
-                                                    <i className="bi bi-pencil-square me-2 text-secondary"></i>Edit Profile
-                                                </Link>
-                                            </li>
-                                            <li>
-                                                <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/changepassword" onClick={closeAll}>
-                                                    <i className="bi bi-key me-2 text-warning"></i>Change Password
-                                                </Link>
-                                            </li>
-                                            {auth.user.roles?.includes('Admin') && (
-                                                <>
-                                                    <li><hr className="dropdown-divider my-2 opacity-50" /></li>
-                                                    <li>
-                                                        <Link className="dropdown-item text-primary fw-bold py-2 px-3 rounded-3" href="/admin/home" onClick={closeAll}>
-                                                            <i className="bi bi-shield-lock me-2"></i>Admin Dashboard
-                                                        </Link>
-                                                    </li>
-                                                </>
-                                            )}
-                                            <li><hr className="dropdown-divider my-2 opacity-50" /></li>
-                                            <li>
-                                                <button
-                                                    onClick={handleLogout}
-                                                    className="dropdown-item text-danger py-2 px-3 fw-medium rounded-3"
-                                                >
-                                                    <i className="bi bi-box-arrow-right me-2"></i>Logout
-                                                </button>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                ) : (
+                                {auth?.user ? (() => {
+                                    const isAdmin = auth.user.type === 'admin' ||
+                                        auth.user.roles?.includes('Super Admin') ||
+                                        auth.user.roles?.includes('Admin');
+
+                                    return (
+                                        <div className="dropdown position-relative">
+                                            <button
+                                                className="btn btn-light border rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDropdown(openDropdown === 'user' ? null : 'user');
+                                                }}
+                                                aria-expanded={openDropdown === 'user'}
+                                            >
+                                                <i className="bi bi-person-circle text-primary fs-5"></i>
+                                                <span className="small">{auth.user.name || 'Account'}</span>
+                                                <i className="bi bi-chevron-down text-muted small" style={{ fontSize: '0.7rem' }}></i>
+                                            </button>
+                                            <ul
+                                                className={`dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 ${openDropdown === 'user' ? 'show' : ''}`}
+                                                style={{
+                                                    display: openDropdown === 'user' ? 'block' : 'none',
+                                                    visibility: openDropdown === 'user' ? 'visible' : 'hidden',
+                                                    opacity: openDropdown === 'user' ? 1 : 0,
+                                                    position: 'absolute',
+                                                    right: 0,
+                                                    zIndex: 1060,
+                                                    minWidth: '220px',
+                                                    boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1)',
+                                                }}
+                                            >
+                                                {isAdmin && (
+                                                    <>
+                                                        <li>
+                                                            <Link className="dropdown-item py-2 px-3 fw-bold rounded-3 text-primary bg-primary-subtle d-flex align-items-center gap-2 mb-1" href="/admin/home" onClick={closeAll}>
+                                                                <i className="bi bi-shield-lock-fill text-primary"></i>
+                                                                <span>Admin Control Panel</span>
+                                                            </Link>
+                                                        </li>
+                                                        <li><hr className="dropdown-divider my-1 opacity-50" /></li>
+                                                    </>
+                                                )}
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard" onClick={closeAll}>
+                                                        <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/myfavouritecourses" onClick={closeAll}>
+                                                        <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/mycourses" onClick={closeAll}>
+                                                        <i className="bi bi-journal-check me-2 text-success"></i>My Enrolled Courses
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/editprofile" onClick={closeAll}>
+                                                        <i className="bi bi-pencil-square me-2 text-secondary"></i>Edit Profile
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/changepassword" onClick={closeAll}>
+                                                        <i className="bi bi-key me-2 text-warning"></i>Change Password
+                                                    </Link>
+                                                </li>
+                                                <li><hr className="dropdown-divider my-2 opacity-50" /></li>
+                                                <li>
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="dropdown-item text-danger py-2 px-3 fw-medium rounded-3"
+                                                    >
+                                                        <i className="bi bi-box-arrow-right me-2"></i>Logout
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    );
+                                })() : (
                                     <div className="d-flex align-items-center gap-2">
                                         <Link
                                             href="/login"

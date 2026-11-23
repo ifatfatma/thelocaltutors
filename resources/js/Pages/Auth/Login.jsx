@@ -43,9 +43,10 @@ export default function Login() {
             };
             const res = await axios.post('/LoginPost', payload);
             setSuccessMsg(res.data.message || 'Login successful! Redirecting...');
+            const targetUrl = res.data.redirect_url || (res.data.is_admin ? '/admin/home' : '/dashboard');
             setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 1000);
+                window.location.href = targetUrl;
+            }, 800);
         } catch (err) {
             setLoading(false);
             if (err.response?.status === 422) {
