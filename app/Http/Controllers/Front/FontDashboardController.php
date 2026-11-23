@@ -26,6 +26,10 @@ class FontDashboardController extends Controller
 
 
     public function index(){
+        $user = Auth::user();
+        if ($user && ($user->type === 'admin' || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('Super Admin'))))) {
+            return redirect()->route('home');
+        }
         $pageData = SinglePage::where('id',5)->first();        
         return Inertia::render('Dashboard/Index', compact('pageData'));
     }

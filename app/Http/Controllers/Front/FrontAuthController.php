@@ -55,7 +55,16 @@ class FrontAuthController extends Controller
                 Cookie::queue('password', $request->user_password, $minutes);
                 Cookie::queue('rememberme', 1, $minutes);
             }
-            return response()->json(['message' => 'Your login credentials are successfully verified.Please wait while redirecting to the dashboard.']);
+
+            $user = Auth::user();
+            $isAdmin = ($user->type === 'admin' || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('Super Admin'))));
+            $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
+
+            return response()->json([
+                'message' => 'Your login credentials are successfully verified. Please wait while redirecting...',
+                'redirect_url' => $redirectUrl,
+                'is_admin' => $isAdmin,
+            ]);
         } else {
             return response()->json(['message' => 'Invalid login credentials'],400); 
         }

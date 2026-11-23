@@ -73,6 +73,31 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
             </div>
 
             <div className="container py-5">
+                {/* Super Admin Access Banner */}
+                {(user.type === 'admin' || user.roles?.includes('Super Admin') || user.roles?.includes('Admin')) && (
+                    <div className="card border-0 bg-primary-subtle rounded-4 p-4 mb-4 border border-primary-subtle shadow-sm">
+                        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div className="d-flex align-items-center gap-3">
+                                <div className="p-3 bg-primary text-white rounded-circle fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>
+                                    <i className="bi bi-shield-lock-fill"></i>
+                                </div>
+                                <div>
+                                    <div className="d-flex align-items-center gap-2 mb-1">
+                                        <h5 className="fw-bold text-dark mb-0">Super Admin Control Center</h5>
+                                        <span className="badge bg-primary text-white rounded-pill px-2 py-1 small">Admin Privileges</span>
+                                    </div>
+                                    <p className="text-secondary small mb-0">
+                                        You are currently logged in with Super Administrator privileges. Access the full admin management panel to manage teachers, courses, inquiries, demo submissions, reviews, and settings.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link href="/admin/home" className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold shadow-xs">
+                                <i className="bi bi-speedometer2 me-2"></i>Open Full Admin Panel &rarr;
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 <div className="row g-4">
                     {quickLinks.map((item, idx) => (
                         <div key={idx} className="col-md-6 col-lg-4">
