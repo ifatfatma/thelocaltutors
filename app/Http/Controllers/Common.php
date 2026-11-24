@@ -225,8 +225,9 @@ class Common extends Controller
 
 public static function tmodeName($id){
   if (empty($id)) return '';
+  if (!is_numeric($id)) return (string)$id;
   $info = CustomData::where('id', $id)->first();
-  return $info ? $info->name : '';
+  return $info ? $info->name : (string)$id;
 }
 
 public static function getkeyname($id){
