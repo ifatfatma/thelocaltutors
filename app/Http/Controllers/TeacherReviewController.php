@@ -10,6 +10,7 @@ use App\Http\Requests\StoreTeacherReviewRequest;
 use App\Http\Requests\UpdateTeacherReviewRequest;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Schema;
 
 class TeacherReviewController extends Controller
 {
@@ -18,9 +19,10 @@ class TeacherReviewController extends Controller
      */
     public function index(Request $request)
     {
+        $hasIsActive = Schema::hasColumn('teacher_reviews', 'is_active');
         $query = TeacherReview::with(['reviewer', 'teacher'])->latest('id');
 
-        if ($request->has('status') && $request->status !== 'all' && $request->status !== '') {
+        if ($hasIsActive && $request->has('status') && $request->status !== 'all' && $request->status !== '') {
             $query->where('is_active', $request->status === 'approved' ? 1 : 0);
         }
 
@@ -28,8 +30,8 @@ class TeacherReviewController extends Controller
 
         $stats = [
             'total' => TeacherReview::count(),
-            'pending' => TeacherReview::where('is_active', 0)->count(),
-            'approved' => TeacherReview::where('is_active', 1)->count(),
+            'pending' => $hasIsActive ? TeacherReview::where('is_active', 0)->count() : 0,
+            'approved' => $hasIsActive ? TeacherReview::where('is_active', 1)->count() : TeacherReview::count(),
         ];
 
         return Inertia::render('Admin/TeacherReview/Index', [
@@ -57,7 +59,9 @@ class TeacherReviewController extends Controller
         $teacher_review->teacher_id     = $request->teacher_id ?? 0;
         $teacher_review->teacher_review = $request->teacher_review ?? '';
         $teacher_review->teacher_rating = $request->teacher_rating ?? 5;
-        $teacher_review->is_active      = $request->has('is_active') ? $request->is_active : 1;
+        if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+            $teacher_review->is_active  = $request->has('is_active') ? $request->is_active : 1;
+        }
         $teacher_review->save();
         return redirect()->back()->withSuccess('Teacher Review added successfully.');
     }
@@ -68,8 +72,10 @@ class TeacherReviewController extends Controller
     public function accept($id)
     {
         $review = TeacherReview::findOrFail($id);
-        $review->is_active = 1;
-        $review->save();
+        if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+            $review->is_active = 1;
+            $review->save();
+        }
         return redirect()->back()->withSuccess('Review approved! It will now be displayed publicly on the website.');
     }
 
@@ -79,8 +85,10 @@ class TeacherReviewController extends Controller
     public function reject($id)
     {
         $review = TeacherReview::findOrFail($id);
-        $review->is_active = 0;
-        $review->save();
+        if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+            $review->is_active = 0;
+            $review->save();
+        }
         return redirect()->back()->withSuccess('Review unapproved and moved to pending moderation.');
     }
 
