@@ -335,13 +335,13 @@ export default function TeacherCard({
                 {/* 2. Body Grid: Left Attributes Box + Right About Me Box */}
                 <div className="row g-3 mb-3">
                     {/* Left Attribute Panel: Perfectly Aligned Academic Details */}
-                    <div className="col-12 col-md-6">
+                    <div className={isModal ? "col-12 col-md-6" : "col-12"}>
                         <div
                             className="p-3 rounded-4 h-100 d-flex flex-column justify-content-center"
                             style={{
                                 backgroundColor: '#f0f7ff',
                                 border: '1px solid #d0e7ff',
-                                minHeight: '175px',
+                                minHeight: isModal ? '175px' : 'auto',
                             }}
                         >
                             <div className="d-flex flex-column gap-2">
@@ -353,11 +353,11 @@ export default function TeacherCard({
                                     >
                                         <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.85rem' }}></i>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.82rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '92px' }}>
+                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
                                             Qualification:
                                         </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
                                             {qualification}
                                         </span>
                                     </div>
@@ -371,11 +371,11 @@ export default function TeacherCard({
                                     >
                                         <i className="bi bi-book-fill" style={{ fontSize: '0.85rem' }}></i>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.82rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '92px' }}>
+                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
                                             Subjects:
                                         </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
                                             {subjects}
                                         </span>
                                     </div>
@@ -389,11 +389,11 @@ export default function TeacherCard({
                                     >
                                         <i className="bi bi-layers-fill" style={{ fontSize: '0.85rem' }}></i>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.82rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '92px' }}>
+                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
                                             Board:
                                         </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
                                             {boards}
                                         </span>
                                     </div>
@@ -407,11 +407,11 @@ export default function TeacherCard({
                                     >
                                         <i className="bi bi-display" style={{ fontSize: '0.85rem' }}></i>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.82rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '92px' }}>
+                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
                                             Mode:
                                         </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
                                             {mode}
                                         </span>
                                     </div>
@@ -425,11 +425,11 @@ export default function TeacherCard({
                                     >
                                         <i className="bi bi-clock-fill" style={{ fontSize: '0.85rem' }}></i>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.82rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '92px' }}>
+                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
                                             Timings:
                                         </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ wordBreak: 'break-word', lineHeight: 1.3 }}>
+                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
                                             {timings}
                                         </span>
                                     </div>
@@ -439,7 +439,7 @@ export default function TeacherCard({
                     </div>
 
                     {/* Right Attribute Panel: "About Me" Quote Box with Tab Header */}
-                    <div className="col-12 col-md-6 d-flex flex-column">
+                    <div className={isModal ? "col-12 col-md-6 d-flex flex-column" : "col-12 d-flex flex-column"}>
                         {/* Blue Tab Header */}
                         <div className="d-flex align-items-end" style={{ marginBottom: '-1px', zIndex: 2 }}>
                             <span
@@ -463,7 +463,7 @@ export default function TeacherCard({
                             style={{
                                 backgroundColor: '#f0f7ff',
                                 border: '1px solid #d0e7ff',
-                                minHeight: '175px',
+                                minHeight: isModal ? '175px' : 'auto',
                             }}
                         >
                             <p
