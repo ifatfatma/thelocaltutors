@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import { cleanExcerpt } from '../../Utils/text';
+import TeacherCard from '../../Components/TeacherCard';
+import TeacherProfileModal from '../../Components/TeacherProfileModal';
 import axios from 'axios';
 
 /**
@@ -367,22 +369,26 @@ export default function Home({
 
     // Teacher profile detail modal state
     const [selectedTeacher, setSelectedTeacher] = useState(null);
-    const [teacherModalHtml, setTeacherModalHtml] = useState('');
+    const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [teacherRating, setTeacherRating] = useState('5');
     const [teacherReview, setTeacherReview] = useState('');
     const [reviewMsg, setReviewMsg] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const openTeacherModal = async (teacher) => {
         setSelectedTeacher(teacher);
+        setIsTeacherModalOpen(true);
         setLoadingDetails(true);
-        setTeacherModalHtml('');
         setReviewMsg('');
 
         try {
             const res = await axios.get(`/getTeacherDetailsAjax/${teacher.user_id || teacher.id}`);
-            if (res.data.status === 200) {
-                setTeacherModalHtml(res.data.message);
+            if (res.data.status === 200 && res.data.teacher) {
+                setSelectedTeacher((prev) => ({
+                    ...(prev || {}),
+                    ...res.data.teacher,
+                }));
             }
         } catch (err) {
             console.error(err);
@@ -394,6 +400,7 @@ export default function Home({
     const handlePostTeacherReview = async () => {
         if (!selectedTeacher) return;
         setReviewMsg('');
+        setSubmittingReview(true);
         try {
             const res = await axios.get('/postTeacherReviews', {
                 params: {
@@ -408,6 +415,8 @@ export default function Home({
             }
         } catch (err) {
             setReviewMsg('Please login to post a review or check your input.');
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -795,166 +804,21 @@ export default function Home({
                                             className="w-100 flex-shrink-0 px-1"
                                             style={{ minWidth: '100%', boxSizing: 'border-box' }}
                                         >
-                                            {/* Two Columns Side-by-Side per Slide */}
-                                            <div className="row row-cols-1 row-cols-md-2 g-3 g-lg-4">
+                                            {/* 2-Column Grid: 1st card on Left, 2nd card auto-aligns on Right */}
+                                            <div className="row row-cols-1 row-cols-lg-2 g-3 g-lg-4">
                                                 {pair.map((teacher, tIdx) => (
-                                                    <div key={teacher.user_id || teacher.id || tIdx} className="col">
-                                                        <div
-                                                            className="card h-100 border rounded-4 p-3 p-lg-4 shadow-2xs transition d-flex flex-column justify-content-between bg-white"
-                                                            style={{
-                                                                transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+                                                    <div
+                                                        key={teacher.user_id || teacher.id || tIdx}
+                                                        className="col"
+                                                    >
+                                                        <TeacherCard
+                                                            teacher={teacher}
+                                                            isModal={false}
+                                                            onViewProfile={(t) => openTeacherModal(t)}
+                                                            onExplore={() => {
+                                                                window.location.href = `/search?lookingfor=teacher&search_state=${teacher.state || 0}&search_city=${teacher.city || 0}&filter_mode=all`;
                                                             }}
-                                                        >
-                                                            <div>
-                                                                {/* Profile Header */}
-                                                                <div className="d-flex align-items-start gap-3 mb-3">
-                                                                    <div className="position-relative flex-shrink-0">
-                                                                        <img
-                                                                            src={
-                                                                                teacher.image
-                                                                                    ? teacher.image.startsWith('http')
-                                                                                        ? teacher.image
-                                                                                        : `/user/${teacher.image}`
-                                                                                    : '/front/img/noprofileimage.png'
-                                                                            }
-                                                                            onError={(e) => {
-                                                                                e.target.src = '/front/img/noprofileimage.png';
-                                                                            }}
-                                                                            alt={teacher.name}
-                                                                            className="rounded-circle border shadow-xs"
-                                                                            style={{ width: '68px', height: '68px', objectFit: 'cover' }}
-                                                                        />
-                                                                        <span
-                                                                            className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle"
-                                                                            style={{ width: '13px', height: '13px' }}
-                                                                            title="Online & Available"
-                                                                        />
-                                                                    </div>
-
-                                                                    <div className="flex-grow-1 min-w-0">
-                                                                        <div className="d-flex align-items-center justify-content-between gap-1 mb-1">
-                                                                            <h5 className="fw-bold text-dark mb-0 text-truncate" title={teacher.name}>
-                                                                                {teacher.name}
-                                                                            </h5>
-                                                                            {teacher.gender && (
-                                                                                <span className="badge bg-light text-secondary border small">
-                                                                                    {teacher.gender}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-
-                                                                        <div className="d-flex align-items-center gap-1 flex-wrap mb-1">
-                                                                            <span
-                                                                                className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1 px-2"
-                                                                                style={{ fontSize: '0.72rem' }}
-                                                                            >
-                                                                                <i className="bi bi-shield-check me-1"></i>
-                                                                                Verified Educator
-                                                                            </span>
-                                                                            {teacher.experience && (
-                                                                                <span
-                                                                                    className="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill py-1 px-2"
-                                                                                    style={{ fontSize: '0.72rem' }}
-                                                                                >
-                                                                                    {teacher.experience} Yrs Exp
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* Distance Proximity Badge */}
-                                                                        {teacher.distance !== undefined && teacher.distance !== null && (
-                                                                            <div className="mt-1">
-                                                                                <span
-                                                                                    className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1"
-                                                                                    style={{ fontSize: '0.74rem' }}
-                                                                                >
-                                                                                    <i className="bi bi-geo-alt-fill me-1"></i>
-                                                                                    {Number(teacher.distance) < 0.1
-                                                                                        ? 'In your neighborhood'
-                                                                                        : Number(teacher.distance) < 1
-                                                                                        ? `${Math.round(Number(teacher.distance) * 1000)} meters away`
-                                                                                        : `${Number(teacher.distance).toFixed(1)} km away`}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Address */}
-                                                                {teacher.address && (
-                                                                    <div className="text-muted small mb-2 d-flex align-items-center gap-1 text-truncate">
-                                                                        <i className="bi bi-pin-map text-danger flex-shrink-0"></i>
-                                                                        <span className="text-truncate">{teacher.address}</span>
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Academic Details Pill Box */}
-                                                                <div className="bg-light rounded-3 p-2 mb-2 small">
-                                                                    {teacher.qualification_name && (
-                                                                        <div className="row g-1 mb-1">
-                                                                            <span className="col-4 text-muted fw-semibold">Qualification:</span>
-                                                                            <span className="col-8 text-dark fw-medium text-truncate">
-                                                                                {teacher.qualification_name}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                    {teacher.subject_names && (
-                                                                        <div className="row g-1 mb-1">
-                                                                            <span className="col-4 text-muted fw-semibold">Subjects:</span>
-                                                                            <span className="col-8 text-dark fw-medium text-truncate">
-                                                                                {teacher.subject_names}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                    {teacher.board_names && (
-                                                                        <div className="row g-1 mb-1">
-                                                                            <span className="col-4 text-muted fw-semibold">Board:</span>
-                                                                            <span className="col-8 text-dark text-truncate">{teacher.board_names}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {teacher.teaching_mode_name && (
-                                                                        <div className="row g-1 mb-1">
-                                                                            <span className="col-4 text-muted fw-semibold">Mode:</span>
-                                                                            <span className="col-8 text-dark text-truncate">{teacher.teaching_mode_name}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    {teacher.timings && (
-                                                                        <div className="row g-1">
-                                                                            <span className="col-4 text-muted fw-semibold">Timings:</span>
-                                                                            <span className="col-8 text-dark text-truncate">{teacher.timings}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Bio / Description */}
-                                                                {teacher.description && (
-                                                                    <p className="text-muted small mb-2 text-truncate-2 fst-italic" style={{ fontSize: '0.82rem' }}>
-                                                                        "{teacher.description}"
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Action Footer */}
-                                                            <div className="pt-2 border-top d-flex align-items-center justify-content-between gap-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => openTeacherModal(teacher)}
-                                                                    className="btn btn-primary btn-sm rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1 shadow-xs"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#homeTeacherModal"
-                                                                >
-                                                                    <i className="bi bi-info-circle"></i>
-                                                                    <span>View Profile</span>
-                                                                </button>
-
-                                                                <Link
-                                                                    href={`/search?lookingfor=teacher&search_state=${teacher.state || 0}&search_city=${teacher.city || 0}&filter_mode=all`}
-                                                                    className="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                                                                >
-                                                                    Explore &rarr;
-                                                                </Link>
-                                                            </div>
-                                                        </div>
+                                                        />
                                                     </div>
                                                 ))}
                                             </div>
@@ -1059,7 +923,7 @@ export default function Home({
                                     <i className="bi bi-person-workspace fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">1-on-1 Home &amp; Online</h5>
-                                <p className="text-white-50 mb-0 small">Flexible Personalized Learning Modes</p>
+                                <p className="text-white-50 mb-0 small">Tutors Teach at Your Home &amp; Live Online</p>
                             </div>
                         </div>
                         <div className="col-6 col-lg-3">
@@ -1086,10 +950,10 @@ export default function Home({
                                 }}
                             >
                                 <div className="d-inline-flex p-3 rounded-circle bg-white text-info mb-3 shadow-sm mx-auto">
-                                    <i className="bi bi-graph-up-arrow fs-4"></i>
+                                    <i className="bi bi-lightbulb-fill fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">Structured Guidance</h5>
-                                <p className="text-white-50 mb-0 small">Monthly Progress Reports to Parents</p>
+                                <p className="text-white-50 mb-0 small">Personalized Doubt Clearing &amp; Exam Prep</p>
                             </div>
                         </div>
                     </div>
@@ -1494,83 +1358,23 @@ export default function Home({
             {/* ============================================================== */}
             {/* TEACHER PROFILE DETAILS MODAL */}
             {/* ============================================================== */}
-            <div
-                className="modal fade"
-                id="homeTeacherModal"
-                tabIndex="-1"
-                aria-labelledby="homeTeacherModalLabel"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog modal-dialog-centered modal-lg">
-                    <div className="modal-content border-0 rounded-4 shadow">
-                        <div className="modal-header border-bottom py-3 px-4">
-                            <h5 className="modal-title fw-bold" id="homeTeacherModalLabel">
-                                {selectedTeacher?.name ? `${selectedTeacher.name} - Profile` : 'Teacher Profile'}
-                            </h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div className="modal-body p-4">
-                            {loadingDetails ? (
-                                <div className="text-center py-5">
-                                    <div className="spinner-border text-primary" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                    </div>
-                                    <p className="mt-2 text-muted">Loading profile details...</p>
-                                </div>
-                            ) : (
-                                <div>
-                                    {teacherModalHtml ? (
-                                        <div dangerouslySetInnerHTML={{ __html: teacherModalHtml }} />
-                                    ) : (
-                                        <div className="text-center py-3">
-                                            <p className="text-muted">No additional profile details found.</p>
-                                        </div>
-                                    )}
-
-                                    {/* Direct review post in modal */}
-                                    <div className="card border-0 bg-light p-3 mt-4 rounded-3">
-                                        <h6 className="fw-bold mb-2">Write feedback for this teacher</h6>
-                                        {reviewMsg && <div className="alert alert-info py-2 small">{reviewMsg}</div>}
-                                        <div className="row g-2">
-                                            <div className="col-sm-4">
-                                                <select
-                                                    className="form-select form-select-sm"
-                                                    value={teacherRating}
-                                                    onChange={(e) => setTeacherRating(e.target.value)}
-                                                >
-                                                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
-                                                    <option value="4">⭐⭐⭐⭐ 4 Stars</option>
-                                                    <option value="3">⭐⭐⭐ 3 Stars</option>
-                                                    <option value="2">⭐⭐ 2 Stars</option>
-                                                    <option value="1">⭐ 1 Star</option>
-                                                </select>
-                                            </div>
-                                            <div className="col-12">
-                                                <textarea
-                                                    rows="2"
-                                                    className="form-control form-control-sm"
-                                                    placeholder="Share your experience with this teacher..."
-                                                    value={teacherReview}
-                                                    onChange={(e) => setTeacherReview(e.target.value)}
-                                                ></textarea>
-                                            </div>
-                                            <div className="col-12">
-                                                <button
-                                                    type="button"
-                                                    onClick={handlePostTeacherReview}
-                                                    className="btn btn-dark btn-sm rounded-pill px-4"
-                                                >
-                                                    Submit Review
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <TeacherProfileModal
+                isOpen={isTeacherModalOpen}
+                onClose={() => setIsTeacherModalOpen(false)}
+                teacher={selectedTeacher}
+                teacherRating={teacherRating}
+                setTeacherRating={setTeacherRating}
+                teacherReview={teacherReview}
+                setTeacherReview={setTeacherReview}
+                handlePostTeacherReview={handlePostTeacherReview}
+                reviewMsg={reviewMsg}
+                submittingReview={submittingReview}
+                onBookTrial={() => {
+                    setIsTeacherModalOpen(false);
+                    const formEl = document.getElementById('inquiry-form');
+                    if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+                }}
+            />
         </FrontLayout>
     );
 }

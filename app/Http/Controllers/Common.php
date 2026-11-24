@@ -272,7 +272,7 @@ public static function courseRating($courseid)
 public static function teacherRating($courseid)
 {
     $ratinbgtxt='';$ratingAverage=0;
-    $ratings = TeacherReview::where('teacher_id',$courseid)->get();  
+    $ratings = TeacherReview::where('teacher_id',$courseid)->where('is_active', 1)->get();  
 
     if(!empty($ratings->sum('teacher_rating'))){  
     $ratingAverage = round($ratings->sum('teacher_rating') / $ratings->count());

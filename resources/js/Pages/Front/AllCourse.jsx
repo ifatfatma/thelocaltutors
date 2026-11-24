@@ -146,6 +146,20 @@ export default function AllCourse({ courses, categories = [] }) {
                                                 {cleanDesc}
                                             </p>
 
+                                            {course.teacher && (
+                                                <div className="d-flex align-items-center gap-2 mb-3 py-2 px-2 bg-light rounded-3">
+                                                    <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style={{ width: '26px', height: '26px', fontSize: '11px' }}>
+                                                        <i className="bi bi-person-fill"></i>
+                                                    </div>
+                                                    <span className="small text-dark fw-semibold text-truncate">
+                                                        Taught by {course.teacher.name}
+                                                    </span>
+                                                    <span className="badge bg-primary-subtle text-primary rounded-pill ms-auto" style={{ fontSize: '10px' }}>
+                                                        Teacher
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             <div className="d-flex justify-content-between align-items-end pt-3 border-top mt-auto">
                                                 <div>
                                                     <div className="d-flex align-items-baseline gap-1">

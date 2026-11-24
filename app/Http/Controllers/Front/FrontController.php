@@ -22,6 +22,7 @@ use App\Models\Blog;
 use App\Models\Search;
 use App\Models\Faq;
 use App\Models\FavouriteCourse;
+use App\Models\PlatformFeedback;
 
 
 
@@ -30,94 +31,78 @@ use Auth;
 
 use App\Models\User;
 use App\Models\Teacher;
+use Illuminate\Support\Str;
 
 class FrontController extends Controller
 {
-        public function getTeacherDetailsAjax($id){
-        $tchtxt='';
-        $teacherinfo = User::with('teachermore')->where('id',$id)->first();    
-        if(!empty($teacherinfo->id)){
-          $tchtxt.='<ul class="list-group">';  
-          $profileimg = ''; 
-          $tchtxt.='<li class="list-group-item text-center "><img style="border-radius:5px;" src="'.Common::profileimage($teacherinfo->image).'" height="150"></li>';
-          if(!empty($teacherinfo->name)){
-          $tchtxt.='<li class="list-group-item"><label class="profiletitle">NAME</label>'.($teacherinfo->name??'--').'</li>';
-          }
-          if(!empty($teacherinfo->email)){
-          $tchtxt.='<li class="list-group-item"><label class="profiletitle">E-MAIL</label>'.($teacherinfo->email??'--').'</li>';
-          }
-          if(!empty($teacherinfo->mobile)){
-          $tchtxt.='<li class="list-group-item"><label class="profiletitle">MOBILE</label>'.($teacherinfo->mobile??'--').'</li>';
-          }
-          if(!empty($teacherinfo->teachermore->whatsapp)){
-          $tchtxt.='<li class="list-group-item"><label class="profiletitle">WHATSAPP</label>'.($teacherinfo->teachermore->whatsapp??'--').'</li>';
-           }
-          if(!empty($teacherinfo->teachermore->address)){
-           $tchtxt.='<li class="list-group-item"><label class="profiletitle">ADDRESS</label>'.($teacherinfo->teachermore->address??'--').'</li>';
-          } 
-          if(!empty($teacherinfo->teachermore->qualification)){
-            $tchtxt.='<li class="list-group-item"><label class="profiletitle">qualification</label>'.(Common::tmodeName($teacherinfo->teachermore->qualification)??'--').'</li>';
-           } 
-           if(!empty($teacherinfo->teachermore->subjects)){
-            $tchtxt.='<li class="list-group-item"><label class="profiletitle">subjects</label><a class="subjecttxt">'.(Common::getSubjects($teacherinfo->teachermore->subjects)??'--').'</a></li>';
-           } 
-           if(!empty($teacherinfo->teachermore->timings)){
-            $tchtxt.='<li class="list-group-item"><label class="profiletitle">timings</label>'.($teacherinfo->teachermore->timings??'--').'</li>';
-           } 
-           if(!empty($teacherinfo->teachermore->experience)){
-            $tchtxt.='<li class="list-group-item"><label class="profiletitle">experience</label>'.($teacherinfo->teachermore->experience??'--').' Years</li>';
-           } 
-           if(!empty($teacherinfo->teachermore->description)){
-            $tchtxt.='<li class="list-group-item"><label class="profiletitle">description</label>'.($teacherinfo->teachermore->description??'--').'</li>';
-           } 
-
-          $tchtxt.='</ul>';
-        }
-        return ['status'=>200,'message'=>$tchtxt];
+    public function getTeacherDetailsAjax($id){
+        $teacher = Teacher::with('user')->where('user_id', $id)->orWhere('id', $id)->first();
+        $user = User::with('teachermore')->where('id', $id)->first();
+        if (!$teacher && $user && $user->teachermore) {
+            $teacher = $user->teachermore;
         }
 
-        public function getTeamTeacherDetailsAjax($id){ 
-            $tchtxt='';
-            $teacherinfo = User::with('teachermore')->where('id',$id)->first();  
-            if(!empty($teacherinfo->id)){
-              $tchtxt.='<ul class="list-group">';  
-              $profileimg = ''; 
-              $tchtxt.='<li class="list-group-item text-center "><img style="border-radius:5px;" src="'.Common::profileimage($teacherinfo->image).' " height="200"></li>';
-              if(!empty($teacherinfo->name)){
-              $tchtxt.='<li class="list-group-item"><label class="profiletitle">NAME</label>'.($teacherinfo->name??'--').'</li>';
-              }
-              if(!empty($teacherinfo->email)){
-              $tchtxt.='<li class="list-group-item"><label class="profiletitle">E-MAIL</label>'.($teacherinfo->email??'--').'</li>';
-              }
-              if(!empty($teacherinfo->mobile)){
-              $tchtxt.='<li class="list-group-item"><label class="profiletitle">MOBILE</label>'.($teacherinfo->mobile??'--').'</li>';
-              }
-              if(!empty($teacherinfo->teachermore->whatsapp)){
-              $tchtxt.='<li class="list-group-item"><label class="profiletitle">WHATSAPP</label>'.($teacherinfo->teachermore->whatsapp??'--').'</li>';
-               }
-              if(!empty($teacherinfo->teachermore->address)){
-               $tchtxt.='<li class="list-group-item"><label class="profiletitle">ADDRESS</label>'.($teacherinfo->teachermore->address??'--').'</li>';
-              } 
-              if(!empty($teacherinfo->teachermore->qualification)){
-                $tchtxt.='<li class="list-group-item"><label class="profiletitle">qualification</label>'.(Common::tmodeName($teacherinfo->teachermore->qualification)??'--').'</li>';
-               } 
-               if(!empty($teacherinfo->teachermore->subjects)){
-                $tchtxt.='<li class="list-group-item"><label class="profiletitle">subjects</label><a class="subjecttxt">'.(Common::getSubjects($teacherinfo->teachermore->subjects)??'--').'</a></li>';
-               } 
-               if(!empty($teacherinfo->teachermore->timings)){
-                $tchtxt.='<li class="list-group-item"><label class="profiletitle">timings</label>'.($teacherinfo->teachermore->timings??'--').'</li>';
-               } 
-               if(!empty($teacherinfo->teachermore->experience)){
-                $tchtxt.='<li class="list-group-item"><label class="profiletitle">experience</label>'.($teacherinfo->teachermore->experience??'--').' Years</li>';
-               } 
-               if(!empty($teacherinfo->teachermore->description)){
-                $tchtxt.='<li class="list-group-item"><label class="profiletitle">description</label>'.($teacherinfo->teachermore->description??'--').'</li>';
-               } 
+        if (!$teacher && !$user) {
+            return response()->json(['status' => 404, 'message' => 'Educator not found']);
+        }
 
-              $tchtxt.='</ul>';
-            }
-            return ['status'=>200,'message'=>$tchtxt];
-            }
+        $teacherUser = $teacher->user ?? $user;
+        $name = $teacherUser->name ?? ($teacher->name ?? 'Verified Educator');
+        $img = Common::profileimage($teacher->image ?: ($teacherUser->image ?? ''));
+        $gender = $teacher->gender ?: ($teacherUser->teachermore->gender ?? 'Educator');
+        $exp = $teacher->experience ?: ($teacherUser->teachermore->experience ?? '');
+        $expText = $exp ? ($exp . ' Yrs Exp') : 'Experienced';
+
+        $city = trim((string)($teacher->city ?? $user->teachermore->city ?? ''));
+        $state = trim((string)($teacher->state ?? $user->teachermore->state ?? ''));
+        $locParts = [];
+        if (!empty($city) && $city !== '0') $locParts[] = $city;
+        if (!empty($state) && $state !== '0') $locParts[] = $state;
+        $locParts[] = 'India';
+        $locationFormatted = implode(', ', $locParts);
+
+        $qualification = $teacher->qualification_name ?: (Common::tmodeName($user->teachermore->qualification ?? 0) ?: 'Graduation');
+        $subjects = $teacher->subject_names ?: (Common::getSubjects($user->teachermore->subjects ?? '') ?: 'English, Mathematics');
+        $boards = $teacher->board_names ?: 'CBSE, ICSE, WBBSE';
+        $teachingMode = $teacher->teaching_mode_name ?: 'Both (Online & Offline)';
+        $timings = $teacher->timings ?: ($user->teachermore->timings ?? '10 AM – 10 PM');
+        $description = $teacher->description ?: ($user->teachermore->description ?? 'Dedicated and certified educator committed to conceptual clarity, personalized doubt clearing, and continuous academic growth for students.');
+
+        $teacherData = [
+            'id' => $teacher->id ?? $user->id,
+            'user_id' => $teacher->user_id ?? $user->id,
+            'name' => $name,
+            'image' => $img,
+            'gender' => $gender,
+            'experience' => $exp,
+            'exp_text' => $expText,
+            'city' => $city,
+            'state' => $state,
+            'country' => 'India',
+            'location_formatted' => $locationFormatted,
+            'qualification' => $qualification,
+            'qualification_name' => $qualification,
+            'subjects' => $subjects,
+            'subject_names' => $subjects,
+            'boards' => $boards,
+            'board_names' => $boards,
+            'teaching_mode' => $teachingMode,
+            'teaching_mode_name' => $teachingMode,
+            'timings' => $timings,
+            'description' => $description,
+            'rating' => 5.0,
+        ];
+
+        return response()->json([
+            'status' => 200,
+            'teacher' => $teacherData,
+            'message' => 'OK',
+        ]);
+    }
+
+    public function getTeamTeacherDetailsAjax($id){ 
+        return $this->getTeacherDetailsAjax($id);
+    }
 
         //get course video link
         public function getCourseVideoAjax($courseid){
@@ -147,17 +132,36 @@ class FrontController extends Controller
                 return ['status'=>400,'message'=>'Please login to access this'];
             }
 
-            $review = TeacherReview::where('student_id',Auth::user()->id)->where('teacher_id',$request->id)->first();
+            // Strictly disable self-reviews: only other users can review another user
+            $currentUserId = Auth::id();
+            
+            // Resolve the target educator's User ID
+            $targetTeacher = Teacher::where('id', $request->id)->orWhere('user_id', $request->id)->first();
+            $targetUserId = null;
+            if ($targetTeacher && !empty($targetTeacher->user_id)) {
+                $targetUserId = (int)$targetTeacher->user_id;
+            } else {
+                $targetUser = User::find($request->id);
+                $targetUserId = $targetUser ? (int)$targetUser->id : (int)$request->id;
+            }
+
+            // Check if user is attempting to review themselves
+            if ($currentUserId === $targetUserId) {
+                return ['status' => 400, 'message' => 'Self-reviews are disabled. You cannot review your own educator profile.'];
+            }
+
+            $review = TeacherReview::where('student_id', $currentUserId)->where('teacher_id', $targetUserId)->first();
             if(empty($review->id)){
-            $reviewx = new TeacherReview;
-            $reviewx->student_id = Auth::user()->id??0; 
-            $reviewx->teacher_id = $request->id;
-            $reviewx->teacher_rating = $request->teacher_rating??0;
-            $reviewx->teacher_review = $request->teacher_review??'';
-            $reviewx->save();
-            return ['status'=>200,'message'=>'Your review is posted successfully. Thank you'];
+                $reviewx = new TeacherReview;
+                $reviewx->student_id = $currentUserId; 
+                $reviewx->teacher_id = $targetUserId;
+                $reviewx->teacher_rating = $request->teacher_rating??0;
+                $reviewx->teacher_review = $request->teacher_review??'';
+                $reviewx->is_active = 0; // Requires administrator approval before public display
+                $reviewx->save();
+                return ['status'=>200,'message'=>'Thank you! Your review has been submitted and will be displayed once approved by the administrator.'];
             }else{
-            return ['status'=>400,'message'=>'You have already posted your feedback. Thank you'];    
+                return ['status'=>400,'message'=>'You have already submitted a review for this educator.'];    
             }
         }
         public function index(Request $request){
@@ -167,7 +171,7 @@ class FrontController extends Controller
                 $courses = Course::with('category')->where('is_active',1)->latest('id')->take(6)->get();
                 $blogs = Common::blogs();
                 $teachers = Common::teachers();
-                $testimonials = TeacherReview::with(['student', 'teacher.user'])->latest('id')->take(6)->get();
+                $testimonials = TeacherReview::with(['student', 'teacher.user'])->where('is_active', 1)->latest('id')->take(6)->get();
                 $stats = [
                     'courses' => Common::coursecount(),
                     'teachers' => Common::teacherscount(),
@@ -450,7 +454,7 @@ class FrontController extends Controller
         }
 
         public function all_course(){
-            $courses = Course::with('category')->where('is_active',1)->latest('id')->paginate(12);
+            $courses = Course::with(['category', 'teacher.teachermore'])->where('is_active',1)->latest('id')->paginate(12);
             $categories = CourseCategory::where('is_active',1)->orderBy('title','asc')->get();
             return Inertia::render('Front/AllCourse', compact('courses', 'categories')); 
         }
@@ -604,11 +608,105 @@ class FrontController extends Controller
             $coursefeedback->user_id   = Auth::user()->id??0;
             $coursefeedback->rating    = !empty($request->rating)?$request->rating:0;
             $coursefeedback->feedback  =!empty($request->feedback)?$request->feedback:'';
-            $coursefeedback->is_active =!empty($request->is_active)?$request->is_active:0;
+            $coursefeedback->is_active = 0; // Requires administrator approval
             $coursefeedback->save();
-            return ["status"=>200,"message"=>"Your feedback has been posted."];
+            return ["status"=>200,"message"=>"Thank you! Your course feedback has been submitted successfully and will be displayed after administrator approval."];
         }
         return ["status"=>400,"message"=>"Invalid Request"];
+    }
+
+    /**
+     * Submit General Website / Platform Feedback (Students, Parents, Teachers)
+     */
+    public function postPlatformFeedback(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'feedback' => 'required|string|min:5|max:2000',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'role' => 'nullable|string|max:100',
+            'category' => 'nullable|string|max:100',
+            'name' => 'nullable|string|max:191',
+            'email' => 'nullable|email|max:191',
+        ], [
+            'feedback.required' => 'Please share your feedback or experience message.',
+            'feedback.min' => 'Feedback message should be at least 5 characters.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 400,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        $userId = Auth::id();
+        $userName = $request->name ?: (Auth::user() ? Auth::user()->name : 'Anonymous');
+        $userEmail = $request->email ?: (Auth::user() ? Auth::user()->email : null);
+        $userRole = $request->role ?: (Auth::user() ? (Auth::user()->type === 'teacher' ? 'Teacher' : 'Student') : 'Visitor');
+
+        $feedback = new PlatformFeedback();
+        $feedback->user_id = $userId;
+        $feedback->name = $userName;
+        $feedback->email = $userEmail;
+        $feedback->phone = $request->phone ?? (Auth::user() ? Auth::user()->mobile : null);
+        $feedback->role = $userRole;
+        $feedback->category = $request->category ?: 'Platform Experience';
+        $feedback->rating = (int)($request->rating ?: 5);
+        $feedback->feedback = trim($request->feedback);
+        $feedback->is_active = 0; // Requires admin approval to display publicly
+        $feedback->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Thank you! Your feedback has been received and will be displayed publicly once approved by the administrator.',
+        ]);
+    }
+
+    /**
+     * Admin: List Platform Feedback Queue
+     */
+    public function adminPlatformFeedback(Request $request)
+    {
+        $query = PlatformFeedback::with('user')->latest('id');
+
+        if ($request->has('status') && $request->status !== 'all' && $request->status !== '') {
+            $query->where('is_active', $request->status === 'approved' ? 1 : 0);
+        }
+
+        $feedbacks = $query->paginate(50)->withQueryString();
+
+        $stats = [
+            'total' => PlatformFeedback::count(),
+            'pending' => PlatformFeedback::where('is_active', 0)->count(),
+            'approved' => PlatformFeedback::where('is_active', 1)->count(),
+        ];
+
+        return Inertia::render('Admin/Feedback/PlatformFeedback', [
+            'feedbacks' => $feedbacks,
+            'stats' => $stats,
+            'currentStatus' => $request->status ?? 'all',
+        ]);
+    }
+
+    /**
+     * Admin: Approve Platform Feedback
+     */
+    public function acceptPlatformFeedback($id)
+    {
+        $feedback = PlatformFeedback::findOrFail($id);
+        $feedback->is_active = 1;
+        $feedback->save();
+        return redirect()->back()->withSuccess('Platform feedback approved successfully! It will now be visible publicly.');
+    }
+
+    /**
+     * Admin: Delete Platform Feedback
+     */
+    public function destroyPlatformFeedback($id)
+    {
+        $feedback = PlatformFeedback::findOrFail($id);
+        $feedback->delete();
+        return redirect()->back()->withSuccess('Platform feedback deleted successfully.');
     }
 
         public function event_details(){
@@ -1013,9 +1111,147 @@ class FrontController extends Controller
              
         } 
 
-        public function team(){
-            $teachers = Common::teachers();
-            return Inertia::render('Front/Team', compact('teachers'));
+        public function team(Request $request){
+            $allTeachers = Common::teachers();
+            $subjectParam = $request->get('subject');
+
+            $selectedSubject = null;
+            $allSubjects = CustomData::where('key_name', 'subject')
+                ->where('is_active', '1')
+                ->orderBy('name', 'asc')
+                ->get(['id', 'name']);
+
+            if (!empty($subjectParam)) {
+                $selectedSubject = CustomData::where('key_name', 'subject')
+                    ->where(function ($q) use ($subjectParam) {
+                        if (is_numeric($subjectParam)) {
+                            $q->where('id', $subjectParam);
+                        } else {
+                            $q->where('name', 'like', $subjectParam)
+                              ->orWhereRaw("LOWER(REPLACE(name, ' ', '-')) = ?", [strtolower($subjectParam)]);
+                        }
+                    })
+                    ->first();
+            }
+
+            if ($selectedSubject) {
+                $subId = (string)$selectedSubject->id;
+                $subNameLower = strtolower(trim($selectedSubject->name));
+
+                $teachers = $allTeachers->filter(function ($t) use ($subId, $subNameLower) {
+                    $rawSubjects = (string)($t->subjects ?? '');
+                    if (!empty($rawSubjects)) {
+                        $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
+                        foreach ($parts as $part) {
+                            if ($part === $subId || strtolower($part) === $subNameLower) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    $subjectNames = strtolower((string)($t->subject_names ?? ''));
+                    return str_contains($subjectNames, $subNameLower);
+                })->values();
+            } else {
+                $teachers = $allTeachers;
+            }
+
+            return Inertia::render('Front/Team', [
+                'teachers' => $teachers,
+                'selectedSubject' => $selectedSubject ? [
+                    'id' => $selectedSubject->id,
+                    'name' => $selectedSubject->name,
+                ] : null,
+                'allSubjects' => $allSubjects,
+            ]);
+        }
+
+        public function subjects(){
+            $subjects = CustomData::where('key_name', 'subject')
+                ->where('is_active', '1')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $teachers = Teacher::with('user')
+                ->whereHas('user', function ($q) {
+                    $q->whereNull('deleted_at');
+                })
+                ->get();
+
+            // MULTIPLE SUBJECTS RULE:
+            // If a teacher teaches multiple subjects (e.g., "13,14" for English & Math),
+            // they are counted individually in each of those subjects (+1 English, +1 Math).
+            $subjectCards = $subjects->map(function ($s) use ($teachers) {
+                $subId = (string)$s->id;
+                $subNameLower = strtolower(trim($s->name));
+
+                $count = $teachers->filter(function ($t) use ($subId, $subNameLower) {
+                    $rawSubjects = (string)($t->subjects ?? '');
+                    if (!empty($rawSubjects)) {
+                        $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
+                        foreach ($parts as $part) {
+                            if ($part === $subId || strtolower($part) === $subNameLower) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    $subjectNames = strtolower((string)($t->subject_names ?? ''));
+                    return !empty($subjectNames) && str_contains($subjectNames, $subNameLower);
+                })->count();
+
+                $icon = match ($subNameLower) {
+                    'math', 'mathematics' => 'bi-calculator-fill',
+                    'physics' => 'bi-lightning-charge-fill',
+                    'chemistry' => 'bi-droplet-fill',
+                    'biology' => 'bi-heart-pulse-fill',
+                    'english' => 'bi-book-half',
+                    'hindi' => 'bi-translate',
+                    'social studies', 'history', 'geography' => 'bi-globe-americas',
+                    'computer', 'computer science' => 'bi-laptop-fill',
+                    default => 'bi-journal-bookmark-fill',
+                };
+
+                $badgeColor = match ($subNameLower) {
+                    'math', 'mathematics' => '#0284c7',
+                    'physics' => '#d97706',
+                    'chemistry' => '#059669',
+                    'biology' => '#dc2626',
+                    'english' => '#7c3aed',
+                    'hindi' => '#ea580c',
+                    'social studies' => '#0891b2',
+                    default => '#2563eb',
+                };
+
+                $description = match ($subNameLower) {
+                    'math', 'mathematics' => 'Algebra, Geometry, Calculus, Trigonometry, and board exam numericals with step-by-step problem solving.',
+                    'physics' => 'Mechanics, Electromagnetism, Optics, formula mastery, and concept-based numerical preparation.',
+                    'chemistry' => 'Organic reaction mechanisms, Inorganic periodic trends, equations, and Physical Chemistry formulas.',
+                    'biology' => 'Botany, Zoology, Genetics, human physiology diagrams, and foundation preparation for NEET.',
+                    'english' => 'Comprehensive grammar, creative writing, prose, poetry analysis, and spoken English fluency.',
+                    'hindi' => 'Vyakaran, Sahitya, Kavita vishleshan, and scoring structured answer presentation for exams.',
+                    'social studies' => 'History timeline mastery, Civics, Geography map pointing, and structured school board exam answers.',
+                    'computer', 'computer science' => 'Coding foundations, Python, Java, computer applications, and basic AI research tools.',
+                    default => 'Personalized 1-on-1 tutoring, doubt resolution, previous years questions, and regular mock assessments.',
+                };
+
+                return [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'slug' => Str::slug($s->name),
+                    'teacher_count' => $count,
+                    'icon' => $icon,
+                    'badge_color' => $badgeColor,
+                    'description' => $description,
+                    'grades' => 'Class 1 – 12 & Competitive',
+                    'boards' => 'CBSE, ICSE, WBBSE',
+                ];
+            });
+
+            return Inertia::render('Front/Subjects', [
+                'subjects' => $subjectCards,
+                'totalTeachers' => $teachers->count(),
+            ]);
         }
 
         public function contact(){

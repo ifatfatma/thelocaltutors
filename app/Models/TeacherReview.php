@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TeacherReview extends Model
 {
     use HasFactory,SoftDeletes;
+
+    protected $guarded = [];
+
     public function teacher(){
         return $this->hasOne(User::class,'id','teacher_id');
     }

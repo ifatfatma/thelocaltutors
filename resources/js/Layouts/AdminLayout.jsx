@@ -27,6 +27,7 @@ export default function AdminLayout({ children, title }) {
         { label: 'Blogs', href: '/admin/blog', icon: 'bi-newspaper' },
         { label: 'Course Feedback', href: '/admin/coursefeedback', icon: 'bi-chat-left-dots' },
         { label: 'Blog Feedback', href: '/admin/blogfeedback', icon: 'bi-chat-square-quote' },
+        { label: 'Platform Feedback', href: '/admin/platform-feedback', icon: 'bi-chat-heart' },
         { label: 'Messages Inbox', href: '/admin/messages', icon: 'bi-envelope' },
         { label: 'Gallery', href: '/admin/gallery', icon: 'bi-images' },
         { label: 'FAQs', href: '/admin/faq', icon: 'bi-patch-question' },

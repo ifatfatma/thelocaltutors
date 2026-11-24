@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class CourseCategory extends Model
 {
     use HasFactory,SoftDeletes;
+
+    protected $guarded = [];
+
     public function courses(){
         return $this->hasMany(Course::class,'category_id','id');
     }
