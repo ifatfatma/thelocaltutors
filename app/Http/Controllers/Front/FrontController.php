@@ -322,7 +322,8 @@ class FrontController extends Controller
                 'teachers.latitude',
                 'teachers.longitude'
             )
-            ->join('teachers', 'users.id', '=', 'teachers.user_id')
+            ->leftJoin('teachers', 'users.id', '=', 'teachers.user_id')
+            ->where('users.type', 'teacher')
             ->whereIn('users.is_active', ['1', 1])
             ->selectRaw("{$haversine} AS distance", [(float)$userLat, (float)$userLng, (float)$userLat])
             ->orderByRaw('CASE WHEN teachers.latitude IS NOT NULL AND teachers.latitude != "" AND distance IS NOT NULL AND distance <= 50 THEN 0 ELSE 1 END')
@@ -781,8 +782,9 @@ class FrontController extends Controller
                 'teachers.address',
                 'teachers.latitude',
                 'teachers.longitude')
-                ->join('teachers','users.id','=','teachers.user_id')
-                ->where('is_active',1);
+                ->leftJoin('teachers','users.id','=','teachers.user_id')
+                ->where('users.type', 'teacher')
+                ->whereIn('users.is_active', ['1', 1]);
 
             // Area / Quick Area filter
             if (!empty($area)) {
@@ -976,8 +978,9 @@ class FrontController extends Controller
                 'teachers.subjects',
                 'teachers.latitude',
                 'teachers.longitude')
-                ->join('teachers','users.id','=','teachers.user_id')
-                ->where('is_active',1);
+                ->leftJoin('teachers','users.id','=','teachers.user_id')
+                ->where('users.type', 'teacher')
+                ->whereIn('users.is_active', ['1', 1]);
 
             if(!empty($searchdetails->state)){
                 $lists = $lists->where('teachers.state',$searchdetails->state);

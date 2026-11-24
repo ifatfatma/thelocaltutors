@@ -477,203 +477,293 @@ export default function Home({
             {/* ============================================================== */}
             {/* HERO SECTION: Custom Category Selector & Sleek Search Pill */}
             {/* ============================================================== */}
-            <section className="hero-section py-5 hero-wrapper position-relative overflow-hidden border-bottom">
+            <section className="hero-section py-4 py-lg-5 hero-wrapper position-relative overflow-hidden border-bottom">
+                <style>{`
+                    @keyframes heroFloat {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-7px); }
+                    }
+                `}</style>
                 <div className="container">
-                    {/* 1. HERO HEADER: Heading & Subheading */}
-                    <div className="text-center mx-auto mb-4" style={{ maxWidth: '850px' }}>
-                        <span
-                            className="mb-3 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 shadow-2xs fw-semibold"
-                            style={{
-                                backgroundColor: '#eff6ff',
-                                color: '#1d4ed8',
-                                border: '1px solid rgba(29, 78, 216, 0.22)',
-                                fontSize: '0.85rem',
-                            }}
-                        >
-                            <i className="bi bi-patch-check-fill text-primary"></i>
-                            <span className="text-primary">Top Rated Learning Platform</span>
-                        </span>
-                        <h1 className="display-5 fw-bold text-dark lh-sm mb-2">
-                            Find the Perfect <span className="text-primary">Tutor</span> in Your Local Area
-                        </h1>
-                        <p className="lead text-muted mb-4">
-                            Connect with qualified home and online teachers, coaching institutes, schools, and colleges for all subjects and boards.
-                        </p>
-
-                        {/* PRIMARY SEARCH BAR: Custom Category Dropdown & Auto-Suggestions */}
-                        <div className="position-relative mx-auto text-start" style={{ maxWidth: '850px', zIndex: 30 }} ref={searchBarRef}>
-                            <form
-                                onSubmit={handlePrimarySearchSubmit}
-                                className="shadow-lg rounded-pill bg-white p-2 border d-flex flex-wrap align-items-center gap-2"
+                    {/* 1. HERO HEADER: 2-Column Grid (Left: Headline & Search, Right: Girl Visual) */}
+                    <div className="row align-items-center gy-4 mb-4">
+                        {/* Left Column: Heading, Subheading & Primary Search Bar */}
+                        <div className="col-12 col-lg-7 col-xl-7 text-start">
+                            <span
+                                className="mb-3 px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2 shadow-2xs fw-semibold"
+                                style={{
+                                    backgroundColor: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    border: '1px solid rgba(29, 78, 216, 0.22)',
+                                    fontSize: '0.85rem',
+                                }}
                             >
-                                {/* Sleek Custom-Styled Modern Category Dropdown */}
-                                <div className="position-relative" ref={categoryDropdownRef}>
-                                    <button
-                                        type="button"
-                                        className="btn border-0 d-flex align-items-center gap-2 py-2 px-3 rounded-pill bg-light text-dark fw-semibold transition"
-                                        style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
-                                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                                        aria-expanded={isCategoryDropdownOpen}
-                                    >
-                                        <div
-                                            className={`rounded-circle p-1 d-flex align-items-center justify-content-center ${activeCategoryObj.badgeColor}`}
-                                            style={{ width: '26px', height: '26px' }}
-                                        >
-                                            <i className={`bi ${activeCategoryObj.icon}`} style={{ fontSize: '0.85rem' }}></i>
-                                        </div>
-                                        <span style={{ fontSize: '0.92rem' }}>{activeCategoryObj.name}</span>
-                                        <i
-                                            className="bi bi-chevron-down text-muted small ms-1"
-                                            style={{
-                                                transform: isCategoryDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                transition: 'transform 0.25s ease',
-                                                fontSize: '0.75rem',
-                                            }}
-                                        ></i>
-                                    </button>
+                                <i className="bi bi-patch-check-fill text-primary"></i>
+                                <span className="text-primary">Top Rated Learning Platform</span>
+                            </span>
+                            <h1 className="display-5 fw-bold text-dark lh-sm mb-3">
+                                Find the Perfect <span className="text-primary">Tutor</span> in Your Local Area
+                            </h1>
+                            <p className="lead text-muted mb-4 fs-6" style={{ maxWidth: '620px' }}>
+                                Connect with qualified home and online teachers, coaching institutes, schools, and colleges for all subjects and boards.
+                            </p>
 
-                                    {/* Custom Dropdown Menu with Icons & Descriptions */}
-                                    {isCategoryDropdownOpen && (
-                                        <div
-                                            className="position-absolute start-0 mt-2 bg-white rounded-4 shadow-xl border overflow-hidden p-2"
-                                            style={{ minWidth: '280px', zIndex: 1060 }}
+                            {/* PRIMARY SEARCH BAR: Custom Category Dropdown & Auto-Suggestions */}
+                            <div className="position-relative text-start w-100" style={{ maxWidth: '650px', zIndex: 30 }} ref={searchBarRef}>
+                                <form
+                                    onSubmit={handlePrimarySearchSubmit}
+                                    className="shadow-lg rounded-pill bg-white p-2 border d-flex flex-wrap align-items-center gap-2"
+                                >
+                                    {/* Sleek Custom-Styled Modern Category Dropdown */}
+                                    <div className="position-relative" ref={categoryDropdownRef}>
+                                        <button
+                                            type="button"
+                                            className="btn border-0 d-flex align-items-center gap-2 py-2 px-3 rounded-pill bg-light text-dark fw-semibold transition"
+                                            style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                                            aria-expanded={isCategoryDropdownOpen}
                                         >
-                                            <div className="px-3 py-2 text-muted small fw-semibold border-bottom mb-1 d-flex align-items-center justify-content-between">
-                                                <span>SELECT CATEGORY</span>
-                                                <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
+                                            <div
+                                                className={`rounded-circle p-1 d-flex align-items-center justify-content-center ${activeCategoryObj.badgeColor}`}
+                                                style={{ width: '26px', height: '26px' }}
+                                            >
+                                                <i className={`bi ${activeCategoryObj.icon}`} style={{ fontSize: '0.85rem' }}></i>
                                             </div>
-                                            <div className="d-flex flex-column gap-1">
-                                                {CATEGORIES.map((cat) => {
-                                                    const isSelected = cat.id === primaryCategory;
-                                                    return (
-                                                        <button
-                                                            key={cat.id}
-                                                            type="button"
-                                                            className={`btn w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 rounded-3 border-0 transition ${
-                                                                isSelected ? 'bg-primary-subtle text-primary fw-bold' : 'hover-bg-light text-dark'
-                                                            }`}
-                                                            style={{ fontSize: '0.88rem' }}
-                                                            onClick={() => {
-                                                                setPrimaryCategory(cat.id);
-                                                                setIsCategoryDropdownOpen(false);
-                                                            }}
-                                                        >
-                                                            <div className="d-flex align-items-center gap-2">
-                                                                <div
-                                                                    className={`rounded-3 p-2 d-flex align-items-center justify-content-center ${cat.badgeColor}`}
-                                                                    style={{ width: '32px', height: '32px' }}
-                                                                >
-                                                                    <i className={`bi ${cat.icon}`}></i>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="fw-semibold lh-sm">{cat.name}</div>
-                                                                    <div className="text-muted small" style={{ fontSize: '0.74rem' }}>
-                                                                        {cat.description}
+                                            <span style={{ fontSize: '0.92rem' }}>{activeCategoryObj.name}</span>
+                                            <i
+                                                className="bi bi-chevron-down text-muted small ms-1"
+                                                style={{
+                                                    transform: isCategoryDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    transition: 'transform 0.25s ease',
+                                                    fontSize: '0.75rem',
+                                                }}
+                                            ></i>
+                                        </button>
+
+                                        {/* Custom Dropdown Menu with Icons & Descriptions */}
+                                        {isCategoryDropdownOpen && (
+                                            <div
+                                                className="position-absolute start-0 mt-2 bg-white rounded-4 shadow-xl border overflow-hidden p-2"
+                                                style={{ minWidth: '280px', zIndex: 1060 }}
+                                            >
+                                                <div className="px-3 py-2 text-muted small fw-semibold border-bottom mb-1 d-flex align-items-center justify-content-between">
+                                                    <span>SELECT CATEGORY</span>
+                                                    <i className="bi bi-grid-3x3-gap-fill text-primary"></i>
+                                                </div>
+                                                <div className="d-flex flex-column gap-1">
+                                                    {CATEGORIES.map((cat) => {
+                                                        const isSelected = cat.id === primaryCategory;
+                                                        return (
+                                                            <button
+                                                                key={cat.id}
+                                                                type="button"
+                                                                className={`btn w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 rounded-3 border-0 transition ${
+                                                                    isSelected ? 'bg-primary-subtle text-primary fw-bold' : 'hover-bg-light text-dark'
+                                                                }`}
+                                                                style={{ fontSize: '0.88rem' }}
+                                                                onClick={() => {
+                                                                    setPrimaryCategory(cat.id);
+                                                                    setIsCategoryDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                <div className="d-flex align-items-center gap-2">
+                                                                    <div
+                                                                        className={`rounded-3 p-2 d-flex align-items-center justify-content-center ${cat.badgeColor}`}
+                                                                        style={{ width: '32px', height: '32px' }}
+                                                                    >
+                                                                        <i className={`bi ${cat.icon}`}></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="fw-semibold lh-sm">{cat.name}</div>
+                                                                        <div className="text-muted small" style={{ fontSize: '0.74rem' }}>
+                                                                            {cat.description}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            {isSelected && <i className="bi bi-check2 text-primary fs-5 ms-2"></i>}
-                                                        </button>
-                                                    );
-                                                })}
+                                                                {isSelected && <i className="bi bi-check2 text-primary fs-5 ms-2"></i>}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Divider */}
-                                <div className="vr text-secondary opacity-25 my-1 d-none d-sm-block"></div>
-
-                                {/* Dynamic Auto-Suggest Search Input */}
-                                <div className="flex-grow-1 position-relative d-flex align-items-center px-2">
-                                    <i className="bi bi-search text-muted me-2"></i>
-                                    <input
-                                        type="text"
-                                        className="form-control border-0 shadow-none py-2 ps-1"
-                                        placeholder="Search subject or course (e.g. Mathematics, Physics, NEET)..."
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            setShowSuggestions(true);
-                                        }}
-                                        onFocus={() => setShowSuggestions(true)}
-                                        autoComplete="off"
-                                        style={{ fontSize: '0.95rem' }}
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-link text-muted p-0 me-2"
-                                            onClick={() => {
-                                                setSearchQuery('');
-                                                setSelectedSubjectId('0');
-                                            }}
-                                            title="Clear input"
-                                        >
-                                            <i className="bi bi-x-circle-fill"></i>
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Search Button */}
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
-                                    style={{ minHeight: '44px' }}
-                                >
-                                    <span>Search</span>
-                                    <i className="bi bi-arrow-right"></i>
-                                </button>
-                            </form>
-
-                            {/* Auto-Suggestions Dropdown Card */}
-                            {showSuggestions && matchingSuggestions.length > 0 && (
-                                <div
-                                    className="position-absolute start-0 end-0 mt-2 bg-white rounded-4 shadow-xl border overflow-hidden p-2"
-                                    style={{ zIndex: 1050, maxHeight: '350px', overflowY: 'auto' }}
-                                >
-                                    <div className="d-flex align-items-center justify-content-between px-3 py-1 border-bottom text-muted small">
-                                        <span className="fw-semibold">
-                                            <i className="bi bi-stars text-warning me-1"></i> Matching Subjects &amp; Courses
-                                        </span>
-                                        <button
-                                            type="button"
-                                            className="btn btn-link btn-sm p-0 text-muted"
-                                            onClick={() => setShowSuggestions(false)}
-                                        >
-                                            Close &times;
-                                        </button>
+                                        )}
                                     </div>
-                                    <div className="list-group list-group-flush pt-1">
-                                        {matchingSuggestions.map((item, idx) => (
+
+                                    {/* Divider */}
+                                    <div className="vr text-secondary opacity-25 my-1 d-none d-sm-block"></div>
+
+                                    {/* Dynamic Auto-Suggest Search Input */}
+                                    <div className="flex-grow-1 position-relative d-flex align-items-center px-2">
+                                        <i className="bi bi-search text-muted me-2"></i>
+                                        <input
+                                            type="text"
+                                            className="form-control border-0 shadow-none py-2 ps-1"
+                                            placeholder="Search subject or course (e.g. Mathematics, Physics, NEET)..."
+                                            value={searchQuery}
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setShowSuggestions(true);
+                                            }}
+                                            onFocus={() => setShowSuggestions(true)}
+                                            autoComplete="off"
+                                            style={{ fontSize: '0.95rem' }}
+                                        />
+                                        {searchQuery && (
                                             <button
-                                                key={idx}
                                                 type="button"
-                                                className="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-3 border-0 rounded-3 my-1"
-                                                onClick={() => handleSelectSuggestion(item, true)}
+                                                className="btn btn-sm btn-link text-muted p-0 me-2"
+                                                onClick={() => {
+                                                    setSearchQuery('');
+                                                    setSelectedSubjectId('0');
+                                                }}
+                                                title="Clear input"
                                             >
-                                                <div className="d-flex align-items-center gap-2">
-                                                    <div
-                                                        className="bg-primary-subtle text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
-                                                        style={{ width: '32px', height: '32px' }}
-                                                    >
-                                                        <i className={`bi ${item.icon || 'bi-book'}`}></i>
-                                                    </div>
-                                                    <div>
-                                                        <div className="fw-semibold text-dark small">{item.name}</div>
-                                                        <div className="text-muted" style={{ fontSize: '0.74rem' }}>
-                                                            {item.board} &bull; {item.category}
+                                                <i className="bi bi-x-circle-fill"></i>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Search Button */}
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary-gradient rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                                        style={{ minHeight: '44px' }}
+                                    >
+                                        <span>Search</span>
+                                        <i className="bi bi-arrow-right"></i>
+                                    </button>
+                                </form>
+
+                                {/* Auto-Suggestions Dropdown Card */}
+                                {showSuggestions && matchingSuggestions.length > 0 && (
+                                    <div
+                                        className="position-absolute start-0 end-0 mt-2 bg-white rounded-4 shadow-xl border overflow-hidden p-2"
+                                        style={{ zIndex: 1050, maxHeight: '350px', overflowY: 'auto' }}
+                                    >
+                                        <div className="d-flex align-items-center justify-content-between px-3 py-1 border-bottom text-muted small">
+                                            <span className="fw-semibold">
+                                                <i className="bi bi-stars text-warning me-1"></i> Matching Subjects &amp; Courses
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="btn btn-link btn-sm p-0 text-muted"
+                                                onClick={() => setShowSuggestions(false)}
+                                            >
+                                                Close &times;
+                                            </button>
+                                        </div>
+                                        <div className="list-group list-group-flush pt-1">
+                                            {matchingSuggestions.map((item, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    className="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-3 border-0 rounded-3 my-1"
+                                                    onClick={() => handleSelectSuggestion(item, true)}
+                                                >
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        <div
+                                                            className="bg-primary-subtle text-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                                            style={{ width: '32px', height: '32px' }}
+                                                        >
+                                                            <i className={`bi ${item.icon || 'bi-book'}`}></i>
+                                                        </div>
+                                                        <div>
+                                                            <div className="fw-semibold text-dark small">{item.name}</div>
+                                                            <div className="text-muted" style={{ fontSize: '0.74rem' }}>
+                                                                {item.board} &bull; {item.category}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <span className="badge bg-light text-secondary border small">
-                                                    {item.category}
-                                                </span>
-                                            </button>
-                                        ))}
+                                                    <span className="badge bg-light text-secondary border small">
+                                                        {item.category}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Column: Girl Image with Dashed Circular Accent & Floating Learning Badges */}
+                        <div className="col-12 col-lg-5 col-xl-5 text-center position-relative d-none d-lg-block">
+                            <div className="position-relative d-inline-block">
+                                {/* Soft Circular Accent with Dashed Border */}
+                                <div
+                                    className="position-absolute top-50 start-50 translate-middle rounded-circle"
+                                    style={{
+                                        width: '360px',
+                                        height: '360px',
+                                        backgroundColor: '#eff6ff',
+                                        border: '2px dashed #93c5fd',
+                                        zIndex: 1,
+                                    }}
+                                />
+
+                                {/* 1. Graduation Cap with Rays (Top Right) */}
+                                <div
+                                    className="position-absolute bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                    style={{
+                                        top: '10px',
+                                        right: '10px',
+                                        width: '52px',
+                                        height: '52px',
+                                        zIndex: 3,
+                                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                                        animation: 'heroFloat 4s ease-in-out infinite',
+                                    }}
+                                    title="Verified Educators"
+                                >
+                                    <i className="bi bi-mortarboard-fill text-primary fs-4"></i>
                                 </div>
-                            )}
+
+                                {/* 2. Lightbulb (Middle Left) */}
+                                <div
+                                    className="position-absolute bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                    style={{
+                                        top: '70px',
+                                        left: '-5px',
+                                        width: '46px',
+                                        height: '46px',
+                                        zIndex: 3,
+                                        border: '1px solid rgba(234, 179, 8, 0.3)',
+                                        animation: 'heroFloat 3.5s ease-in-out infinite 0.5s',
+                                    }}
+                                    title="Smart Tutoring"
+                                >
+                                    <i className="bi bi-lightbulb-fill text-warning fs-5"></i>
+                                </div>
+
+                                {/* 3. Open Book (Bottom Left) */}
+                                <div
+                                    className="position-absolute bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                    style={{
+                                        bottom: '100px',
+                                        left: '-15px',
+                                        width: '48px',
+                                        height: '48px',
+                                        zIndex: 3,
+                                        border: '1px solid rgba(37, 99, 235, 0.25)',
+                                        animation: 'heroFloat 4.5s ease-in-out infinite 1s',
+                                    }}
+                                    title="All Subjects & Boards"
+                                >
+                                    <i className="bi bi-book-half text-primary fs-5"></i>
+                                </div>
+
+                                {/* The Girl Picture */}
+                                <img
+                                    src="/front/img/hero/hero-girl.png"
+                                    alt="Find the Perfect Tutor"
+                                    className="img-fluid position-relative"
+                                    style={{
+                                        maxHeight: '430px',
+                                        objectFit: 'contain',
+                                        zIndex: 2,
+                                        filter: 'drop-shadow(0 15px 25px rgba(29, 78, 216, 0.12))',
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
 

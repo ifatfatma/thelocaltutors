@@ -64,15 +64,21 @@ class Teacher extends Model
         if (!$this->subjects) return 'Mathematics & Science';
         $ids = array_filter(explode(',', (string)$this->subjects));
         if (empty($ids)) return 'All Academic Subjects';
-        $names = CustomData::whereIn('id', $ids)->pluck('name')->toArray();
-        return !empty($names) ? implode(', ', $names) : 'Mathematics, Science, English';
+        $numericIds = array_filter($ids, 'is_numeric');
+        $customNames = array_diff($ids, $numericIds);
+        $names = !empty($numericIds) ? CustomData::whereIn('id', $numericIds)->pluck('name')->toArray() : [];
+        $all = array_merge($names, $customNames);
+        return !empty($all) ? implode(', ', $all) : 'Mathematics, Science, English';
     }
 
     public function getBoardNamesAttribute() {
         if (!$this->board) return 'CBSE / ICSE / WBBSE';
         $ids = array_filter(explode(',', (string)$this->board));
         if (empty($ids)) return 'All Boards';
-        $names = CustomData::whereIn('id', $ids)->pluck('name')->toArray();
-        return !empty($names) ? implode(', ', $names) : 'CBSE, ICSE, WBBSE';
+        $numericIds = array_filter($ids, 'is_numeric');
+        $customNames = array_diff($ids, $numericIds);
+        $names = !empty($numericIds) ? CustomData::whereIn('id', $numericIds)->pluck('name')->toArray() : [];
+        $all = array_merge($names, $customNames);
+        return !empty($all) ? implode(', ', $all) : 'CBSE, ICSE, WBBSE';
     }
 }
