@@ -66,7 +66,14 @@ class TeacherController extends Controller
 
     public function store(StoreTeacherRequest $request): RedirectResponse
     {
-        $user = User::create($request->all());
+        $userData = $request->all();
+        $userData['type'] = 'teacher';
+        $userData['is_active'] = $request->input('is_active', 1);
+        $user = User::create($userData);
+
+        // Ensure teacher details record is created immediately so the teacher appears in search and showcase
+        Teacher::firstOrCreate(['user_id' => $user->id]);
+
         if(!empty($request->file('image'))){
         $image = Image::read($request->file('image'));
 
