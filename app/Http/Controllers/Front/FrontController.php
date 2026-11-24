@@ -32,6 +32,7 @@ use Auth;
 use App\Models\User;
 use App\Models\Teacher;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class FrontController extends Controller
 {
@@ -157,7 +158,9 @@ class FrontController extends Controller
                 $reviewx->teacher_id = $targetUserId;
                 $reviewx->teacher_rating = $request->teacher_rating??0;
                 $reviewx->teacher_review = $request->teacher_review??'';
-                $reviewx->is_active = 0; // Requires administrator approval before public display
+                if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+                    $reviewx->is_active = 0; // Requires administrator approval before public display
+                }
                 $reviewx->save();
                 return ['status'=>200,'message'=>'Thank you! Your review has been submitted and will be displayed once approved by the administrator.'];
             }else{
@@ -171,7 +174,11 @@ class FrontController extends Controller
                 $courses = Course::with('category')->where('is_active',1)->latest('id')->take(6)->get();
                 $blogs = Common::blogs();
                 $teachers = Common::teachers();
-                $testimonials = TeacherReview::with(['student', 'teacher.user'])->where('is_active', 1)->latest('id')->take(6)->get();
+                $testimonialsQuery = TeacherReview::with(['student', 'teacher.user']);
+                if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+                    $testimonialsQuery->where('is_active', 1);
+                }
+                $testimonials = $testimonialsQuery->latest('id')->take(6)->get();
                 $stats = [
                     'courses' => Common::coursecount(),
                     'teachers' => Common::teacherscount(),
