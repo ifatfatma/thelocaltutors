@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import FlashAlert from '../Components/FlashAlert';
+import PlatformFeedbackModal from '../Components/PlatformFeedbackModal';
 
 export default function FrontLayout({ children, title }) {
     const { auth, settings, categories, userLocation } = usePage().props;
     const [navOpen, setNavOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null); // 'courses' | 'about' | 'user' | null
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -166,6 +168,12 @@ export default function FrontLayout({ children, title }) {
                                     </Link>
                                 </li>
 
+                                <li className="nav-item">
+                                    <Link className="nav-link fw-semibold px-3 py-2 rounded-pill text-dark" href="/subjects" onClick={closeAll}>
+                                        Subjects
+                                    </Link>
+                                </li>
+
                                 {/* About Us Dropdown */}
                                 <li className="nav-item dropdown position-relative">
                                     <button
@@ -222,6 +230,18 @@ export default function FrontLayout({ children, title }) {
                                                 <i className="bi bi-envelope me-2"></i>Contact Us
                                             </Link>
                                         </li>
+                                        <li>
+                                            <button
+                                                type="button"
+                                                className="dropdown-item py-2 px-3 fw-medium rounded-3 text-secondary text-start"
+                                                onClick={() => {
+                                                    closeAll();
+                                                    setShowFeedbackModal(true);
+                                                }}
+                                            >
+                                                <i className="bi bi-chat-heart me-2 text-primary"></i>Share Feedback
+                                            </button>
+                                        </li>
                                     </ul>
                                 </li>
                             </ul>
@@ -275,6 +295,16 @@ export default function FrontLayout({ children, title }) {
                                                 <li>
                                                     <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard" onClick={closeAll}>
                                                         <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/courses" onClick={closeAll}>
+                                                        <i className="bi bi-journal-plus me-2 text-primary"></i>My Offered Courses
+                                                    </Link>
+                                                </li>
+                                                <li>
+                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/demos" onClick={closeAll}>
+                                                        <i className="bi bi-camera-video me-2 text-primary"></i>Demo Sessions
                                                     </Link>
                                                 </li>
                                                 <li>
@@ -426,6 +456,11 @@ export default function FrontLayout({ children, title }) {
                                     </Link>
                                 </li>
                                 <li className="mb-2">
+                                    <Link href="/subjects" className="text-secondary text-decoration-none">
+                                        Browse Subjects
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
                                     <Link href="/all_course" className="text-secondary text-decoration-none">
                                         All Courses
                                     </Link>
@@ -439,6 +474,15 @@ export default function FrontLayout({ children, title }) {
                                     <Link href="/contact" className="text-secondary text-decoration-none">
                                         Contact Us
                                     </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFeedbackModal(true)}
+                                        className="btn btn-link p-0 text-secondary text-decoration-none small text-start"
+                                    >
+                                        <i className="bi bi-chat-heart text-primary me-1"></i>Share Feedback
+                                    </button>
                                 </li>
                             </ul>
                         </div>
@@ -482,6 +526,12 @@ export default function FrontLayout({ children, title }) {
                     </div>
                 </div>
             </footer>
+
+            {/* Platform Feedback Modal */}
+            <PlatformFeedbackModal
+                isOpen={showFeedbackModal}
+                onClose={() => setShowFeedbackModal(false)}
+            />
         </div>
     );
 }

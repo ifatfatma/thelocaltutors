@@ -45,4 +45,8 @@ class Course extends Model
     public function feedback(){
         return $this->hasMany(CourseFeedback::class, 'id', 'course_id');
     }
+
+    public function enrollments(){
+        return $this->hasMany(enrollCourse::class, 'course_id', 'id');
+    }
 }

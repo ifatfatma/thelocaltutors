@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import { cleanExcerpt } from '../../Utils/text';
+import TeacherCard from '../../Components/TeacherCard';
+import TeacherProfileModal from '../../Components/TeacherProfileModal';
 import axios from 'axios';
 
-export default function Team({ teachers = [] }) {
+export default function Team({ teachers = [], selectedSubject = null, allSubjects = [] }) {
     const { auth } = usePage().props;
     const list = Array.isArray(teachers) ? teachers : [];
     const [selectedTeacher, setSelectedTeacher] = useState(null);
@@ -34,8 +36,11 @@ export default function Team({ teachers = [] }) {
         setModalHtml('');
         try {
             const res = await axios.get(`/getTeamTeacherDetailsAjax/${teacher.user_id || teacher.id}`);
-            if (res.data.status === 200) {
-                setModalHtml(res.data.message);
+            if (res.data.status === 200 && res.data.teacher) {
+                setSelectedTeacher((prev) => ({
+                    ...(prev || {}),
+                    ...res.data.teacher,
+                }));
             }
         } catch (err) {
             console.error(err);
@@ -97,26 +102,81 @@ export default function Team({ teachers = [] }) {
                         <i className="bi bi-shield-check text-primary"></i>
                         <span>100% Background-Verified Educators</span>
                     </span>
-                    <h1 className="fw-bold display-6 text-dark mb-2">Meet Our Expert Teachers &amp; Mentors</h1>
+                    <h1 className="fw-bold display-6 text-dark mb-2">
+                        {selectedSubject ? `${selectedSubject.name} Tutors & Mentors` : 'Meet Our Expert Teachers & Mentors'}
+                    </h1>
                     <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '640px' }}>
-                        Browse qualified home tutors and online educators across Kolkata and West Bengal. Specialized guidance in Mathematics, Science, Languages, Commerce, and Computer Skills.
+                        {selectedSubject
+                            ? `Browse verified educators specialized in ${selectedSubject.name}. Book free trial classes or request home and online tuition.`
+                            : 'Browse qualified home tutors and online educators across Kolkata and West Bengal. Specialized guidance in Mathematics, Science, Languages, Commerce, and Computer Skills.'}
                     </p>
                     <nav aria-label="breadcrumb">
                         <ol className="breadcrumb justify-content-center mb-0 small">
                             <li className="breadcrumb-item">
                                 <Link href="/" className="text-secondary text-decoration-none">Home</Link>
                             </li>
-                            <li className="breadcrumb-item active text-primary fw-semibold" aria-current="page">Teachers</li>
+                            <li className="breadcrumb-item">
+                                <Link href="/subjects" className="text-secondary text-decoration-none">Subjects</Link>
+                            </li>
+                            {selectedSubject ? (
+                                <>
+                                    <li className="breadcrumb-item">
+                                        <Link href="/team" className="text-secondary text-decoration-none">Teachers</Link>
+                                    </li>
+                                    <li className="breadcrumb-item active text-primary fw-semibold" aria-current="page">
+                                        {selectedSubject.name}
+                                    </li>
+                                </>
+                            ) : (
+                                <li className="breadcrumb-item active text-primary fw-semibold" aria-current="page">Teachers</li>
+                            )}
                         </ol>
                     </nav>
                 </div>
             </div>
 
             <div className="container py-5 flex-grow-1 d-flex flex-column">
+                {/* Active Subject Filter Banner */}
+                {selectedSubject && (
+                    <div className="alert alert-primary bg-primary-subtle border-primary-subtle rounded-4 d-flex align-items-center justify-content-between p-3 mb-4 shadow-xs flex-wrap gap-2">
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <span className="badge bg-primary text-white rounded-pill px-3 py-1.5 fw-semibold shadow-2xs">
+                                <i className="bi bi-funnel-fill me-1"></i>Active Subject Filter
+                            </span>
+                            <span className="fw-bold text-dark fs-6">
+                                Showing educators for: <span className="text-primary">{selectedSubject.name}</span>
+                            </span>
+                            <span className="badge bg-white text-secondary border rounded-pill px-2.5 py-1">
+                                {list.length} {list.length === 1 ? 'Teacher' : 'Teachers'} Found
+                            </span>
+                        </div>
+                        <div className="d-flex align-items-center gap-2">
+                            <Link
+                                href="/subjects"
+                                className="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold"
+                            >
+                                <i className="bi bi-grid me-1"></i>All Subjects
+                            </Link>
+                            <Link
+                                href="/team"
+                                className="btn btn-primary btn-sm rounded-pill px-3 py-1.5 fw-semibold shadow-xs"
+                            >
+                                <i className="bi bi-x-circle me-1"></i>Clear Filter
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-2 border-bottom">
                     <div>
-                        <h3 className="fw-bold text-dark mb-1">Qualified Mentors Directory</h3>
-                        <p className="text-muted small mb-0">Showing verified teachers with direct trial class booking</p>
+                        <h3 className="fw-bold text-dark mb-1">
+                            {selectedSubject ? `${selectedSubject.name} Educators` : 'Qualified Mentors Directory'}
+                        </h3>
+                        <p className="text-muted small mb-0">
+                            {selectedSubject
+                                ? `Showing background-verified tutors offering ${selectedSubject.name} classes`
+                                : 'Showing verified teachers with direct trial class booking'}
+                        </p>
                     </div>
                     <div className="d-flex align-items-center gap-2">
                         <span className="badge badge-soft-success text-success px-3 py-2 rounded-pill small">
@@ -130,138 +190,51 @@ export default function Team({ teachers = [] }) {
                         <div className="rounded-circle bg-light d-inline-flex p-4 mb-3 shadow-xs">
                             <i className="bi bi-people fs-1 text-primary"></i>
                         </div>
-                        <h4 className="fw-bold text-dark">No Teachers Listed At The Moment</h4>
-                        <p className="text-muted mx-auto" style={{ maxWidth: '420px' }}>
-                            Our directory of verified local tutors is updating. Find teachers using our search on the homepage.
+                        <h4 className="fw-bold text-dark">
+                            {selectedSubject ? `No Teachers Listed for ${selectedSubject.name} Yet` : 'No Teachers Listed At The Moment'}
+                        </h4>
+                        <p className="text-muted mx-auto mb-3" style={{ maxWidth: '420px' }}>
+                            {selectedSubject
+                                ? `We are currently onboarding verified tutors for ${selectedSubject.name}. You can explore other subjects or view all active tutors.`
+                                : 'Our directory of verified local tutors is updating. Find teachers using our search on the homepage.'}
                         </p>
-                        <Link href="/" className="btn btn-primary-gradient rounded-pill px-4 py-2 mt-3 fw-semibold shadow-xs">Back to Home</Link>
+                        <div className="d-flex justify-content-center gap-2">
+                            <Link href="/team" className="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-xs">
+                                View All Teachers
+                            </Link>
+                            <Link href="/subjects" className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                                Browse Other Subjects
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="row g-4">
-                        {list.map((t) => {
-                            const u = t.user || {};
-                            const tName = t.name || u.name || 'Verified Educator';
-                            const experienceText = t.experience ? `${t.experience} Years Exp` : 'Experienced';
-                            const qualification = t.qualification_name || 'Graduate Educator';
-                            const subjects = t.subject_names || 'Mathematics, Science';
-                            const boards = t.board_names || 'CBSE / ICSE / WBBSE';
-                            const mode = t.teaching_mode_name || 'Home & Online Tuition';
-                            const bio = cleanExcerpt(t.description, 85, 'Dedicated educator providing structured lesson plans and individual doubt resolution.');
-
-                            return (
-                                <div key={t.id} className="col-md-6 col-lg-4">
-                                    <div className="card card-modern h-100 p-4 d-flex flex-column">
-                                        <div className="d-flex align-items-start gap-3 mb-3">
-                                            <div className="position-relative flex-shrink-0">
-                                                <img
-                                                    src={u.image ? `/user/${u.image}` : '/front/img/noprofileimage.png'}
-                                                    onError={(e) => { e.currentTarget.src = '/front/img/noprofileimage.png'; }}
-                                                    alt={`Profile photo of ${tName}`}
-                                                    className="rounded-circle shadow-sm"
-                                                    style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-                                                />
-                                                <span
-                                                    className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle"
-                                                    style={{ width: '14px', height: '14px' }}
-                                                    title="Available for Tuition"
-                                                />
-                                            </div>
-
-                                            <div className="flex-grow-1 min-w-0">
-                                                <h5 className="fw-bold text-dark mb-1 text-truncate" title={tName}>
-                                                    {tName}
-                                                </h5>
-                                                <div className="d-flex align-items-center gap-1 flex-wrap mb-1">
-                                                    <span className="badge badge-soft-primary text-primary px-2 py-1 rounded-pill small" style={{ fontSize: '0.72rem' }}>
-                                                        <i className="bi bi-patch-check-fill me-1"></i>Verified
-                                                    </span>
-                                                    <span className="badge bg-light text-secondary border px-2 py-1 rounded-pill small" style={{ fontSize: '0.72rem' }}>
-                                                        {experienceText}
-                                                    </span>
-                                                </div>
-                                                <span className="text-muted small d-block text-truncate" style={{ fontSize: '0.82rem' }}>
-                                                    <i className="bi bi-mortarboard me-1 text-primary"></i>{qualification}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Academic Details Pill Box */}
-                                        <div className="bg-light rounded-3 p-3 mb-3 small flex-grow-1">
-                                            <div className="mb-2">
-                                                <span className="text-muted d-block" style={{ fontSize: '0.75rem' }}>Subjects Taught:</span>
-                                                <strong className="text-dark d-block text-truncate" title={subjects}>
-                                                    {subjects}
-                                                </strong>
-                                            </div>
-                                            <div className="row g-2">
-                                                <div className="col-6">
-                                                    <span className="text-muted d-block" style={{ fontSize: '0.75rem' }}>Boards:</span>
-                                                    <span className="text-dark text-truncate d-block fw-medium">{boards}</span>
-                                                </div>
-                                                <div className="col-6">
-                                                    <span className="text-muted d-block" style={{ fontSize: '0.75rem' }}>Mode:</span>
-                                                    <span className="text-dark text-truncate d-block fw-medium">{mode}</span>
-                                                </div>
-                                            </div>
-                                            {t.address && (
-                                                <div className="mt-2 pt-2 border-top text-muted text-truncate" style={{ fontSize: '0.75rem' }}>
-                                                    <i className="bi bi-geo-alt text-danger me-1"></i>{t.address}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <p className="text-secondary small mb-3">
-                                            {bio}
-                                        </p>
-
-                                        {/* Action buttons */}
-                                        <div className="d-flex gap-2 mt-auto pt-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleOpenInquiry(t)}
-                                                className="btn btn-primary-gradient btn-sm rounded-pill flex-grow-1 fw-semibold"
-                                            >
-                                                <i className="bi bi-calendar-check me-1"></i>Book Trial
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleViewTeacher(t)}
-                                                className="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#teamTeacherModal"
-                                                title="View detailed qualifications"
-                                            >
-                                                Profile
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {list.map((t) => (
+                            <div key={t.id || t.user_id} className="col-12 col-md-6 col-lg-6 mb-2">
+                                <TeacherCard
+                                    teacher={t}
+                                    isModal={false}
+                                    onViewProfile={() => handleViewTeacher(t)}
+                                    onBookTrial={() => handleOpenInquiry(t)}
+                                    onExplore={() => handleOpenInquiry(t)}
+                                />
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
 
             {/* Profile Detail Modal */}
-            <div className="modal fade" id="teamTeacherModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content rounded-4 border-0 shadow">
-                        <div className="modal-header border-0 pb-0">
-                            <h5 className="modal-title fw-bold">Educator Qualifications &amp; Details</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div className="modal-body p-4">
-                            {loading ? (
-                                <div className="text-center py-4">
-                                    <div className="spinner-border text-primary" role="status"></div>
-                                </div>
-                            ) : (
-                                <div dangerouslySetInnerHTML={{ __html: modalHtml || '<p class="text-muted">No details available.</p>' }} />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <TeacherProfileModal
+                isOpen={!!selectedTeacher}
+                onClose={() => setSelectedTeacher(null)}
+                teacher={selectedTeacher}
+                onBookTrial={(t) => {
+                    const target = t || selectedTeacher;
+                    setSelectedTeacher(null);
+                    handleOpenInquiry(target);
+                }}
+            />
 
             {/* Trial Inquiry Modal */}
             {showInquiryModal && (

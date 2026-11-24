@@ -8,6 +8,14 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
 
     const quickLinks = [
         {
+            title: 'My Offered Courses & Add Course',
+            desc: 'Create academic courses or batch programs, set your fees with transparent 5% platform commission, and manage enrollments.',
+            href: '/dashboard/courses',
+            icon: 'bi-journal-plus',
+            color: 'primary',
+            badge: 'Teacher Portal',
+        },
+        {
             title: 'Recorded Demo Sessions',
             desc: 'Submit and manage sample teaching video previews for interested students and parents.',
             href: '/dashboard/demos',
@@ -105,8 +113,15 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
                                 href={item.href}
                                 className="card h-100 border-0 shadow-sm rounded-4 p-4 text-decoration-none hover-shadow transition"
                             >
-                                <div className={`text-${item.color} fs-2 mb-3`}>
-                                    <i className={`bi ${item.icon}`}></i>
+                                <div className="d-flex align-items-center justify-content-between mb-3">
+                                    <div className={`text-${item.color} fs-2`}>
+                                        <i className={`bi ${item.icon}`}></i>
+                                    </div>
+                                    {item.badge && (
+                                        <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 small fw-semibold">
+                                            {item.badge}
+                                        </span>
+                                    )}
                                 </div>
                                 <h5 className="fw-bold text-dark mb-2">{item.title}</h5>
                                 <p className="text-muted small mb-0">{item.desc}</p>

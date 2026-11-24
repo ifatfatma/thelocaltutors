@@ -24,6 +24,7 @@ use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CourseFaqController;
 use App\Http\Controllers\Installer\InstallController;
 use App\Http\Controllers\TeacherDemoController;
+use App\Http\Controllers\TeacherCourseController;
 
 // Web Installer Routes
 Route::prefix('install')->name('install.')->group(function () {
@@ -67,6 +68,15 @@ Route::delete('feedback/{id}/delete',[CourseController::class,'destroycoursefeed
 Route::get('blogfeedback',[BlogController::class,'blogfeedback'])->name('blogfeedback.list');
 Route::get('blogfeedback/accept/{id}',[BlogController::class,'acceptblogfeedback'])->name('blogfeedback.accept');
 Route::delete('blogfeedback/{id}/delete',[BlogController::class,'destroyblogfeedback'])->name('blogfeedback.destroy');
+
+// Teacher Reviews Moderation (Approve / Reject)
+Route::get('teacher_review/accept/{id}', [TeacherReviewController::class, 'accept'])->name('teacher_review.accept');
+Route::get('teacher_review/reject/{id}', [TeacherReviewController::class, 'reject'])->name('teacher_review.reject');
+
+// Platform Feedback Moderation
+Route::get('platform-feedback', [FrontController::class, 'adminPlatformFeedback'])->name('admin.platform_feedback.index');
+Route::get('platform-feedback/accept/{id}', [FrontController::class, 'acceptPlatformFeedback'])->name('admin.platform_feedback.accept');
+Route::delete('platform-feedback/{id}', [FrontController::class, 'destroyPlatformFeedback'])->name('admin.platform_feedback.destroy');
 
 Route::resources([
     'roles'           => RoleController::class,
@@ -121,8 +131,10 @@ Route::get('/studentinterface',[FrontController::class, 'studentinterface'])->na
 Route::get('/search',[FrontController::class, 'search'])->name('front.search');
 Route::get('/demo-view/{token}', [TeacherDemoController::class, 'publicDemoView'])->name('front.demo.view');
 Route::post('/demo-view/{token}/confirm', [TeacherDemoController::class, 'confirmDemoBooking'])->name('front.demo.confirm');
+Route::post('/platform-feedback', [FrontController::class, 'postPlatformFeedback'])->name('front.platform_feedback.submit');
 
 Route::get('/team',[FrontController::class, 'team'])->name('front.team');
+Route::get('/subjects',[FrontController::class, 'subjects'])->name('front.subjects');
 Route::get('/get_lonlat',[FrontController::class, 'get_lonlat'])->name('front.get_lonlat');
 Route::get('/myfavcourse/ajax',[FrontController::class, 'addmyfavcourse'])->name('front.addmyfavcourse'); 
 
@@ -150,6 +162,13 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::get('/dashboard/demos', [TeacherDemoController::class, 'teacherIndex'])->name('front.dashboard.demos');
     Route::post('/dashboard/demos', [TeacherDemoController::class, 'teacherStore'])->name('front.dashboard.demos.store');
     Route::delete('/dashboard/demos/{id}', [TeacherDemoController::class, 'teacherDestroy'])->name('front.dashboard.demos.destroy');
+
+    // Teacher Course Management Routes (Add course, set custom price with 5% commission)
+    Route::get('/dashboard/courses', [TeacherCourseController::class, 'index'])->name('front.dashboard.courses');
+    Route::post('/dashboard/courses', [TeacherCourseController::class, 'store'])->name('front.dashboard.courses.store');
+    Route::post('/dashboard/courses/{id}/update', [TeacherCourseController::class, 'update'])->name('front.dashboard.courses.update');
+    Route::delete('/dashboard/courses/{id}', [TeacherCourseController::class, 'destroy'])->name('front.dashboard.courses.destroy');
+    Route::post('/dashboard/courses/{id}/toggle', [TeacherCourseController::class, 'toggleStatus'])->name('front.dashboard.courses.toggle');
     Route::post('ChangePasswordPost',[FontDashboardController::class,'ChangePasswordPost'])->name('front.changepassword.post'); 
     Route::post('/logout',[FontDashboardController::class, 'logout'])->name('front.logout');
 
