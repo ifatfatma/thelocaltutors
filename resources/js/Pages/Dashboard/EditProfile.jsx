@@ -56,6 +56,48 @@ export default function EditProfile({
     const [detectingLocation, setDetectingLocation] = useState(false);
     const [locationStatus, setLocationStatus] = useState({ type: '', text: '' });
 
+    // Extract any existing custom "other" entries that don't match predefined IDs or names
+    const getInitialOther = (storedList, predefinedList) => {
+        if (!Array.isArray(storedList)) return '';
+        const knownIds = new Set(predefinedList.map((p) => String(p.id)));
+        const knownNames = new Set(predefinedList.map((p) => String(p.name).trim().toLowerCase()));
+        const others = storedList.filter((item) => {
+            const s = String(item).trim();
+            return s && !knownIds.has(s) && !knownNames.has(s.toLowerCase());
+        });
+        return others.join(', ');
+    };
+
+    const initialOtherQual = getInitialOther(
+        teacherdetails?.qualification
+            ? (Array.isArray(teacherdetails.qualification) ? teacherdetails.qualification : teacherdetails.qualification.split(',').map(s => s.trim()))
+            : [],
+        qualifications
+    );
+
+    const initialOtherSubj = getInitialOther(
+        teacherdetails?.subjects
+            ? (Array.isArray(teacherdetails.subjects) ? teacherdetails.subjects : teacherdetails.subjects.split(',').map(s => s.trim()))
+            : [],
+        subjects
+    );
+
+    const initialOtherBoard = getInitialOther(
+        teacherdetails?.board
+            ? (Array.isArray(teacherdetails.board) ? teacherdetails.board : teacherdetails.board.split(',').map(s => s.trim()))
+            : [],
+        boards
+    );
+
+    const [showOtherQualification, setShowOtherQualification] = useState(!!initialOtherQual);
+    const [otherQualification, setOtherQualification] = useState(initialOtherQual);
+
+    const [showOtherSubjects, setShowOtherSubjects] = useState(!!initialOtherSubj);
+    const [otherSubjects, setOtherSubjects] = useState(initialOtherSubj);
+
+    const [showOtherBoards, setShowOtherBoards] = useState(!!initialOtherBoard);
+    const [otherBoards, setOtherBoards] = useState(initialOtherBoard);
+
     const handleDetectServingLocation = () => {
         if (!navigator.geolocation) {
             setLocationStatus({
@@ -120,12 +162,45 @@ export default function EditProfile({
         setLoading(true);
         setStatusMsg({ type: '', text: '' });
 
+        // Build final multi-select lists combining selected pills + active "Other" text
+        const mergeWithOther = (selectedArr, isOtherActive, otherText, predefinedList) => {
+            const knownIds = new Set(predefinedList.map((p) => String(p.id)));
+            const knownNames = new Set(predefinedList.map((p) => String(p.name).trim().toLowerCase()));
+
+            // Retain selected predefined items
+            const result = selectedArr.filter((val) => {
+                const s = String(val).trim();
+                return knownIds.has(s) || knownNames.has(s.toLowerCase());
+            });
+
+            // Append custom typed entries from Other input
+            if (isOtherActive && otherText && otherText.trim()) {
+                const customItems = otherText
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter((item) => item.length > 0 && !result.includes(item));
+                result.push(...customItems);
+            }
+            return result;
+        };
+
+        const finalQualification = mergeWithOther(form.qualification, showOtherQualification, otherQualification, qualifications);
+        const finalSubjects = mergeWithOther(form.subjects, showOtherSubjects, otherSubjects, subjects);
+        const finalBoard = mergeWithOther(form.board, showOtherBoards, otherBoards, boards);
+
+        const submissionData = {
+            ...form,
+            qualification: finalQualification,
+            subjects: finalSubjects,
+            board: finalBoard,
+        };
+
         const formData = new FormData();
-        Object.keys(form).forEach((k) => {
-            if (Array.isArray(form[k])) {
-                form[k].forEach((val) => formData.append(`${k}[]`, val));
+        Object.keys(submissionData).forEach((k) => {
+            if (Array.isArray(submissionData[k])) {
+                submissionData[k].forEach((val) => formData.append(`${k}[]`, val));
             } else {
-                formData.append(k, form[k] ?? '');
+                formData.append(k, submissionData[k] ?? '');
             }
         });
         if (imageFile) {
@@ -487,7 +562,31 @@ export default function EditProfile({
                                                     </label>
                                                 );
                                             })}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowOtherQualification(!showOtherQualification)}
+                                                className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                    showOtherQualification ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                }`}
+                                            >
+                                                <i className={`bi ${showOtherQualification ? 'bi-check2' : 'bi-plus'} me-1`}></i>
+                                                Other
+                                            </button>
                                         </div>
+                                        {showOtherQualification && (
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Enter custom qualification(s), e.g. B.Tech, MCA, B.Ed (comma-separated)"
+                                                    value={otherQualification}
+                                                    onChange={(e) => setOtherQualification(e.target.value)}
+                                                />
+                                                <div className="form-text small text-muted">
+                                                    Enter any additional qualifications or degrees manually.
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Subjects Taught */}
@@ -515,7 +614,31 @@ export default function EditProfile({
                                                     </label>
                                                 );
                                             })}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowOtherSubjects(!showOtherSubjects)}
+                                                className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                    showOtherSubjects ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                }`}
+                                            >
+                                                <i className={`bi ${showOtherSubjects ? 'bi-check2' : 'bi-plus'} me-1`}></i>
+                                                Other
+                                            </button>
                                         </div>
+                                        {showOtherSubjects && (
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Enter custom subject(s), e.g. Computer Science, Economics (comma-separated)"
+                                                    value={otherSubjects}
+                                                    onChange={(e) => setOtherSubjects(e.target.value)}
+                                                />
+                                                <div className="form-text small text-muted">
+                                                    Enter any additional subjects manually.
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Boards & Classes Taught */}
@@ -543,7 +666,31 @@ export default function EditProfile({
                                                     </label>
                                                 );
                                             })}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowOtherBoards(!showOtherBoards)}
+                                                className={`btn btn-sm rounded-pill px-3 py-1 border ${
+                                                    showOtherBoards ? 'btn-primary text-white' : 'btn-light text-secondary'
+                                                }`}
+                                            >
+                                                <i className={`bi ${showOtherBoards ? 'bi-check2' : 'bi-plus'} me-1`}></i>
+                                                Other
+                                            </button>
                                         </div>
+                                        {showOtherBoards && (
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Enter custom board(s), e.g. Cambridge, IB, IGCSE (comma-separated)"
+                                                    value={otherBoards}
+                                                    onChange={(e) => setOtherBoards(e.target.value)}
+                                                />
+                                                <div className="form-text small text-muted">
+                                                    Enter any additional school boards manually.
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Bio / Teaching Methodology */}

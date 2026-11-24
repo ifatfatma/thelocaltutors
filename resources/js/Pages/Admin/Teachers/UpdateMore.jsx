@@ -31,16 +31,68 @@ export default function UpdateMore({
         latitude: teacher?.latitude || '',
         longitude: teacher?.longitude || '',
         timings: teacher?.timings || '',
-        qualification: teacher?.qualification ? teacher.qualification.split(',').map(String) : [],
-        teaching_mode: teacher?.teaching_mode ? teacher.teaching_mode.split(',').map(String) : [],
-        board: teacher?.board ? teacher.board.split(',').map(String) : [],
-        subjects: teacher?.subjects ? teacher.subjects.split(',').map(String) : [],
-        days: teacher?.days ? teacher.days.split(',').map(String) : [],
+        qualification: teacher?.qualification
+            ? (Array.isArray(teacher.qualification) ? teacher.qualification : teacher.qualification.split(',').map(s => s.trim()))
+            : [],
+        teaching_mode: teacher?.teaching_mode
+            ? (Array.isArray(teacher.teaching_mode) ? teacher.teaching_mode : teacher.teaching_mode.split(',').map(s => s.trim()))
+            : [],
+        board: teacher?.board
+            ? (Array.isArray(teacher.board) ? teacher.board : teacher.board.split(',').map(s => s.trim()))
+            : [],
+        subjects: teacher?.subjects
+            ? (Array.isArray(teacher.subjects) ? teacher.subjects : teacher.subjects.split(',').map(s => s.trim()))
+            : [],
+        days: teacher?.days
+            ? (Array.isArray(teacher.days) ? teacher.days : teacher.days.split(',').map(s => s.trim()))
+            : [],
     });
 
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
     const [detectingLocation, setDetectingLocation] = useState(false);
+
+    // Extract any existing custom "other" entries that don't match predefined IDs or names
+    const getInitialOther = (storedList, predefinedList) => {
+        if (!Array.isArray(storedList)) return '';
+        const knownIds = new Set((predefinedList || []).map((p) => String(p.id)));
+        const knownNames = new Set((predefinedList || []).map((p) => String(p.name).trim().toLowerCase()));
+        const others = storedList.filter((item) => {
+            const s = String(item).trim();
+            return s && !knownIds.has(s) && !knownNames.has(s.toLowerCase());
+        });
+        return others.join(', ');
+    };
+
+    const initialOtherQual = getInitialOther(
+        teacher?.qualification
+            ? (Array.isArray(teacher.qualification) ? teacher.qualification : teacher.qualification.split(',').map(s => s.trim()))
+            : [],
+        qualifications
+    );
+
+    const initialOtherSubj = getInitialOther(
+        teacher?.subjects
+            ? (Array.isArray(teacher.subjects) ? teacher.subjects : teacher.subjects.split(',').map(s => s.trim()))
+            : [],
+        subjects
+    );
+
+    const initialOtherBoard = getInitialOther(
+        teacher?.board
+            ? (Array.isArray(teacher.board) ? teacher.board : teacher.board.split(',').map(s => s.trim()))
+            : [],
+        boards
+    );
+
+    const [showOtherQualification, setShowOtherQualification] = useState(!!initialOtherQual);
+    const [otherQualification, setOtherQualification] = useState(initialOtherQual);
+
+    const [showOtherSubjects, setShowOtherSubjects] = useState(!!initialOtherSubj);
+    const [otherSubjects, setOtherSubjects] = useState(initialOtherSubj);
+
+    const [showOtherBoards, setShowOtherBoards] = useState(!!initialOtherBoard);
+    const [otherBoards, setOtherBoards] = useState(initialOtherBoard);
 
     const handleDetectLocation = () => {
         if (!navigator.geolocation) {
@@ -127,7 +179,38 @@ export default function UpdateMore({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        router.post(`/admin/teacher/updatemore/post/${user_id}`, form);
+
+        const mergeWithOther = (selectedArr, isOtherActive, otherText, predefinedList) => {
+            const knownIds = new Set((predefinedList || []).map((p) => String(p.id)));
+            const knownNames = new Set((predefinedList || []).map((p) => String(p.name).trim().toLowerCase()));
+
+            const result = (selectedArr || []).filter((val) => {
+                const s = String(val).trim();
+                return knownIds.has(s) || knownNames.has(s.toLowerCase());
+            });
+
+            if (isOtherActive && otherText && otherText.trim()) {
+                const customItems = otherText
+                    .split(',')
+                    .map((item) => item.trim())
+                    .filter((item) => item.length > 0 && !result.includes(item));
+                result.push(...customItems);
+            }
+            return result;
+        };
+
+        const finalQualification = mergeWithOther(form.qualification, showOtherQualification, otherQualification, qualifications);
+        const finalSubjects = mergeWithOther(form.subjects, showOtherSubjects, otherSubjects, subjects);
+        const finalBoard = mergeWithOther(form.board, showOtherBoards, otherBoards, boards);
+
+        const payload = {
+            ...form,
+            qualification: finalQualification,
+            subjects: finalSubjects,
+            board: finalBoard,
+        };
+
+        router.post(`/admin/teacher/updatemore/post/${user_id}`, payload);
     };
 
     return (
@@ -271,7 +354,29 @@ export default function UpdateMore({
                                         </button>
                                     );
                                 })}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOtherQualification(!showOtherQualification)}
+                                    className={`btn btn-sm ${showOtherQualification ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    {showOtherQualification && '✓ '}
+                                    Other
+                                </button>
                             </div>
+                            {showOtherQualification && (
+                                <div className="mt-2">
+                                    <input
+                                        type="text"
+                                        className="form-control form-control-sm"
+                                        placeholder="Enter custom qualification(s), e.g. B.Tech, MCA, B.Ed (comma-separated)"
+                                        value={otherQualification}
+                                        onChange={(e) => setOtherQualification(e.target.value)}
+                                    />
+                                    <div className="form-text small text-muted">
+                                        Enter any additional qualifications manually.
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="col-12">
@@ -291,7 +396,29 @@ export default function UpdateMore({
                                         </button>
                                     );
                                 })}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOtherSubjects(!showOtherSubjects)}
+                                    className={`btn btn-sm ${showOtherSubjects ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    {showOtherSubjects && '✓ '}
+                                    Other
+                                </button>
                             </div>
+                            {showOtherSubjects && (
+                                <div className="mt-2">
+                                    <input
+                                        type="text"
+                                        className="form-control form-control-sm"
+                                        placeholder="Enter custom subject(s), e.g. Computer Science, Economics (comma-separated)"
+                                        value={otherSubjects}
+                                        onChange={(e) => setOtherSubjects(e.target.value)}
+                                    />
+                                    <div className="form-text small text-muted">
+                                        Enter any additional subjects manually.
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="col-12">
@@ -311,7 +438,29 @@ export default function UpdateMore({
                                         </button>
                                     );
                                 })}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOtherBoards(!showOtherBoards)}
+                                    className={`btn btn-sm ${showOtherBoards ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    {showOtherBoards && '✓ '}
+                                    Other
+                                </button>
                             </div>
+                            {showOtherBoards && (
+                                <div className="mt-2">
+                                    <input
+                                        type="text"
+                                        className="form-control form-control-sm"
+                                        placeholder="Enter custom board(s), e.g. Cambridge, IB, IGCSE (comma-separated)"
+                                        value={otherBoards}
+                                        onChange={(e) => setOtherBoards(e.target.value)}
+                                    />
+                                    <div className="form-text small text-muted">
+                                        Enter any additional school boards manually.
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="col-12">
