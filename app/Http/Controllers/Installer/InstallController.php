@@ -403,9 +403,13 @@ class InstallController extends Controller
                 @touch(database_path('database.sqlite'));
             }
 
-            // 3. Run Migrations & Seeders specifically on MySQL
-            Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
-            Artisan::call('db:seed', ['--database' => 'mysql', '--force' => true]);
+            // 3. Run Migrations & Seeders safely without dropping existing user data if tables exist
+            if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
+                Artisan::call('migrate', ['--database' => 'mysql', '--force' => true]);
+            } else {
+                Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
+                Artisan::call('db:seed', ['--database' => 'mysql', '--force' => true]);
+            }
 
             // 4. Create / Update Super Admin User
             // Purge any pre-existing or conflicting accounts (including soft-deleted) across email, username, or mobile
