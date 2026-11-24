@@ -44,6 +44,14 @@ return new class extends Migration
                 // Ignore if already varchar
             }
         }
+
+        // 4. Clean up dummy teacher profile "Ifat Fatma" if present in production
+        try {
+            \Illuminate\Support\Facades\DB::table('teachers')->where('name', 'like', '%Ifat Fatma%')->orWhere('user_id', 2)->delete();
+            \Illuminate\Support\Facades\DB::table('users')->where('id', 2)->orWhere('name', 'like', '%Ifat Fatma%')->delete();
+        } catch (\Throwable $e) {
+            // Ignore
+        }
     }
 
     /**
