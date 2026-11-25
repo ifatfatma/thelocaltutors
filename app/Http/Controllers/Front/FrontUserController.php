@@ -13,6 +13,7 @@ use File;
 use Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class FrontUserController extends Controller
 {
@@ -90,8 +91,21 @@ class FrontUserController extends Controller
             $teacher->city          = $request->city ? trim((string)$request->city) : '';
             $teacher->state         = $request->state ? trim((string)$request->state) : '';
             $teacher->pincode       = $request->pincode ? trim((string)$request->pincode) : '';
-            $teacher->latitude      = !empty($request->latitude) ? trim((string)$request->latitude) : '';
-            $teacher->longitude     = !empty($request->longitude) ? trim((string)$request->longitude) : '';
+
+            // Validate & sanitize latitude (-90 to 90) and longitude (-180 to 180)
+            $lat = $request->filled('latitude') ? (float)trim((string)$request->latitude) : null;
+            $lng = $request->filled('longitude') ? (float)trim((string)$request->longitude) : null;
+
+            if ($lat !== null && $lng !== null && $lat >= -90.0 && $lat <= 90.0 && $lng >= -180.0 && $lng <= 180.0) {
+                $teacher->latitude = number_format($lat, 7, '.', '');
+                $teacher->longitude = number_format($lng, 7, '.', '');
+                Session::put('latitude', $teacher->latitude);
+                Session::put('longitude', $teacher->longitude);
+            } else {
+                $teacher->latitude = null;
+                $teacher->longitude = null;
+            }
+
             $teacher->save();
 
             if ($teacherbasic->type !== 'teacher') {

@@ -93,6 +93,8 @@ class FrontController extends Controller
             'timings' => $timings,
             'description' => $description,
             'rating' => 5.0,
+            'latitude' => $teacher->latitude ?: ($user->teachermore->latitude ?? null),
+            'longitude' => $teacher->longitude ?: ($user->teachermore->longitude ?? null),
         ];
 
         return response()->json([

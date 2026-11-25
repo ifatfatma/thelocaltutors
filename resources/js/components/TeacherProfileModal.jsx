@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePage, Link } from '@inertiajs/react';
 import TeacherCard from './TeacherCard';
+import TeacherLocationMap from './TeacherLocationMap';
 
 /**
  * Universal Teacher Profile Pop-up Modal
@@ -89,6 +90,11 @@ export default function TeacherProfileModal({
                             onViewProfile={null}
                             onExplore={onBookTrial}
                         />
+                    </div>
+
+                    {/* Interactive Tutoring Location & Distance Map */}
+                    <div className="px-4 pb-2 pt-0">
+                        <TeacherLocationMap teacher={teacher} height="230px" />
                     </div>
 
                     {/* Review Section */}
