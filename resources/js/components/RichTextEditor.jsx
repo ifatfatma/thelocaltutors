@@ -198,8 +198,50 @@ export default function RichTextEditor({
                     </button>
                 </div>
 
-                {/* Right: Visual / HTML Mode Switcher */}
-                <div className="ms-auto">
+                {/* Right: Template & Visual / HTML Mode Switcher */}
+                <div className="ms-auto d-flex align-items-center gap-1">
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold d-inline-flex align-items-center gap-1 rounded-2 shadow-2xs bg-white"
+                        disabled={disabled}
+                        onClick={() => {
+                            const template = `<h4>What You Will Learn</h4>
+<ul>
+    <li>Core concept 1 and fundamental principles</li>
+    <li>Practical techniques and hands-on exercises</li>
+    <li>Real-world applications and project work</li>
+</ul>
+
+<h4>Who Can Join?</h4>
+<ul>
+    <li>School / College students seeking conceptual clarity</li>
+    <li>Beginners looking to build a strong foundation</li>
+    <li>Learners preparing for upcoming exams or career advancement</li>
+</ul>
+
+<h4>Course Benefits</h4>
+<ul>
+    <li>Structured step-by-step guidance</li>
+    <li>Personalized doubt clearance</li>
+    <li>Weekly assessments and performance tracking</li>
+    <li>Official Certificate of Completion</li>
+</ul>`;
+                            if (isSourceMode) {
+                                const updated = (sourceHtml ? sourceHtml + '\n\n' : '') + template;
+                                setSourceHtml(updated);
+                                if (onChange) onChange(updated);
+                            } else if (editorRef.current) {
+                                editorRef.current.focus();
+                                document.execCommand('insertHTML', false, template);
+                                handleInput();
+                            }
+                        }}
+                        title="Insert Standard Syllabus & Curriculum Template"
+                    >
+                        <i className="bi bi-file-earmark-plus"></i>
+                        <span style={{ fontSize: '11px' }}>Insert Template</span>
+                    </button>
+
                     <button
                         type="button"
                         className={`btn btn-sm py-1 px-2 fw-semibold d-inline-flex align-items-center gap-1 rounded-2 shadow-2xs ${

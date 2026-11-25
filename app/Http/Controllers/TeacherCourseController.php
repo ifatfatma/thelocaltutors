@@ -77,7 +77,10 @@ class TeacherCourseController extends Controller
             'category_id' => 'nullable|integer',
             'duration' => 'nullable|string|max:100',
             'teaching_mode' => 'nullable',
-            'description' => 'nullable|string|max:10000',
+            'target_level' => 'nullable|string|max:192',
+            'educator_status' => 'nullable|string|max:192',
+            'curriculum' => 'nullable|string|max:192',
+            'description' => 'nullable|string|max:20000',
             'youtube_url' => 'nullable|string|max:500',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
         ], [
@@ -125,14 +128,17 @@ class TeacherCourseController extends Controller
         $course->price = (float)$request->price;
         $course->price_type = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         $course->duration = trim($request->duration ?? '');
+        $course->target_level = !empty($request->target_level) ? trim($request->target_level) : null;
+        $course->educator_status = !empty($request->educator_status) ? trim($request->educator_status) : null;
+        $course->curriculum = !empty($request->curriculum) ? trim($request->curriculum) : null;
         $course->teacher_id = $userId;
         $course->category_id = $request->category_id ?: 0;
 
-        // Teaching mode
+        // Teaching mode (Home, Online, Private)
         if (is_array($request->teaching_mode)) {
-            $course->teaching_mode = implode(', ', $request->teaching_mode);
+            $course->teaching_mode = implode(', ', array_filter($request->teaching_mode));
         } else {
-            $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
+            $course->teaching_mode = $request->teaching_mode ?: 'Home, Online';
         }
 
         $course->description = \App\Helpers\HtmlSanitizer::clean($request->description);
@@ -166,7 +172,10 @@ class TeacherCourseController extends Controller
             'category_id' => 'nullable|integer',
             'duration' => 'nullable|string|max:100',
             'teaching_mode' => 'nullable',
-            'description' => 'nullable|string|max:10000',
+            'target_level' => 'nullable|string|max:192',
+            'educator_status' => 'nullable|string|max:192',
+            'curriculum' => 'nullable|string|max:192',
+            'description' => 'nullable|string|max:20000',
             'youtube_url' => 'nullable|string|max:500',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
@@ -205,10 +214,13 @@ class TeacherCourseController extends Controller
         $course->price = (float)$request->price;
         $course->price_type = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         $course->duration = trim($request->duration ?? '');
+        $course->target_level = !empty($request->target_level) ? trim($request->target_level) : null;
+        $course->educator_status = !empty($request->educator_status) ? trim($request->educator_status) : null;
+        $course->curriculum = !empty($request->curriculum) ? trim($request->curriculum) : null;
         $course->category_id = $request->category_id ?: 0;
 
         if (is_array($request->teaching_mode)) {
-            $course->teaching_mode = implode(', ', $request->teaching_mode);
+            $course->teaching_mode = implode(', ', array_filter($request->teaching_mode));
         } elseif ($request->teaching_mode) {
             $course->teaching_mode = $request->teaching_mode;
         }

@@ -4,6 +4,63 @@ import FrontLayout from '../../Layouts/FrontLayout';
 import { cleanExcerpt } from '../../Utils/text';
 import axios from 'axios';
 
+// Helper to format plain or structured course descriptions
+function formatCourseDescription(content) {
+    if (!content) return '<p class="text-muted">No detailed syllabus outline provided.</p>';
+    if (/<(h[1-6]|ul|ol|p|div|blockquote)[\s>]/i.test(content)) {
+        return content;
+    }
+
+    let text = content.trim();
+    const sectionKeywords = [
+        'What You Will Learn:',
+        'What You\'ll Learn:',
+        'What You Will Learn',
+        'Who Can Join\\?',
+        'Who Can Join:',
+        'Course Benefits:',
+        'Course Highlights:',
+        'Key Topics Covered:',
+        'Syllabus Overview:'
+    ];
+
+    sectionKeywords.forEach((keyword) => {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        text = text.replace(regex, '___SECTION___$1___TITLE___');
+    });
+
+    const segments = text.split('___SECTION___');
+    let html = '';
+
+    segments.forEach((seg) => {
+        const trimmed = seg.trim();
+        if (!trimmed) return;
+
+        if (trimmed.includes('___TITLE___')) {
+            const [title, ...bodyParts] = trimmed.split('___TITLE___');
+            const body = bodyParts.join('___TITLE___').trim();
+            const cleanTitle = title.replace(/[:?]/g, '').trim();
+
+            html += `<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill text-primary fs-5"></i><span>${cleanTitle}</span></h4>`;
+
+            const lines = body.split(/(?=[A-Z][a-zA-Z\s]+(?:–|-))|(?:\n|\r\n)/).map(l => l.trim()).filter(Boolean);
+            if (lines.length > 1) {
+                html += '<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">';
+                lines.forEach((line) => {
+                    html += `<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>${line}</span></li>`;
+                });
+                html += '</ul>';
+            } else {
+                html += `<p class="mb-3">${body}</p>`;
+            }
+        } else {
+            html += `<p class="lead text-dark fw-normal mb-3 fs-6">${trimmed}</p>`;
+        }
+    });
+
+    return html || content;
+}
+
 export default function CourseDetails({ course_details, coursecategories = [], feedbacklist = [] }) {
     const { auth, settings } = usePage().props;
     const [rating, setRating] = useState('5');
@@ -111,6 +168,31 @@ export default function CourseDetails({ course_details, coursecategories = [], f
     const instructorName = course_details.teacher?.name || course_details.teacher?.user?.name || 'Verified Senior Faculty';
     const cleanDescription = cleanExcerpt(course_details.description, 150);
 
+    // Parse learning modes into badges (Home, Online, Private)
+    const learningModes = (function() {
+        const raw = course_details.teaching_mode;
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw.startsWith('[') && raw.endsWith(']')) {
+            try { return JSON.parse(raw); } catch (e) {}
+        }
+        if (typeof raw === 'string' && raw.includes('Both')) {
+            return ['Home', 'Online'];
+        }
+        return String(raw).split(',').map(s => s.trim()).filter(Boolean);
+    })();
+
+    // Format duration display cleanly without duplicating units
+    const displayDuration = (function() {
+        if (!course_details.duration) return null;
+        const dur = String(course_details.duration).trim();
+        if (!dur) return null;
+        if (/min|hour|hr|day|week|month|year|session|class/i.test(dur)) {
+            return dur;
+        }
+        return `${dur} mins / class`;
+    })();
+
     return (
         <FrontLayout>
             <Head>
@@ -168,7 +250,7 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                                 <h3 className="fw-bold text-dark mb-3">About this Course &amp; Curriculum</h3>
                                 <div
                                     className="course-description-content text-secondary mb-4 fs-6 lh-lg"
-                                    dangerouslySetInnerHTML={{ __html: course_details.description || '<p class="text-muted">No detailed syllabus outline provided.</p>' }}
+                                    dangerouslySetInnerHTML={{ __html: formatCourseDescription(course_details.description) }}
                                 />
 
                                 <style>{`
@@ -383,41 +465,49 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                             <div className="border-top pt-3">
                                 <h6 className="fw-bold text-dark mb-3">Program Specifics</h6>
                                 <ul className="list-unstyled small d-flex flex-column gap-2 mb-0 text-secondary">
-                                    <li className="d-flex justify-content-between">
+                                    <li className="d-flex justify-content-between align-items-center flex-wrap gap-1">
                                         <span><i className="bi bi-geo-alt me-2 text-primary"></i>Learning Mode:</span>
-                                        <strong className="text-dark">{course_details.teaching_mode || 'Home / Online'}</strong>
+                                        <div className="d-inline-flex flex-wrap gap-1 justify-content-end">
+                                            {learningModes.length > 0 ? (
+                                                learningModes.map((m, idx) => (
+                                                    <span key={idx} className="badge bg-light text-dark border px-2 py-1 fw-semibold">
+                                                        {m}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <strong className="text-dark">{course_details.teaching_mode || 'Flexible'}</strong>
+                                            )}
+                                        </div>
                                     </li>
-                                    <li className="d-flex justify-content-between">
-                                        <span><i className="bi bi-clock me-2 text-primary"></i>Session Duration:</span>
-                                        <strong className="text-dark">{course_details.duration ? `${course_details.duration} mins` : '60 mins'}</strong>
-                                    </li>
-                                    <li className="d-flex justify-content-between">
-                                        <span><i className="bi bi-layers me-2 text-primary"></i>Target Level:</span>
-                                        <strong className="text-dark">Class 9–12 / Foundation</strong>
-                                    </li>
-                                    <li className="d-flex justify-content-between">
-                                        <span><i className="bi bi-shield-check me-2 text-primary"></i>Educator Status:</span>
-                                        <strong className="text-success">Verified Background</strong>
-                                    </li>
-                                    <li className="d-flex justify-content-between">
-                                        <span><i className="bi bi-journal-check me-2 text-primary"></i>Curriculum:</span>
-                                        <strong className="text-dark">CBSE, ICSE &amp; WBBSE</strong>
-                                    </li>
-                                </ul>
-                            </div>
 
-                            {/* Direct Call / WhatsApp Helpline */}
-                            <div className="border-top mt-4 pt-3 text-center">
-                                <p className="small text-muted mb-2">Need advice on syllabus or teacher match?</p>
-                                <a
-                                    href="https://wa.me/917003578764?text=Hello%20The%20Local%20Tutors,%20I%20am%20interested%20in%20a%20demo%20class"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn btn-sm btn-outline-success rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1"
-                                >
-                                    <i className="bi bi-whatsapp"></i>
-                                    <span>WhatsApp Coordinator: 7003578764</span>
-                                </a>
+                                    {displayDuration && (
+                                        <li className="d-flex justify-content-between">
+                                            <span><i className="bi bi-clock me-2 text-primary"></i>Session Duration:</span>
+                                            <strong className="text-dark">{displayDuration}</strong>
+                                        </li>
+                                    )}
+
+                                    {course_details.target_level && (
+                                        <li className="d-flex justify-content-between">
+                                            <span><i className="bi bi-layers me-2 text-primary"></i>Target Level:</span>
+                                            <strong className="text-dark">{course_details.target_level}</strong>
+                                        </li>
+                                    )}
+
+                                    {course_details.educator_status && (
+                                        <li className="d-flex justify-content-between">
+                                            <span><i className="bi bi-shield-check me-2 text-primary"></i>Educator Status:</span>
+                                            <strong className="text-success">{course_details.educator_status}</strong>
+                                        </li>
+                                    )}
+
+                                    {course_details.curriculum && (
+                                        <li className="d-flex justify-content-between">
+                                            <span><i className="bi bi-journal-check me-2 text-primary"></i>Curriculum:</span>
+                                            <strong className="text-dark">{course_details.curriculum}</strong>
+                                        </li>
+                                    )}
+                                </ul>
                             </div>
                         </div>
                     </div>

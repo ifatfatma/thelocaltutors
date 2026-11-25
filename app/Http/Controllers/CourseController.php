@@ -65,16 +65,19 @@ class CourseController extends Controller
         }
         $course->category_id  = $request->category_id??0;
         $course->name         = $request->name??'';
-        $course->duration     = $request->duration??0;
+        $course->duration     = $request->duration ? trim($request->duration) : '';
+        $course->target_level = !empty($request->target_level) ? trim($request->target_level) : null;
+        $course->educator_status = !empty($request->educator_status) ? trim($request->educator_status) : null;
+        $course->curriculum   = !empty($request->curriculum) ? trim($request->curriculum) : null;
         $course->price        = $request->price??0;
         $course->price_type   = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         if (is_array($request->teaching_mode)) {
-            $course->teaching_mode = implode(',', $request->teaching_mode);
+            $course->teaching_mode = implode(', ', array_filter($request->teaching_mode));
         } else {
-            $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
+            $course->teaching_mode = $request->teaching_mode ?: 'Home, Online';
         }
         $course->teacher_id   = $request->teacher_id??0;
-        $course->description  = $request->description??'';
+        $course->description  = \App\Helpers\HtmlSanitizer::clean($request->description);
         $course->youtube_url  =$request->youtube_url??'';
         $course->is_active    = $request->has('is_active') ? $request->is_active : 1;
         $course->save();
@@ -127,16 +130,19 @@ class CourseController extends Controller
         }
         $course->category_id  = $request->category_id??0;
         $course->name         = $request->name??'';
-        $course->duration     = $request->duration??0;
+        $course->duration     = $request->duration ? trim($request->duration) : '';
+        $course->target_level = !empty($request->target_level) ? trim($request->target_level) : null;
+        $course->educator_status = !empty($request->educator_status) ? trim($request->educator_status) : null;
+        $course->curriculum   = !empty($request->curriculum) ? trim($request->curriculum) : null;
         $course->price        = $request->price??0;
         $course->price_type   = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         if (is_array($request->teaching_mode)) {
-            $course->teaching_mode = implode(',', $request->teaching_mode);
+            $course->teaching_mode = implode(', ', array_filter($request->teaching_mode));
         } else {
-            $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
+            $course->teaching_mode = $request->teaching_mode ?: 'Home, Online';
         }
         $course->teacher_id   = $request->teacher_id??0;
-        $course->description  = $request->description??'';
+        $course->description  = \App\Helpers\HtmlSanitizer::clean($request->description);
         $course->youtube_url  = $request->youtube_url??'';
         $course->is_active    = $request->has('is_active') ? $request->is_active : 1;
         $course->save();

@@ -8,7 +8,10 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
         name: course?.name || '',
         category_id: course?.category_id || '',
         teacher_id: course?.teacher_id || '',
-        teaching_mode: course?.teaching_mode || 'Home / Online',
+        teaching_mode: course?.teaching_mode || 'Home, Online',
+        target_level: course?.target_level || '',
+        educator_status: course?.educator_status || 'Verified Background',
+        curriculum: course?.curriculum || '',
         price: course?.price || '0',
         price_type: course?.price_type || 'one_time',
         duration: course?.duration || '',
@@ -18,6 +21,30 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
     });
     const [image, setImage] = useState(null);
     const [errors, setErrors] = useState({});
+
+    // Helper to parse and toggle checkbox learning modes
+    const parseModes = (modeStr) => {
+        if (!modeStr) return ['Home', 'Online'];
+        if (Array.isArray(modeStr)) return modeStr;
+        const s = String(modeStr);
+        const result = [];
+        if (/home/i.test(s)) result.push('Home');
+        if (/online/i.test(s)) result.push('Online');
+        if (/private/i.test(s)) result.push('Private');
+        return result.length > 0 ? result : ['Home', 'Online'];
+    };
+
+    const toggleMode = (modeName) => {
+        const current = parseModes(form.teaching_mode);
+        let updated;
+        if (current.includes(modeName)) {
+            updated = current.filter(m => m !== modeName);
+            if (updated.length === 0) updated = [modeName];
+        } else {
+            updated = [...current, modeName];
+        }
+        setForm({ ...form, teaching_mode: updated.join(', ') });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -80,16 +107,79 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
                         </div>
 
                         <div className="col-md-4">
-                            <label className="form-label fw-semibold">Teaching Mode *</label>
-                            <select
-                                className="form-select"
-                                value={form.teaching_mode}
-                                onChange={(e) => setForm({ ...form, teaching_mode: e.target.value })}
-                            >
-                                <option value="Home / Online">Both (Home &amp; Online)</option>
-                                <option value="Home Tuition">Home Tuition (Offline)</option>
-                                <option value="Interactive Online">Interactive Online</option>
-                            </select>
+                            <label className="form-label fw-semibold d-block">Teaching Mode (Select one or more) *</label>
+                            <div className="d-flex flex-wrap gap-2 pt-1">
+                                {[
+                                    { id: 'Home', label: 'Home', icon: 'bi-house-door-fill' },
+                                    { id: 'Online', label: 'Online', icon: 'bi-camera-video-fill' },
+                                    { id: 'Private', label: 'Private', icon: 'bi-person-check-fill' },
+                                ].map((item) => {
+                                    const isChecked = parseModes(form.teaching_mode).includes(item.id);
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            onClick={() => toggleMode(item.id)}
+                                            className={`btn btn-sm d-flex align-items-center gap-1 rounded-pill px-3 py-1 cursor-pointer ${
+                                                isChecked
+                                                    ? 'btn-primary'
+                                                    : 'btn-outline-secondary'
+                                            }`}
+                                        >
+                                            <i className={`bi ${item.icon}`}></i>
+                                            <span>{item.label}</span>
+                                            {isChecked && <i className="bi bi-check-lg ms-1"></i>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="small text-muted mt-1" style={{ fontSize: '11px' }}>
+                                Selected: <strong>{parseModes(form.teaching_mode).join(', ')}</strong>
+                            </div>
+                        </div>
+
+                        {/* Program Specifics (Optional Details) */}
+                        <div className="col-12">
+                            <div className="p-3 bg-light rounded-3 border">
+                                <h6 className="fw-bold text-dark small mb-1">
+                                    <i className="bi bi-sliders me-1 text-primary"></i> Program Specifics (Customizable)
+                                </h6>
+                                <p className="text-muted small mb-3" style={{ fontSize: '11px' }}>
+                                    Dynamic fields displayed in the course sidebar. Leave curriculum blank for non-board courses (e.g. AI or skill courses).
+                                </p>
+                                <div className="row g-2">
+                                    <div className="col-md-4">
+                                        <label className="form-label fw-semibold small">Target Level / Grade</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="e.g. Class 9–12, College, Beginners"
+                                            value={form.target_level}
+                                            onChange={(e) => setForm({ ...form, target_level: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label fw-semibold small">Curriculum / Board (Optional)</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="e.g. CBSE, ICSE & WBBSE"
+                                            value={form.curriculum}
+                                            onChange={(e) => setForm({ ...form, curriculum: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label fw-semibold small">Educator Status</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            placeholder="e.g. Verified Background"
+                                            value={form.educator_status}
+                                            onChange={(e) => setForm({ ...form, educator_status: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="col-md-4">

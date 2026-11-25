@@ -23,10 +23,14 @@ class UpdateCourseRequest extends FormRequest
     {
         return [
             'name'=>'required|string|max:192',
-            'duration'=>'nullable',
+            'duration'=>'nullable|string|max:100',
             'price'=>'nullable',
+            'price_type'=>'nullable|string|max:30',
             'teacher_id'=>'nullable',
             'teaching_mode'=>'nullable',
+            'target_level'=>'nullable|string|max:192',
+            'educator_status'=>'nullable|string|max:192',
+            'curriculum'=>'nullable|string|max:192',
             'description'=>'nullable|string',
             'youtube_url'=>'nullable|string',
             'is_active'=>'nullable',

@@ -31,12 +31,39 @@ export default function TeacherCourses({
         price_type: 'one_time', // 'one_time' | 'per_month'
         category_id: categories.length > 0 ? categories[0].id : '',
         duration: '3 Months (3 classes/week)',
-        teaching_mode: 'Both (Home & Online)',
+        teaching_mode: 'Home, Online',
+        target_level: 'Class 9–12 / Foundation',
+        educator_status: 'Verified Background',
+        curriculum: '',
         description: '',
         youtube_url: '',
         is_active: 1,
         image: null,
     });
+
+    // Helper to parse and toggle checkbox learning modes (Home, Online, Private)
+    const parseModes = (modeStr) => {
+        if (!modeStr) return ['Home', 'Online'];
+        if (Array.isArray(modeStr)) return modeStr;
+        const s = String(modeStr);
+        const result = [];
+        if (/home/i.test(s)) result.push('Home');
+        if (/online/i.test(s)) result.push('Online');
+        if (/private/i.test(s)) result.push('Private');
+        return result.length > 0 ? result : ['Home', 'Online'];
+    };
+
+    const toggleMode = (modeName) => {
+        const current = parseModes(data.teaching_mode);
+        let updated;
+        if (current.includes(modeName)) {
+            updated = current.filter(m => m !== modeName);
+            if (updated.length === 0) updated = [modeName]; // Keep at least one
+        } else {
+            updated = [...current, modeName];
+        }
+        setData('teaching_mode', updated.join(', '));
+    };
 
     // Commission calculations (5% standard platform commission)
     const numericPrice = parseFloat(data.price) || 0;
@@ -54,7 +81,10 @@ export default function TeacherCourses({
             price_type: 'one_time',
             category_id: categories.length > 0 ? categories[0].id : '',
             duration: '3 Months (3 classes/week)',
-            teaching_mode: 'Both (Home & Online)',
+            teaching_mode: 'Home, Online',
+            target_level: 'Class 9–12 / Foundation',
+            educator_status: 'Verified Background',
+            curriculum: '',
             description: '',
             youtube_url: '',
             is_active: 1,
@@ -73,7 +103,10 @@ export default function TeacherCourses({
             price_type: course.price_type || 'one_time',
             category_id: course.category_id || (categories.length > 0 ? categories[0].id : ''),
             duration: course.duration || '',
-            teaching_mode: course.teaching_mode || 'Both (Home & Online)',
+            teaching_mode: course.teaching_mode || 'Home, Online',
+            target_level: course.target_level || '',
+            educator_status: course.educator_status || 'Verified Background',
+            curriculum: course.curriculum || '',
             description: course.description || '',
             youtube_url: course.youtube_url || '',
             is_active: course.is_active ? 1 : 0,
@@ -808,18 +841,92 @@ export default function TeacherCourses({
                                         </div>
 
                                         <div className="col-md-6">
-                                            <label className="form-label fw-semibold text-secondary small">
-                                                Teaching Mode
+                                            <label className="form-label fw-semibold text-secondary small d-block">
+                                                Learning Mode (Select one or more) <span className="text-danger">*</span>
                                             </label>
-                                            <select
-                                                className="form-select"
-                                                value={data.teaching_mode}
-                                                onChange={(e) => setData('teaching_mode', e.target.value)}
-                                            >
-                                                <option value="Both (Home & Online)">Both (Home &amp; Online Classes)</option>
-                                                <option value="Home Tuition">Home Tuition (In-person)</option>
-                                                <option value="Online Classes">Online Live 1-on-1 Classes</option>
-                                            </select>
+                                            <div className="d-flex flex-wrap gap-2 pt-1">
+                                                {[
+                                                    { id: 'Home', label: 'Home Tuition', icon: 'bi-house-door-fill' },
+                                                    { id: 'Online', label: 'Online Live Classes', icon: 'bi-camera-video-fill' },
+                                                    { id: 'Private', label: 'Private / 1-on-1', icon: 'bi-person-check-fill' },
+                                                ].map((item) => {
+                                                    const isChecked = parseModes(data.teaching_mode).includes(item.id);
+                                                    return (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => toggleMode(item.id)}
+                                                            className={`btn btn-sm d-flex align-items-center gap-1 rounded-pill px-3 py-1 cursor-pointer ${
+                                                                isChecked
+                                                                    ? 'btn-primary'
+                                                                    : 'btn-outline-secondary'
+                                                            }`}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                            <i className={`bi ${item.icon}`}></i>
+                                                            <span>{item.label}</span>
+                                                            {isChecked && <i className="bi bi-check-lg ms-1"></i>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="small text-muted mt-1" style={{ fontSize: '11px' }}>
+                                                Selected: <strong>{parseModes(data.teaching_mode).join(', ')}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Program Specifics (Optional Details) */}
+                                    <div className="row g-3 mb-3 p-3 bg-light rounded-3 border">
+                                        <div className="col-12">
+                                            <h6 className="fw-bold text-dark small mb-1">
+                                                <i className="bi bi-sliders me-1 text-primary"></i> Program Specifics (Customizable)
+                                            </h6>
+                                            <p className="text-muted small mb-0" style={{ fontSize: '11px' }}>
+                                                Optional fields shown in the course details sidebar. Board can be left blank for non-board courses (e.g. AI or skill courses).
+                                            </p>
+                                        </div>
+
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-semibold text-secondary small">
+                                                Target Level / Grade
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="e.g. Class 9–12, College, Beginners"
+                                                value={data.target_level}
+                                                onChange={(e) => setData('target_level', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-semibold text-secondary small">
+                                                Curriculum / Board (Optional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="e.g. CBSE, ICSE & WBBSE"
+                                                value={data.curriculum}
+                                                onChange={(e) => setData('curriculum', e.target.value)}
+                                            />
+                                            <div className="text-muted small" style={{ fontSize: '10px' }}>
+                                                Leave blank if not applicable (e.g. AI courses)
+                                            </div>
+                                        </div>
+
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-semibold text-secondary small">
+                                                Educator Status
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="form-control form-control-sm"
+                                                placeholder="e.g. Verified Educator"
+                                                value={data.educator_status}
+                                                onChange={(e) => setData('educator_status', e.target.value)}
+                                            />
                                         </div>
                                     </div>
 
