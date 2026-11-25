@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
     const [form, setForm] = useState({
@@ -9,6 +10,7 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
         teacher_id: course?.teacher_id || '',
         teaching_mode: course?.teaching_mode || 'Home / Online',
         price: course?.price || '0',
+        price_type: course?.price_type || 'one_time',
         duration: course?.duration || '',
         description: course?.description || '',
         youtube_url: course?.youtube_url || '',
@@ -101,6 +103,18 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
                         </div>
 
                         <div className="col-md-4">
+                            <label className="form-label fw-semibold">Pricing Model *</label>
+                            <select
+                                className="form-select"
+                                value={form.price_type}
+                                onChange={(e) => setForm({ ...form, price_type: e.target.value })}
+                            >
+                                <option value="one_time">One-Time Complete Course Fee</option>
+                                <option value="per_month">Per Month (Monthly Tuition Fee)</option>
+                            </select>
+                        </div>
+
+                        <div className="col-md-4">
                             <label className="form-label fw-semibold">Duration (Hours/Days)</label>
                             <input
                                 type="text"
@@ -143,13 +157,16 @@ export default function Edit({ course, teacherlist = [], coursecatlist = [] }) {
                         </div>
 
                         <div className="col-12">
-                            <label className="form-label fw-semibold">Description / Syllabus</label>
-                            <textarea
-                                rows="6"
-                                className="form-control"
+                            <label className="form-label fw-semibold d-flex justify-content-between align-items-center">
+                                <span>Description / Syllabus</span>
+                                <span className="text-muted fw-normal small">Rich HTML Editor</span>
+                            </label>
+                            <RichTextEditor
                                 value={form.description}
-                                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            ></textarea>
+                                onChange={(val) => setForm({ ...form, description: val })}
+                                placeholder="Write detailed course syllabus, what students will learn, highlights..."
+                                minHeight="220px"
+                            />
                         </div>
                     </div>
 

@@ -33,6 +33,7 @@ use App\Models\User;
 use App\Models\Teacher;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Mail;
 
 class FrontController extends Controller
 {
@@ -571,28 +572,110 @@ class FrontController extends Controller
 
         //enroll course
         public function enrollcourse(Request $request){
-        
             if(empty(Auth::user()->id)){
-                return ["status"=>400,"message"=>"Please login to access this feature."];
+                return ["status"=>401,"message"=>"Please log in to your student account to enroll in this course."];
             }
-            if(!empty($request->id)){
-                $enrollcourse = enrollCourse::where('course_id',$request->id)
-                ->where('user_id',Auth::user()->id)
+
+            if(empty($request->id)){
+                return ["status"=>400,"message"=>"Invalid course request!"]; 
+            }
+
+            $course = Course::find($request->id);
+            if(!$course){
+                return ["status"=>404,"message"=>"Course not found!"];
+            }
+
+            $student = Auth::user();
+
+            $existing = enrollCourse::where('course_id', $course->id)
+                ->where('user_id', $student->id)
                 ->where(function($sq){
-                $sq->where('status','accepted')->orwhere('status','pending')->orwhere('status','completed');
+                    $sq->where('status', 'accepted')
+                       ->orWhere('status', 'pending')
+                       ->orWhere('status', 'completed');
                 })->first();
-                if(!empty($enrollcourse->id)){
-                 return ["status"=>400,"message"=>"You have already enrolled  this course!"];   
-                }
-                $enrollcoursex = new enrollCourse;
-                $enrollcoursex->course_id = $request->id??0;
-                $enrollcoursex->user_id   = Auth::user()->id??0; 
-                $enrollcoursex->status    = 'pending'; 
-                $enrollcoursex->save();
-                return ["status"=>200,"message"=>"You have successfully enrolled to this course!"];
+
+            if(!empty($existing->id)){
+                return ["status"=>200, "message"=>"You are already enrolled in this course! The educator has your contact details."];   
             }
-            
-        return ["status"=>400,"message"=>"Invalid Request!"]; 
+
+            $enrollcoursex = new enrollCourse;
+            $enrollcoursex->course_id = $course->id;
+            $enrollcoursex->user_id   = $student->id; 
+            $enrollcoursex->status    = 'pending'; 
+            $enrollcoursex->save();
+
+            // Resolve teacher user account to send email notification
+            $teacherUser = User::find($course->teacher_id);
+            if (!$teacherUser) {
+                $teacherProfile = Teacher::find($course->teacher_id);
+                if ($teacherProfile && $teacherProfile->user_id) {
+                    $teacherUser = User::find($teacherProfile->user_id);
+                }
+            }
+
+            // Send Email Notification to the Teacher who listed the course
+            if ($teacherUser && !empty($teacherUser->email)) {
+                try {
+                    $teacherName = $teacherUser->name ?: 'Educator';
+                    $studentName = $student->name ?: 'A Student';
+                    $studentEmail = $student->email ?: 'N/A';
+                    $studentPhone = $student->mobile ?: 'N/A';
+                    $courseName = $course->name;
+                    $priceLabel = !empty($course->price) ? '₹' . number_format($course->price, 2) . ($course->price_type === 'per_month' ? ' / month' : ' (One-Time)') : 'Free';
+                    $dateStr = now()->timezone('Asia/Kolkata')->format('d M Y, h:i A');
+
+                    $htmlContent = "
+                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;'>
+                        <div style='text-align: center; margin-bottom: 20px;'>
+                            <h2 style='color: #0284c7; margin: 0; font-size: 24px;'>New Student Enrolled!</h2>
+                            <p style='color: #64748b; font-size: 14px; margin-top: 5px;'>The Local Tutors - Course Notification</p>
+                        </div>
+                        <p style='color: #334155; font-size: 16px;'>Hello <strong>" . htmlspecialchars($teacherName) . "</strong>,</p>
+                        <p style='color: #334155; font-size: 15px; line-height: 1.5;'>
+                            Great news! A new student has just enrolled in your course: <strong style='color: #0284c7;'>" . htmlspecialchars($courseName) . "</strong>.
+                        </p>
+                        
+                        <div style='background-color: #f0f7ff; border-left: 4px solid #0284c7; border-radius: 6px; padding: 16px; margin: 20px 0;'>
+                            <h4 style='margin: 0 0 10px 0; color: #0f172a; font-size: 16px;'>Student Details:</h4>
+                            <p style='margin: 6px 0; color: #334155;'><strong>Name:</strong> " . htmlspecialchars($studentName) . "</p>
+                            <p style='margin: 6px 0; color: #334155;'><strong>Email:</strong> <a href='mailto:" . htmlspecialchars($studentEmail) . "' style='color: #0284c7; text-decoration: none;'>" . htmlspecialchars($studentEmail) . "</a></p>
+                            <p style='margin: 6px 0; color: #334155;'><strong>Phone / WhatsApp:</strong> <a href='tel:" . htmlspecialchars($studentPhone) . "' style='color: #0284c7; text-decoration: none;'>" . htmlspecialchars($studentPhone) . "</a></p>
+                            <p style='margin: 6px 0; color: #334155;'><strong>Course Fee:</strong> " . htmlspecialchars($priceLabel) . "</p>
+                            <p style='margin: 6px 0; color: #334155;'><strong>Enrollment Time:</strong> " . htmlspecialchars($dateStr) . "</p>
+                        </div>
+
+                        <p style='color: #334155; font-size: 14px; line-height: 1.5;'>
+                            Please log in to your <strong>Educator Dashboard</strong> to view this enrollment and get in touch with your new student.
+                        </p>
+
+                        <div style='text-align: center; margin: 25px 0;'>
+                            <a href='" . url('/dashboard/courses') . "' style='background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block;'>
+                                View Enrolled Students
+                            </a>
+                        </div>
+
+                        <hr style='border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;'>
+                        <p style='color: #94a3b8; font-size: 12px; text-align: center; margin: 0;'>
+                            The Local Tutors &bull; Kolkata & West Bengal<br>
+                            <a href='" . url('/') . "' style='color: #0284c7; text-decoration: none;'>thelocaltutors.com</a>
+                        </p>
+                    </div>";
+
+                    Mail::html($htmlContent, function ($message) use ($teacherUser, $courseName) {
+                        $message->to($teacherUser->email, $teacherUser->name)
+                                ->subject("New Student Enrolled in your Course: {$courseName} - The Local Tutors");
+                    });
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Enrollment email notification error: " . $e->getMessage());
+                }
+            }
+
+            $teacherDisplayName = $teacherUser ? $teacherUser->name : 'the course educator';
+            return [
+                "status" => 200,
+                "message" => "You have successfully enrolled! {$teacherDisplayName} has been notified via email and will get in touch with you shortly."
+            ];
         }
         //course feedback
         public function course_feedback(Request $request){

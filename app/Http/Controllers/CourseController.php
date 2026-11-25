@@ -67,6 +67,7 @@ class CourseController extends Controller
         $course->name         = $request->name??'';
         $course->duration     = $request->duration??0;
         $course->price        = $request->price??0;
+        $course->price_type   = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         if (is_array($request->teaching_mode)) {
             $course->teaching_mode = implode(',', $request->teaching_mode);
         } else {
@@ -128,6 +129,7 @@ class CourseController extends Controller
         $course->name         = $request->name??'';
         $course->duration     = $request->duration??0;
         $course->price        = $request->price??0;
+        $course->price_type   = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         if (is_array($request->teaching_mode)) {
             $course->teaching_mode = implode(',', $request->teaching_mode);
         } else {
