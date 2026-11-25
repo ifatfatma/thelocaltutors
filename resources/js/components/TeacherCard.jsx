@@ -211,17 +211,17 @@ export default function TeacherCard({
             </div>
 
             {/* Card Content Container */}
-            <div className="position-relative p-3 p-md-4" style={{ zIndex: 2 }}>
+            <div className={`position-relative ${isModal ? 'p-3 p-md-4' : 'p-3'}`} style={{ zIndex: 2 }}>
                 {/* 1. Header Row: Avatar + Name + Badges + Stars + State/City Location */}
-                <div className="d-flex flex-column flex-sm-row align-items-start gap-3 mb-3 pb-2">
+                <div className={`d-flex flex-column flex-sm-row align-items-start gap-3 ${isModal ? 'mb-3 pb-2' : 'mb-2'}`}>
                     {/* Teacher Photo with Ring & Online Status */}
                     <div className="position-relative flex-shrink-0 mx-auto mx-sm-0">
                         <div
                             className="rounded-circle p-1"
                             style={{
                                 background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 60%, #f59e0b 100%)',
-                                width: isModal ? '98px' : '86px',
-                                height: isModal ? '98px' : '86px',
+                                width: isModal ? '98px' : '76px',
+                                height: isModal ? '98px' : '76px',
                             }}
                         >
                             <img
@@ -238,10 +238,10 @@ export default function TeacherCard({
                         <span
                             className="position-absolute bg-success border border-white border-2 rounded-circle"
                             style={{
-                                width: '16px',
-                                height: '16px',
-                                bottom: '4px',
-                                right: '4px',
+                                width: '14px',
+                                height: '14px',
+                                bottom: '2px',
+                                right: '2px',
                             }}
                             title="Verified & Available"
                         />
@@ -250,7 +250,7 @@ export default function TeacherCard({
                     {/* Teacher Title & Meta Badges */}
                     <div className="flex-grow-1 min-w-0 text-center text-sm-start w-100">
                         <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-between gap-2 mb-1">
-                            <h4 className="fw-bold text-dark mb-0 lh-sm text-truncate" title={name} style={{ fontSize: isModal ? '1.55rem' : '1.3rem' }}>
+                            <h4 className="fw-bold text-dark mb-0 lh-sm text-truncate" title={name} style={{ fontSize: isModal ? '1.55rem' : '1.2rem' }}>
                                 {name}
                             </h4>
                             {gender && (
@@ -258,7 +258,7 @@ export default function TeacherCard({
                                     className="badge rounded-pill fw-semibold px-2 py-1 text-secondary border"
                                     style={{
                                         backgroundColor: '#f1f5f9',
-                                        fontSize: '0.76rem',
+                                        fontSize: '0.74rem',
                                     }}
                                 >
                                     <i className="bi bi-person me-1"></i>
@@ -268,13 +268,13 @@ export default function TeacherCard({
                         </div>
 
                         {/* Verified & Experience Badges */}
-                        <div className="d-flex align-items-center justify-content-center justify-content-sm-start flex-wrap gap-2 mb-2">
+                        <div className="d-flex align-items-center justify-content-center justify-content-sm-start flex-wrap gap-2 mb-1">
                             <span
                                 className="badge rounded-pill fw-semibold px-2 py-1 text-primary d-inline-flex align-items-center gap-1"
                                 style={{
                                     backgroundColor: '#eff6ff',
                                     border: '1px solid #bfdbfe',
-                                    fontSize: '0.78rem',
+                                    fontSize: '0.76rem',
                                 }}
                             >
                                 <i className="bi bi-patch-check-fill text-primary"></i>
@@ -288,7 +288,7 @@ export default function TeacherCard({
                                 style={{
                                     backgroundColor: '#fffbeb',
                                     border: '1px solid #fde68a',
-                                    fontSize: '0.78rem',
+                                    fontSize: '0.76rem',
                                 }}
                             >
                                 <i className="bi bi-award-fill text-warning"></i>
@@ -297,8 +297,8 @@ export default function TeacherCard({
                         </div>
 
                         {/* Ratings & Distance */}
-                        <div className="d-flex align-items-center justify-content-center justify-content-sm-start flex-wrap gap-2 mb-2">
-                            <div className="d-flex align-items-center text-warning" style={{ fontSize: '0.9rem' }}>
+                        <div className="d-flex align-items-center justify-content-center justify-content-sm-start flex-wrap gap-2 mb-1">
+                            <div className="d-flex align-items-center text-warning" style={{ fontSize: '0.86rem' }}>
                                 <i className="bi bi-star-fill"></i>
                                 <i className="bi bi-star-fill ms-1"></i>
                                 <i className="bi bi-star-fill ms-1"></i>
@@ -312,7 +312,7 @@ export default function TeacherCard({
                                     style={{
                                         backgroundColor: '#ecfdf5',
                                         border: '1px solid #a7f3d0',
-                                        fontSize: '0.75rem',
+                                        fontSize: '0.74rem',
                                     }}
                                 >
                                     <i className="bi bi-geo-alt-fill text-success"></i>
@@ -324,7 +324,7 @@ export default function TeacherCard({
                         {/* Location: ONLY State, City, Country */}
                         <div
                             className="d-flex align-items-center justify-content-center justify-content-sm-start gap-1 text-secondary small fw-medium"
-                            style={{ fontSize: '0.84rem' }}
+                            style={{ fontSize: '0.82rem' }}
                         >
                             <i className="bi bi-geo-alt-fill text-danger flex-shrink-0"></i>
                             <span className="text-truncate">{locationText}</span>
@@ -332,163 +332,276 @@ export default function TeacherCard({
                     </div>
                 </div>
 
-                {/* 2. Body Grid: Left Attributes Box + Right About Me Box */}
-                <div className="row g-3 mb-3">
-                    {/* Left Attribute Panel: Perfectly Aligned Academic Details */}
+                {/* 2. Body Grid: Academic Details + About Me */}
+                <div className="row g-2 mb-2">
+                    {/* Academic Details Panel */}
                     <div className={isModal ? "col-12 col-md-6" : "col-12"}>
                         <div
-                            className="p-3 rounded-4 h-100 d-flex flex-column justify-content-center"
+                            className="p-2 p-sm-3 rounded-3 h-100 d-flex flex-column justify-content-center"
                             style={{
                                 backgroundColor: '#f0f7ff',
                                 border: '1px solid #d0e7ff',
                                 minHeight: isModal ? '175px' : 'auto',
                             }}
                         >
-                            <div className="d-flex flex-column gap-2">
-                                {/* Qualification */}
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                        style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
-                                    >
-                                        <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.85rem' }}></i>
+                            {isModal ? (
+                                <div className="d-flex flex-column gap-2">
+                                    {/* Qualification */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
+                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.85rem' }}></i>
+                                        </div>
+                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
+                                                Qualification:
+                                            </span>
+                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                                {qualification}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                            Qualification:
-                                        </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
-                                            {qualification}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {/* Subjects */}
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                        style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
-                                    >
-                                        <i className="bi bi-book-fill" style={{ fontSize: '0.85rem' }}></i>
+                                    {/* Subjects */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
+                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-book-fill" style={{ fontSize: '0.85rem' }}></i>
+                                        </div>
+                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
+                                                Subjects:
+                                            </span>
+                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                                {subjects}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                            Subjects:
-                                        </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
-                                            {subjects}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {/* Board */}
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                        style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
-                                    >
-                                        <i className="bi bi-layers-fill" style={{ fontSize: '0.85rem' }}></i>
+                                    {/* Board */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
+                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-layers-fill" style={{ fontSize: '0.85rem' }}></i>
+                                        </div>
+                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
+                                                Board:
+                                            </span>
+                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                                {boards}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                            Board:
-                                        </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
-                                            {boards}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {/* Mode */}
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                        style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
-                                    >
-                                        <i className="bi bi-display" style={{ fontSize: '0.85rem' }}></i>
+                                    {/* Mode */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
+                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-display" style={{ fontSize: '0.85rem' }}></i>
+                                        </div>
+                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
+                                                Mode:
+                                            </span>
+                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                                {mode}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                            Mode:
-                                        </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
-                                            {mode}
-                                        </span>
-                                    </div>
-                                </div>
 
-                                {/* Timings */}
-                                <div className="d-flex align-items-center gap-2">
-                                    <div
-                                        className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                        style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
-                                    >
-                                        <i className="bi bi-clock-fill" style={{ fontSize: '0.85rem' }}></i>
-                                    </div>
-                                    <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                        <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                            Timings:
-                                        </span>
-                                        <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
-                                            {timings}
-                                        </span>
+                                    {/* Timings */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        <div
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
+                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-clock-fill" style={{ fontSize: '0.85rem' }}></i>
+                                        </div>
+                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
+                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
+                                                Timings:
+                                            </span>
+                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                                {timings}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                /* Compact 2-column layout for standard card height */
+                                <div className="row g-2 align-items-center">
+                                    <div className="col-12 col-sm-6">
+                                        <div className="d-flex flex-column gap-2">
+                                            {/* Qualification */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div
+                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
+                                                >
+                                                    <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.78rem' }}></i>
+                                                </div>
+                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
+                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Qualification</span>
+                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={qualification}>{qualification}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Subjects */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div
+                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
+                                                >
+                                                    <i className="bi bi-book-fill" style={{ fontSize: '0.78rem' }}></i>
+                                                </div>
+                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
+                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Subjects</span>
+                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={subjects}>{subjects}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Board */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div
+                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
+                                                >
+                                                    <i className="bi bi-layers-fill" style={{ fontSize: '0.78rem' }}></i>
+                                                </div>
+                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
+                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Board</span>
+                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={boards}>{boards}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="col-12 col-sm-6">
+                                        <div className="d-flex flex-column gap-2">
+                                            {/* Mode */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div
+                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
+                                                >
+                                                    <i className="bi bi-display" style={{ fontSize: '0.78rem' }}></i>
+                                                </div>
+                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
+                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Mode</span>
+                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={mode}>{mode}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Timings */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div
+                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
+                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
+                                                >
+                                                    <i className="bi bi-clock-fill" style={{ fontSize: '0.78rem' }}></i>
+                                                </div>
+                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
+                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Timings</span>
+                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={timings}>{timings}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Right Attribute Panel: "About Me" Quote Box with Tab Header */}
-                    <div className={isModal ? "col-12 col-md-6 d-flex flex-column" : "col-12 d-flex flex-column"}>
-                        {/* Blue Tab Header */}
-                        <div className="d-flex align-items-end" style={{ marginBottom: '-1px', zIndex: 2 }}>
-                            <span
-                                className="px-3 py-1 text-white fw-bold d-inline-flex align-items-center gap-1 shadow-2xs"
-                                style={{
-                                    backgroundColor: '#0284c7',
-                                    borderRadius: '10px 10px 0 0',
-                                    fontSize: '0.82rem',
-                                    letterSpacing: '0.02em',
-                                }}
-                            >
-                                <i className="bi bi-person-fill"></i>
-                                About Me
-                            </span>
-                            <div className="flex-grow-1" style={{ height: '1px', backgroundColor: '#d0e7ff' }}></div>
-                        </div>
+                    {/* Right Attribute Panel: "About Me" */}
+                    <div className={isModal ? "col-12 col-md-6 d-flex flex-column" : "col-12"}>
+                        {isModal ? (
+                            <>
+                                {/* Blue Tab Header */}
+                                <div className="d-flex align-items-end" style={{ marginBottom: '-1px', zIndex: 2 }}>
+                                    <span
+                                        className="px-3 py-1 text-white fw-bold d-inline-flex align-items-center gap-1 shadow-2xs"
+                                        style={{
+                                            backgroundColor: '#0284c7',
+                                            borderRadius: '10px 10px 0 0',
+                                            fontSize: '0.82rem',
+                                            letterSpacing: '0.02em',
+                                        }}
+                                    >
+                                        <i className="bi bi-person-fill"></i>
+                                        About Me
+                                    </span>
+                                    <div className="flex-grow-1" style={{ height: '1px', backgroundColor: '#d0e7ff' }}></div>
+                                </div>
 
-                        {/* Quote Content Box */}
-                        <div
-                            className="p-3 rounded-bottom-4 rounded-end-4 flex-grow-1 position-relative d-flex flex-column justify-content-center"
-                            style={{
-                                backgroundColor: '#f0f7ff',
-                                border: '1px solid #d0e7ff',
-                                minHeight: isModal ? '175px' : 'auto',
-                            }}
-                        >
-                            <p
-                                className="text-secondary fst-italic mb-0 small lh-base text-start"
+                                {/* Quote Content Box */}
+                                <div
+                                    className="p-3 rounded-bottom-4 rounded-end-4 flex-grow-1 position-relative d-flex flex-column justify-content-center"
+                                    style={{
+                                        backgroundColor: '#f0f7ff',
+                                        border: '1px solid #d0e7ff',
+                                        minHeight: '175px',
+                                    }}
+                                >
+                                    <p
+                                        className="text-secondary fst-italic mb-0 small lh-base text-start"
+                                        style={{
+                                            fontSize: '0.84rem',
+                                            color: '#334155',
+                                            maxHeight: 'none',
+                                            overflow: 'visible',
+                                        }}
+                                    >
+                                        <span className="fw-bold text-primary fs-5 me-1 lh-1" style={{ verticalAlign: '-3px' }}>
+                                            &ldquo;
+                                        </span>
+                                        {bio}
+                                        <span className="fw-bold text-primary fs-5 ms-1 lh-1" style={{ verticalAlign: '-3px' }}>
+                                            &rdquo;
+                                        </span>
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            /* Sleek Compact Quote for Card */
+                            <div
+                                className="p-2 px-3 rounded-3"
                                 style={{
-                                    fontSize: '0.84rem',
-                                    color: '#334155',
-                                    maxHeight: isModal ? 'none' : '135px',
-                                    overflow: isModal ? 'visible' : 'hidden',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
                                 }}
                             >
-                                <span className="fw-bold text-primary fs-5 me-1 lh-1" style={{ verticalAlign: '-3px' }}>
-                                    &ldquo;
-                                </span>
-                                {bio}
-                                <span className="fw-bold text-primary fs-5 ms-1 lh-1" style={{ verticalAlign: '-3px' }}>
-                                    &rdquo;
-                                </span>
-                            </p>
-                        </div>
+                                <div className="d-flex align-items-center gap-1 mb-1 text-primary fw-bold" style={{ fontSize: '0.74rem' }}>
+                                    <i className="bi bi-chat-quote-fill"></i> About Educator
+                                </div>
+                                <p
+                                    className="text-secondary fst-italic mb-0 small lh-sm text-start"
+                                    style={{
+                                        fontSize: '0.80rem',
+                                        color: '#475569',
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    &ldquo;{bio}&rdquo;
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* 3. Action Buttons Row: View Profile / Book Trial / Explore */}
-                <div className="d-flex flex-wrap align-items-center justify-content-center gap-3 pt-2">
+                <div className="d-flex flex-wrap align-items-center justify-content-center gap-2 pt-2">
                     {onViewProfile ? (
                         <button
                             type="button"
