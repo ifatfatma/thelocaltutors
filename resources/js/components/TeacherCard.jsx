@@ -116,6 +116,11 @@ export default function TeacherCard({
 
     const locationText = formatTeacherLocation(teacher);
 
+    // Rating calculations - only show star rating if educator has genuine reviews
+    const rawRating = teacher.rating !== undefined && teacher.rating !== null ? parseFloat(teacher.rating) : null;
+    const reviewCount = parseInt(teacher.review_count || teacher.reviews_count || 0, 10);
+    const hasRealRating = rawRating !== null && rawRating > 0 && reviewCount > 0;
+
     // Image URL resolution
     const rawImage = teacher.image || u.image || teacher.teachermore?.image;
     let imageUrl = '/front/img/noprofileimage.png';
@@ -298,13 +303,33 @@ export default function TeacherCard({
 
                         {/* Ratings & Distance */}
                         <div className="d-flex align-items-center justify-content-center justify-content-sm-start flex-wrap gap-2 mb-1">
-                            <div className="d-flex align-items-center text-warning" style={{ fontSize: '0.86rem' }}>
-                                <i className="bi bi-star-fill"></i>
-                                <i className="bi bi-star-fill ms-1"></i>
-                                <i className="bi bi-star-fill ms-1"></i>
-                                <i className="bi bi-star-fill ms-1"></i>
-                                <i className="bi bi-star-fill ms-1"></i>
-                            </div>
+                            {hasRealRating ? (
+                                <div className="d-flex align-items-center gap-1">
+                                    <div className="d-flex align-items-center text-warning" style={{ fontSize: '0.84rem' }}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <i
+                                                key={star}
+                                                className={`bi ${
+                                                    star <= Math.round(rawRating)
+                                                        ? 'bi-star-fill'
+                                                        : 'bi-star text-secondary opacity-50'
+                                                } ${star > 1 ? 'ms-1' : ''}`}
+                                            ></i>
+                                        ))}
+                                    </div>
+                                    <span className="text-secondary small fw-bold ms-1" style={{ fontSize: '0.76rem' }}>
+                                        {rawRating.toFixed(1)} <span className="text-muted fw-normal">({reviewCount})</span>
+                                    </span>
+                                </div>
+                            ) : (
+                                <span
+                                    className="badge rounded-pill bg-light text-secondary border px-2 py-1 fw-medium d-inline-flex align-items-center gap-1"
+                                    style={{ fontSize: '0.74rem' }}
+                                >
+                                    <i className="bi bi-star text-muted"></i>
+                                    <span>New Educator</span>
+                                </span>
+                            )}
 
                             {distanceText && (
                                 <span

@@ -37,42 +37,74 @@ use Illuminate\Support\Facades\Mail;
 
 class FrontController extends Controller
 {
-    public function getTeacherDetailsAjax($id){
-        $teacher = Teacher::with('user')->where('user_id', $id)->orWhere('id', $id)->first();
-        $user = User::with('teachermore')->where('id', $id)->first();
-        if (!$teacher && $user && $user->teachermore) {
-            $teacher = $user->teachermore;
+    public function getTeacherDetailsAjax($id, Request $request = null){
+        $user = null;
+        $teacher = null;
+
+        // 1. Priority 1: Match by User ID directly (prevents collisions between users.id and teachers.id)
+        $userCandidate = User::with('teachermore')->where('id', $id)->first();
+        if ($userCandidate && $userCandidate->type === 'teacher') {
+            $user = $userCandidate;
+            $teacher = $userCandidate->teachermore;
+        }
+
+        // 2. Priority 2: Match by Teacher table's user_id
+        if (!$teacher) {
+            $teacherCandidate = Teacher::with('user')->where('user_id', $id)->first();
+            if ($teacherCandidate) {
+                $teacher = $teacherCandidate;
+                $user = $teacherCandidate->user;
+            }
+        }
+
+        // 3. Priority 3: Fallback match by Teacher table's primary key `id`
+        if (!$teacher) {
+            $teacherCandidate = Teacher::with('user')->where('id', $id)->first();
+            if ($teacherCandidate) {
+                $teacher = $teacherCandidate;
+                $user = $teacherCandidate->user;
+            }
         }
 
         if (!$teacher && !$user) {
             return response()->json(['status' => 404, 'message' => 'Educator not found']);
         }
 
-        $teacherUser = $teacher->user ?? $user;
+        $teacherUser = $user ?? ($teacher->user ?? null);
         $name = $teacherUser->name ?? ($teacher->name ?? 'Verified Educator');
         $img = Common::profileimage($teacher->image ?: ($teacherUser->image ?? ''));
         $gender = $teacher->gender ?: ($teacherUser->teachermore->gender ?? 'Educator');
         $exp = $teacher->experience ?: ($teacherUser->teachermore->experience ?? '');
         $expText = $exp ? ($exp . ' Yrs Exp') : 'Experienced';
 
-        $city = trim((string)($teacher->city ?? $user->teachermore->city ?? ''));
-        $state = trim((string)($teacher->state ?? $user->teachermore->state ?? ''));
+        $city = trim((string)($teacher->city ?? $teacherUser->teachermore->city ?? ''));
+        $state = trim((string)($teacher->state ?? $teacherUser->teachermore->state ?? ''));
         $locParts = [];
         if (!empty($city) && $city !== '0') $locParts[] = $city;
         if (!empty($state) && $state !== '0') $locParts[] = $state;
         $locParts[] = 'India';
         $locationFormatted = implode(', ', $locParts);
 
-        $qualification = $teacher->qualification_name ?: (Common::tmodeName($user->teachermore->qualification ?? 0) ?: 'Graduation');
-        $subjects = $teacher->subject_names ?: (Common::getSubjects($user->teachermore->subjects ?? '') ?: 'English, Mathematics');
+        $qualification = $teacher->qualification_name ?: (Common::tmodeName($teacherUser->teachermore->qualification ?? 0) ?: 'Graduation');
+        $subjects = $teacher->subject_names ?: (Common::getSubjects($teacherUser->teachermore->subjects ?? '') ?: 'English, Mathematics');
         $boards = $teacher->board_names ?: 'CBSE, ICSE, WBBSE';
         $teachingMode = $teacher->teaching_mode_name ?: 'Both (Online & Offline)';
-        $timings = $teacher->timings ?: ($user->teachermore->timings ?? '10 AM – 10 PM');
-        $description = $teacher->description ?: ($user->teachermore->description ?? 'Dedicated and certified educator committed to conceptual clarity, personalized doubt clearing, and continuous academic growth for students.');
+        $timings = $teacher->timings ?: ($teacherUser->teachermore->timings ?? '10 AM – 10 PM');
+        $description = $teacher->description ?: ($teacherUser->teachermore->description ?? 'Dedicated and certified educator committed to conceptual clarity, personalized doubt clearing, and continuous academic growth for students.');
+
+        // Compute real review rating & count
+        $reviewUserId = $teacherUser->id ?? ($teacher->user_id ?? 0);
+        $reviewQuery = TeacherReview::where('teacher_id', $reviewUserId);
+        if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+            $reviewQuery->where('is_active', 1);
+        }
+        $avgRating = $reviewQuery->avg('teacher_rating');
+        $reviewCount = $reviewQuery->count();
+        $realRating = ($avgRating && $reviewCount > 0) ? round((float)$avgRating, 1) : null;
 
         $teacherData = [
             'id' => $teacher->id ?? $user->id,
-            'user_id' => $teacher->user_id ?? $user->id,
+            'user_id' => $teacherUser->id ?? ($teacher->user_id ?? $user->id),
             'name' => $name,
             'image' => $img,
             'gender' => $gender,
@@ -92,9 +124,10 @@ class FrontController extends Controller
             'teaching_mode_name' => $teachingMode,
             'timings' => $timings,
             'description' => $description,
-            'rating' => 5.0,
-            'latitude' => $teacher->latitude ?: ($user->teachermore->latitude ?? null),
-            'longitude' => $teacher->longitude ?: ($user->teachermore->longitude ?? null),
+            'rating' => $realRating,
+            'review_count' => $reviewCount,
+            'latitude' => $teacher->latitude ?: ($teacherUser->teachermore->latitude ?? null),
+            'longitude' => $teacher->longitude ?: ($teacherUser->teachermore->longitude ?? null),
         ];
 
         return response()->json([
@@ -380,7 +413,12 @@ class FrontController extends Controller
         private function formatTeacherCollection($teachers, $isNearby = false)
         {
             $idsToLookup = [];
+            $teacherUserIds = [];
+
             foreach ($teachers as $item) {
+                if (!empty($item->user_id)) {
+                    $teacherUserIds[] = $item->user_id;
+                }
                 if (!empty($item->qualification)) {
                     $idsToLookup = array_merge($idsToLookup, explode(',', (string)$item->qualification));
                 }
@@ -406,7 +444,20 @@ class FrontController extends Controller
                 ? CustomData::whereIn('id', $idsToLookup)->pluck('name', 'id')->toArray()
                 : [];
 
-            return $teachers->map(function ($item) use ($lookup, $isNearby) {
+            $teacherUserIds = array_unique(array_filter($teacherUserIds));
+            $ratingsStats = [];
+            if (!empty($teacherUserIds)) {
+                $ratingsQuery = TeacherReview::whereIn('teacher_id', $teacherUserIds);
+                if (Schema::hasColumn('teacher_reviews', 'is_active')) {
+                    $ratingsQuery->where('is_active', 1);
+                }
+                $ratingsStats = $ratingsQuery->selectRaw('teacher_id, AVG(teacher_rating) as avg_rating, COUNT(*) as review_count')
+                    ->groupBy('teacher_id')
+                    ->get()
+                    ->keyBy('teacher_id');
+            }
+
+            return $teachers->map(function ($item) use ($lookup, $ratingsStats, $isNearby) {
                 if (!empty($item->qualification)) {
                     $qIds = array_filter(array_map('trim', explode(',', (string)$item->qualification)));
                     $names = array_filter(array_map(fn($id) => $lookup[$id] ?? (is_numeric($id) ? null : $id), $qIds));
@@ -443,6 +494,10 @@ class FrontController extends Controller
                 $item->state_name = !empty($item->state) ? ($lookup[$item->state] ?? '') : '';
                 $item->is_nearby = $isNearby;
                 $item->distance = isset($item->distance) && !is_null($item->distance) ? round((float)$item->distance, 2) : null;
+
+                $stat = $ratingsStats[$item->user_id] ?? null;
+                $item->rating = ($stat && $stat->review_count > 0 && $stat->avg_rating) ? round((float)$stat->avg_rating, 1) : null;
+                $item->review_count = $stat ? (int)$stat->review_count : 0;
 
                 return $item;
             })->values()->toArray();

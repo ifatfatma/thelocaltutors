@@ -430,7 +430,10 @@ export default function SearchResults({
         setReviewMsg('');
 
         try {
-            const res = await axios.get(`/getTeacherDetailsAjax/${teacher.id || teacher.user_id}`);
+            const targetId = teacher.user_id || teacher.id;
+            const res = await axios.get(`/getTeacherDetailsAjax/${targetId}`, {
+                params: { user_id: teacher.user_id || '' },
+            });
             if (res.data.status === 200 && res.data.teacher) {
                 setSelectedTeacher((prev) => ({
                     ...(prev || {}),
