@@ -115,7 +115,6 @@ class OtpService
                     'status'   => 200,
                     'message'  => "A 6-digit verification code has been sent to " . self::maskEmail($email) . " (Valid for 10 minutes).",
                     'cooldown' => 60,
-                    'dev_otp'  => config('app.debug') ? $otp : null,
                 ];
             }
 
@@ -131,7 +130,6 @@ class OtpService
             'status'   => 200,
             'message'  => "A 6-digit verification code has been sent to " . self::maskEmail($email) . " (Valid for 10 minutes).",
             'cooldown' => 60,
-            'dev_otp'  => config('app.debug') ? $otp : null,
         ];
     }
 

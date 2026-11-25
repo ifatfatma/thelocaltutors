@@ -13,7 +13,6 @@ export default function Login() {
     const [otpSent, setOtpSent] = useState(false);
     const [otpRemember, setOtpRemember] = useState(false);
     const [cooldown, setCooldown] = useState(0);
-    const [devOtp, setDevOtp] = useState('');
 
     // Password Login State
     const [pwdForm, setPwdForm] = useState({
@@ -80,9 +79,6 @@ export default function Login() {
             setLoading(false);
             setOtpSent(true);
             setCooldown(res.data.cooldown || 60);
-            if (res.data.dev_otp) {
-                setDevOtp(res.data.dev_otp);
-            }
             setSuccessMsg(res.data.message || 'A 6-digit code has been sent to your email.');
         } catch (err) {
             setLoading(false);
@@ -194,19 +190,6 @@ export default function Login() {
                 </div>
             )}
 
-            {/* Local dev helper notice if mail driver is log */}
-            {devOtp && (
-                <div className="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
-                    <i className="bi bi-shield-lock me-2 fs-5 flex-shrink-0 text-primary"></i>
-                    <div className="flex-grow-1">
-                        <div><strong>Verification Code:</strong> <span className="badge bg-primary fs-6 ms-1">{devOtp}</span></div>
-                        <div className="text-muted" style={{ fontSize: '11px' }}>
-                            (Local test code generated. To deliver to real inbox, configure SMTP in .env)
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {errorMsg && (
                 <div className="alert alert-danger d-flex align-items-center mb-4">
                     <i className="bi bi-exclamation-triangle-fill me-2 fs-5 flex-shrink-0"></i>
@@ -267,7 +250,7 @@ export default function Login() {
                                     </label>
                                     <button
                                         type="button"
-                                        onClick={() => { setOtpSent(false); setOtpCode(''); setDevOtp(''); }}
+                                        onClick={() => { setOtpSent(false); setOtpCode(''); }}
                                         className="btn btn-link p-0 text-decoration-none small text-muted"
                                     >
                                         Change Email
