@@ -184,7 +184,7 @@ class TeacherController extends Controller
         $user                = Teacher::firstOrNew(['user_id' => $id]);
         $user->gender        = $request->gender ?? 'Male';
         $user->user_id       = $id ?? 0;
-        $user->description   = $request->description ?? '';
+        $user->description   = \App\Helpers\HtmlSanitizer::clean($request->description);
         $user->whatsapp      = $request->whatsapp ?? '';
         $user->experience    = $request->experience ?? '';
         $user->qualification = is_array($request->qualification) ? implode(',', $request->qualification) : ($request->qualification ?? null);

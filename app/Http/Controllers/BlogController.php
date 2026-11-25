@@ -81,7 +81,7 @@ class BlogController extends Controller
 
         $blog->title       = $request->title??'';
         $blog->short_description = $request->short_description??'';
-        $blog->description = $request->description??'';
+        $blog->description = \App\Helpers\HtmlSanitizer::clean($request->description);
         $blog->blog_by     = $request->blog_by??'';
         $blog->date        = $request->date??'';
         $blog->is_active   = $request->is_active??0;
@@ -162,7 +162,7 @@ class BlogController extends Controller
             
             $blog->title       = $request->title??'';
             $blog->short_description = $request->short_description??'';
-            $blog->description = $request->description??'';
+            $blog->description = \App\Helpers\HtmlSanitizer::clean($request->description);
             $blog->blog_by     = $request->blog_by??'';
             $blog->date        = $request->date??'';
             $blog->is_active   = $request->is_active??0;

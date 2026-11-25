@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Models\CourseCategory;
 use App\Http\Requests\StoreCourseCategoryRequest;
 use App\Http\Requests\UpdateCourseCategoryRequest;
+use App\Helpers\HtmlSanitizer;
 use Intervention\Image\Laravel\Facades\Image;
 use File;
 use Inertia\Inertia;
@@ -57,7 +58,7 @@ class CourseCategoryController extends Controller
         }
         $courseCategory->slug        = Str::slug($request->title,'-');
         $courseCategory->title       = $request->title??'';
-        $courseCategory->description = $request->description??'';
+        $courseCategory->description = HtmlSanitizer::clean($request->description ?? '');
         $courseCategory->is_active   = $request->is_active??'';
         $courseCategory->save();
         //dd($courseCategory);
@@ -103,7 +104,7 @@ class CourseCategoryController extends Controller
         }
         $courseCategory->slug        = Str::slug($request->title,'-');
         $courseCategory->title       = $request->title??'';
-        $courseCategory->description = $request->description??'';
+        $courseCategory->description = HtmlSanitizer::clean($request->description ?? '');
         $courseCategory->is_active   = $request->is_active??'';
         $courseCategory->save();
        // dd($courseCategory);

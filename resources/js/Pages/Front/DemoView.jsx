@@ -175,9 +175,16 @@ export default function DemoView({ share, teacherDemo, settings }) {
                                             Tutor
                                         </span>
                                     </div>
-                                    <p className="text-secondary small mb-1 mt-1">
-                                        {teacherProfile?.description || 'Experienced educator focused on personalized mentoring, board curriculum mastery, and building strong fundamental concepts.'}
-                                    </p>
+                                    {teacherProfile?.description && /<[a-z][\s\S]*>/i.test(teacherProfile.description) ? (
+                                        <div
+                                            className="text-secondary small mb-1 mt-1 rich-content"
+                                            dangerouslySetInnerHTML={{ __html: teacherProfile.description }}
+                                        />
+                                    ) : (
+                                        <p className="text-secondary small mb-1 mt-1">
+                                            {teacherProfile?.description || 'Experienced educator focused on personalized mentoring, board curriculum mastery, and building strong fundamental concepts.'}
+                                        </p>
+                                    )}
                                     <span className="text-muted small" style={{ fontSize: '11px' }}>
                                         <i className="bi bi-geo-alt me-1"></i>{teacherProfile?.address || 'Kolkata, West Bengal'}
                                     </span>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CourseFaq;
+use App\Helpers\HtmlSanitizer;
 use Inertia\Inertia;
 
 class CourseFaqController extends Controller
@@ -27,7 +28,7 @@ class CourseFaqController extends Controller
     {
         $course_faq = new CourseFaq;
         $course_faq->title       = $request->title ?? '';
-        $course_faq->description = $request->description ?? '';
+        $course_faq->description = HtmlSanitizer::clean($request->description ?? '');
         $course_faq->is_active   = $request->is_active ?? 1;
         $course_faq->save();
 
@@ -41,7 +42,7 @@ class CourseFaqController extends Controller
     {
         $course_faq = CourseFaq::findOrFail($id);
         $course_faq->title       = $request->title ?? '';
-        $course_faq->description = $request->description ?? '';
+        $course_faq->description = HtmlSanitizer::clean($request->description ?? '');
         $course_faq->is_active   = $request->is_active ?? 1;
         $course_faq->save();
 

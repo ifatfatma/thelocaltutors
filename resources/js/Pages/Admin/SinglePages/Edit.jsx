@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 export default function Edit({ singlepages }) {
     const [title, setTitle] = useState(singlepages?.title || '');
@@ -62,12 +63,12 @@ export default function Edit({ singlepages }) {
 
                         <div className="col-12">
                             <label className="form-label fw-semibold">Page Content (HTML / Text)</label>
-                            <textarea
-                                rows="10"
-                                className="form-control"
+                            <RichTextEditor
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            ></textarea>
+                                onChange={setDescription}
+                                placeholder="Enter page content..."
+                                minHeight="300px"
+                            />
                         </div>
                     </div>
 

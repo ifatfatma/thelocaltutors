@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 export default function Create() {
     const [form, setForm] = useState({
@@ -99,13 +100,13 @@ export default function Create() {
 
                         <div className="col-12">
                             <label className="form-label fw-semibold">Full Blog Content</label>
-                            <textarea
-                                rows="8"
-                                className="form-control"
-                                placeholder="Write full article here..."
+                            <RichTextEditor
                                 value={form.description}
-                                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            ></textarea>
+                                onChange={(val) => setForm({ ...form, description: val })}
+                                placeholder="Write full article here..."
+                                minHeight="260px"
+                                error={errors.description}
+                            />
                         </div>
                     </div>
 

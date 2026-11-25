@@ -73,7 +73,7 @@ class FrontUserController extends Controller
             $teacher                = Teacher::firstOrNew(['user_id' => Auth::user()->id]);
             $teacher->gender        = $request->gender ?? 'Male';
             $teacher->user_id       = Auth::user()->id;
-            $teacher->description   = $request->description ?? '';
+            $teacher->description   = \App\Helpers\HtmlSanitizer::clean($request->description);
             $teacher->whatsapp      = $request->whatsapp ?? '';
             $teacher->experience    = $request->experience ?? '';
             $teacher->qualification = !empty($request->qualification) ? (is_array($request->qualification) ? implode(',', $request->qualification) : $request->qualification) : null;

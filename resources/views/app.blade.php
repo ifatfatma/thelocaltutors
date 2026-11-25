@@ -50,6 +50,11 @@
     <link rel="stylesheet" href="{{ asset('front/css/icomoom.css') }}">
     <link rel="stylesheet" href="{{ asset('front/scss/style.css') }}">
 
+    <!-- Google Maps API Key Config -->
+    <script>
+        window.GOOGLE_MAPS_API_KEY = @json(env('VITE_GOOGLE_MAPS_API_KEY') ?: env('GOOGLE_MAPS_API_KEY') ?: '');
+    </script>
+
     <!-- Scripts & Styles -->
     @viteReactRefresh
     @vite(['resources/sass/app.scss', 'resources/js/app.jsx'])

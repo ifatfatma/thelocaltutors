@@ -543,23 +543,34 @@ export default function TeacherCard({
                                         minHeight: '175px',
                                     }}
                                 >
-                                    <p
-                                        className="text-secondary fst-italic mb-0 small lh-base text-start"
-                                        style={{
-                                            fontSize: '0.84rem',
-                                            color: '#334155',
-                                            maxHeight: 'none',
-                                            overflow: 'visible',
-                                        }}
-                                    >
-                                        <span className="fw-bold text-primary fs-5 me-1 lh-1" style={{ verticalAlign: '-3px' }}>
-                                            &ldquo;
-                                        </span>
-                                        {bio}
-                                        <span className="fw-bold text-primary fs-5 ms-1 lh-1" style={{ verticalAlign: '-3px' }}>
-                                            &rdquo;
-                                        </span>
-                                    </p>
+                                    {rawBio && /<[a-z][\s\S]*>/i.test(rawBio) ? (
+                                        <div
+                                            className="text-secondary small lh-base text-start rich-content"
+                                            style={{
+                                                fontSize: '0.86rem',
+                                                color: '#334155',
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: rawBio }}
+                                        />
+                                    ) : (
+                                        <p
+                                            className="text-secondary fst-italic mb-0 small lh-base text-start"
+                                            style={{
+                                                fontSize: '0.84rem',
+                                                color: '#334155',
+                                                maxHeight: 'none',
+                                                overflow: 'visible',
+                                            }}
+                                        >
+                                            <span className="fw-bold text-primary fs-5 me-1 lh-1" style={{ verticalAlign: '-3px' }}>
+                                                &ldquo;
+                                            </span>
+                                            {bio}
+                                            <span className="fw-bold text-primary fs-5 ms-1 lh-1" style={{ verticalAlign: '-3px' }}>
+                                                &rdquo;
+                                            </span>
+                                        </p>
+                                    )}
                                 </div>
                             </>
                         ) : (

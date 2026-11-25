@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 export default function Create() {
     const [title, setTitle] = useState('');
@@ -65,12 +66,12 @@ export default function Create() {
 
                         <div className="col-12">
                             <label className="form-label fw-semibold">Description</label>
-                            <textarea
-                                rows="4"
-                                className="form-control"
+                            <RichTextEditor
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            ></textarea>
+                                onChange={setDescription}
+                                placeholder="Enter category description..."
+                                minHeight="180px"
+                            />
                         </div>
                     </div>
 
