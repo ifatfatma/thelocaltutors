@@ -135,7 +135,7 @@ class TeacherCourseController extends Controller
             $course->teaching_mode = $request->teaching_mode ?: 'Home / Online';
         }
 
-        $course->description = trim($request->description ?? '');
+        $course->description = \App\Helpers\HtmlSanitizer::clean($request->description);
         $course->youtube_url = trim($request->youtube_url ?? '');
         $course->is_active = $request->has('is_active') ? (int)$request->is_active : 1;
         $course->save();
@@ -213,7 +213,7 @@ class TeacherCourseController extends Controller
             $course->teaching_mode = $request->teaching_mode;
         }
 
-        $course->description = trim($request->description ?? '');
+        $course->description = \App\Helpers\HtmlSanitizer::clean($request->description);
         $course->youtube_url = trim($request->youtube_url ?? '');
         if ($request->has('is_active')) {
             $course->is_active = (int)$request->is_active;

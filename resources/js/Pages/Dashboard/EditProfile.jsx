@@ -3,6 +3,7 @@ import { Head, Link, usePage, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import IndiaLocationSelector from '../../Components/IndiaLocationSelector';
 import MapLocationPicker from '../../components/MapLocationPicker';
+import RichTextEditor from '../../components/RichTextEditor';
 import axios from 'axios';
 
 export default function EditProfile({
@@ -399,18 +400,25 @@ export default function EditProfile({
                                                 <i className="bi bi-map-fill text-primary"></i>
                                                 <span>Interactive Tutoring Location &amp; Map Coordinates</span>
                                             </span>
-                                            <p className="text-secondary small mb-0">
-                                                Pin your exact location on the map below or click <strong>"Use My Current Location"</strong>. Parents and students will be able to easily locate and track you for home tuition or nearby classroom batches.
-                                            </p>
                                         </div>
 
                                         <MapLocationPicker
                                             latitude={form.latitude}
                                             longitude={form.longitude}
-                                            onChange={({ lat, lng }) => setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+                                            onChange={({ lat, lng, area, pincode }) => {
+                                                setForm((prev) => ({
+                                                    ...prev,
+                                                    latitude: lat,
+                                                    longitude: lng,
+                                                    ...(area && !prev.address ? { address: area } : {}),
+                                                    ...(pincode && !prev.pincode ? { pincode: pincode } : {}),
+                                                }));
+                                            }}
                                             stateName={form.state}
                                             cityName={form.city}
-                                            height="360px"
+                                            areaName={form.address}
+                                            pincode={form.pincode}
+                                            height="380px"
                                         />
                                     </div>
                                 </div>
@@ -672,13 +680,12 @@ export default function EditProfile({
                                         <label className="form-label small fw-semibold text-secondary">
                                             Teacher Bio &amp; Pedagogy (Displayed on your Public Profile)
                                         </label>
-                                        <textarea
-                                            rows="4"
-                                            className="form-control"
+                                        <RichTextEditor
                                             value={form.description}
-                                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                            onChange={(val) => setForm({ ...form, description: val })}
                                             placeholder="Highlight your academic degree, teaching style, past student board examination results, and approach to conceptual clarity..."
-                                        ></textarea>
+                                            minHeight="180px"
+                                        />
                                     </div>
                                 </div>
 

@@ -39,7 +39,7 @@ class SinglePageController extends Controller
         $singlepage = new SinglePage;
         $singlepage->title       = $request->title??'';
         $singlepage->key_name    = $request->key_name??'';
-        $singlepage->description = $request->description??'';
+        $singlepage->description = \App\Helpers\HtmlSanitizer::clean($request->description);
         $singlepage->is_active   = $request->is_active??'';
         $singlepage->save();
         return redirect()->back()->withSuccess('Single Page is added successfully.');
@@ -72,7 +72,7 @@ class SinglePageController extends Controller
         $singlepage = SinglePage::findorfail($id);
         $singlepage->title       = $request->title??'';
         $singlepage->key_name    = $request->key_name??'';
-        $singlepage->description = $request->description??'';
+        $singlepage->description = \App\Helpers\HtmlSanitizer::clean($request->description);
         $singlepage->is_active   = $request->is_active??'';
         $singlepage->save();
         return redirect()->back()

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import Pagination from '../../../Components/Pagination';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 export default function Index({ faq }) {
     const list = faq?.data || faq || [];
@@ -78,13 +79,12 @@ export default function Index({ faq }) {
 
                             <div className="mb-4">
                                 <label className="form-label fw-semibold">Answer *</label>
-                                <textarea
-                                    rows="5"
-                                    className="form-control"
+                                <RichTextEditor
                                     value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    required
-                                ></textarea>
+                                    onChange={setDescription}
+                                    placeholder="Enter FAQ answer..."
+                                    minHeight="140px"
+                                />
                             </div>
 
                             <div className="d-flex gap-2">

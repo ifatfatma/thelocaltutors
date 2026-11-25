@@ -195,3 +195,72 @@ Route::get('getTeamTeacherDetailsAjax/{id}', [FrontController::class, 'getTeamTe
 Route::get('getCourseVideoAjax/{courseid}', [FrontController::class, 'getCourseVideoAjax'])->name('front.ajax.get.course.video'); 
 Route::get('postTeacherReviews', [FrontController::class, 'postTeacherReviews'])->name('front.ajax.post.teacher.feedback');
 
+// Resolve Google Maps short links (e.g. maps.app.goo.gl) to extract exact lat/lng
+Route::post('/resolve-maps-url', function (\Illuminate\Http\Request $request) {
+    $rawUrl = trim($request->input('url', ''));
+    if (empty($rawUrl)) {
+        return response()->json(['success' => false, 'message' => 'Empty URL provided.'], 400);
+    }
+
+    if (!preg_match('/^https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:goo\.gl|google\.[a-z.]+)\//i', $rawUrl)) {
+        return response()->json(['success' => false, 'message' => 'Not a valid Google Maps URL.'], 400);
+    }
+
+    try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $rawUrl);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+        curl_exec($ch);
+        $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        curl_close($ch);
+
+        if (!$finalUrl) {
+            $finalUrl = $rawUrl;
+        }
+
+        // 1. @lat,lng
+        if (preg_match('/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/', $finalUrl, $m)) {
+            return response()->json([
+                'success' => true,
+                'lat' => (float)$m[1],
+                'lng' => (float)$m[2],
+                'source' => $finalUrl,
+            ]);
+        }
+
+        // 2. !3dLat!4dLng
+        if (preg_match('/!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/', $finalUrl, $m)) {
+            return response()->json([
+                'success' => true,
+                'lat' => (float)$m[1],
+                'lng' => (float)$m[2],
+                'source' => $finalUrl,
+            ]);
+        }
+
+        // 3. ?q=lat,lng or &query=lat,lng
+        if (preg_match('/[?&](?:q|query|daddr|ll)=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/', $finalUrl, $m)) {
+            return response()->json([
+                'success' => true,
+                'lat' => (float)$m[1],
+                'lng' => (float)$m[2],
+                'source' => $finalUrl,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'final_url' => $finalUrl,
+            'message' => 'Could not extract coordinates from the resolved URL.',
+        ], 422);
+    } catch (\Throwable $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+})->name('front.resolve.maps.url');
+
+

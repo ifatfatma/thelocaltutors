@@ -299,10 +299,20 @@ export default function UpdateMore({
                                 <MapLocationPicker
                                     latitude={form.latitude}
                                     longitude={form.longitude}
-                                    onChange={({ lat, lng }) => setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+                                    onChange={({ lat, lng, area, pincode }) => {
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            latitude: lat,
+                                            longitude: lng,
+                                            ...(area && !prev.address ? { address: area } : {}),
+                                            ...(pincode && !prev.pincode ? { pincode: pincode } : {}),
+                                        }));
+                                    }}
                                     stateName={form.state}
                                     cityName={form.city}
-                                    height="300px"
+                                    areaName={form.address}
+                                    pincode={form.pincode}
+                                    height="340px"
                                 />
                             </div>
                         </div>

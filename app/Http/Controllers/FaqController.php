@@ -8,6 +8,7 @@ use App\Models\Faq;
 use Inertia\Inertia;
 use App\Http\Requests\StoreFaqRequest;
 use App\Http\Requests\UpdateFaqRequest;
+use App\Helpers\HtmlSanitizer;
 
 class FaqController extends Controller
 {
@@ -38,7 +39,7 @@ class FaqController extends Controller
     {
         $faq = new Faq;
         $faq->title       = $request->title??'';
-        $faq->description = $request->description??'';
+        $faq->description = HtmlSanitizer::clean($request->description ?? '');
         $faq->is_active   = $request->is_active??'';
         $faq->save();
         return redirect()->back()->withSuccess('FAQ is added successfully.');
@@ -68,7 +69,7 @@ class FaqController extends Controller
     {
         $faq = Faq::findorfail($id);
         $faq->title       = $request->title??'';
-        $faq->description = $request->description??'';
+        $faq->description = HtmlSanitizer::clean($request->description ?? '');
         $faq->is_active   = $request->is_active??'';
         $faq->save();
         return redirect()->back()
