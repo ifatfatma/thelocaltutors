@@ -29,6 +29,17 @@ class AppServiceProvider extends ServiceProvider
 
         // Self-healing schema check to ensure database tables in production have required columns
         try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('email_otps')) {
+                \Illuminate\Support\Facades\Schema::create('email_otps', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->string('email')->index();
+                    $table->string('otp', 10);
+                    $table->string('action', 32)->default('login');
+                    $table->timestamp('expires_at');
+                    $table->timestamp('verified_at')->nullable();
+                    $table->timestamps();
+                });
+            }
             if (\Illuminate\Support\Facades\Schema::hasTable('teacher_reviews') && !\Illuminate\Support\Facades\Schema::hasColumn('teacher_reviews', 'is_active')) {
                 \Illuminate\Support\Facades\Schema::table('teacher_reviews', function (\Illuminate\Database\Schema\Blueprint $table) {
                     $table->tinyInteger('is_active')->default(1)->index();

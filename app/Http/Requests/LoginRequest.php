@@ -3,16 +3,16 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Auth;
+
 class LoginRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
-    /* public function authorize(): bool
+    public function authorize(): bool
     {
-        return false;
-    } */
+        return true;
+    }
 
     /**
      * Get the validation rules that apply to the request.
@@ -22,8 +22,16 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_mobile'     => 'required|numeric|exists:users,mobile',
-            'user_password'   => 'required'
+            'user_mobile'     => 'required|string',
+            'user_password'   => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'user_mobile.required'   => 'Please enter your registered mobile number or email address.',
+            'user_password.required' => 'Please enter your password.',
         ];
     }
 }

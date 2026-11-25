@@ -6,53 +6,50 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
-
+use App\Services\OtpService;
+use App\Models\User;
+use App\Models\Teacher;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Auth;
 
-use App\Http\Controllers\Common;
-use Auth;
-
-use App\Models\User;
 class FrontAuthController extends Controller
 {
-    public function __construct(){
+    public function __construct()
+    {
         $this->middleware('guest', ['except' => 'getLogout']);
     }
-    //login
-    public function LoginPost(LoginRequest $request){
-        $remember = ($request->rememberme) ? true : false;
 
-        // attempt to do the login
-        $auth = Auth::attempt(
-            [
-                'mobile'   => $request->user_mobile,
-                'password' => $request->user_password  
-            ], $remember
-        );
+    /**
+     * Standard password login (supports email or mobile number).
+     */
+    public function LoginPost(LoginRequest $request)
+    {
+        $remember = (bool)$request->rememberme;
+        $loginInput = trim($request->user_mobile);
+        $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'mobile';
+
+        // Check user active status first
+        $userCheck = User::where($field, $loginInput)->first();
+        if ($userCheck && isset($userCheck->is_active) && (int)$userCheck->is_active === 0) {
+            return response()->json([
+                'message' => 'Your account is currently inactive. Please contact support.',
+            ], 403);
+        }
+
+        // Attempt login
+        $auth = Auth::attempt([
+            $field     => $loginInput,
+            'password' => $request->user_password,
+        ], $remember);
+
         if ($auth) {
-            // Save client latitude and longitude if provided in login
-            if (!empty($request->latitude) && !empty($request->longitude)) {
-                Session::put('latitude', (string)$request->latitude);
-                Session::put('longitude', (string)$request->longitude);
-                Cookie::queue('user_lat', (string)$request->latitude, 43200);
-                Cookie::queue('user_lng', (string)$request->longitude, 43200);
-            } else {
-                // If logged in as a teacher, retrieve their profile location
-                $teacherProfile = \App\Models\Teacher::where('user_id', Auth::id())->first();
-                if ($teacherProfile && !empty($teacherProfile->latitude) && !empty($teacherProfile->longitude)) {
-                    Session::put('latitude', (string)$teacherProfile->latitude);
-                    Session::put('longitude', (string)$teacherProfile->longitude);
-                    Cookie::queue('user_lat', (string)$teacherProfile->latitude, 43200);
-                    Cookie::queue('user_lng', (string)$teacherProfile->longitude, 43200);
-                }
-            }
+            $this->handlePostLoginLocation($request);
 
-            if($remember){
+            if ($remember) {
                 $minutes = 10080;
-                Cookie::queue('mobile', $request->user_mobile, $minutes);
-                Cookie::queue('password', $request->user_password, $minutes);
+                Cookie::queue('mobile', $loginInput, $minutes);
                 Cookie::queue('rememberme', 1, $minutes);
             }
 
@@ -61,16 +58,24 @@ class FrontAuthController extends Controller
             $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
 
             return response()->json([
-                'message' => 'Your login credentials are successfully verified. Please wait while redirecting...',
+                'success'      => true,
+                'message'      => 'Your login credentials are successfully verified. Please wait while redirecting...',
                 'redirect_url' => $redirectUrl,
-                'is_admin' => $isAdmin,
+                'is_admin'     => $isAdmin,
             ]);
-        } else {
-            return response()->json(['message' => 'Invalid login credentials'],400); 
         }
+
+        return response()->json([
+            'message' => 'Invalid email/mobile or password. Please check your credentials.',
+        ], 400);
     }
-    //register  
-    public function RegisterPost(RegisterRequest $request){
+
+    /**
+     * Register a new user (Student or Educator) capturing mobile and email.
+     * Activates account immediately without SMS blocking.
+     */
+    public function RegisterPost(RegisterRequest $request)
+    {
         if (!empty($request->latitude) && !empty($request->longitude)) {
             Session::put('latitude', (string)$request->latitude);
             Session::put('longitude', (string)$request->longitude);
@@ -78,36 +83,192 @@ class FrontAuthController extends Controller
             Cookie::queue('user_lng', (string)$request->longitude, 43200);
         }
 
-        $user = new User;
-        $user->name      = $request->name??'';
-        $user->mobile    = $request->mobile??'';
-        $user->username  = $request->mobile??'';
+        $email = strtolower(trim($request->email));
+        $mobile = trim($request->mobile);
+
+        $user = new User();
+        $user->name      = trim($request->name);
+        $user->email     = $email;
+        $user->mobile    = $mobile;
+        $user->username  = $email;
         $user->password  = Hash::make($request->password);
-        $user->type      = $request->usertype??'';
-        $user->is_active = 0;
-        $user->save(); 
-        $to = $request->mobile;
-        $otp = rand(1234,9876);
-        Session::put('session_otp',$otp);
-        Session::put('session_mobile',$request->mobile);
-        Common::sendOTP($to,$otp);
-        return response()->json(['message' => 'An OTP has been sent to your registered mobile number('.Common::maskNumber($request->mobile).').Please verify your account.-'.Session::get('session_otp')]);
+        $user->type      = $request->usertype;
+        $user->is_active = 1; // Active immediately
+        $user->save();
+
+        // Create teacher profile if educator
+        if ($user->type === 'teacher') {
+            Teacher::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'name'      => $user->name,
+                    'email'     => $user->email,
+                    'mobile'    => $user->mobile,
+                    'latitude'  => $request->latitude ?? null,
+                    'longitude' => $request->longitude ?? null,
+                    'status'    => 'active',
+                ]
+            );
+        }
+
+        // Auto login the newly registered user
+        Auth::login($user);
+
+        $isAdmin = ($user->type === 'admin');
+        $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Account created successfully! Welcome to The Local Tutors.',
+            'redirect_url' => $redirectUrl,
+        ]);
     }
 
-    public function RegisterPostOtp(Request $request){
-        if(!empty($request->first) || !empty($request->second) || !empty($request->third) || !empty($request->fourth)){
-        $myotp = $request->first.$request->second.$request->third.$request->fourth;
-        if(!empty(Session::get('session_otp')) && Session::get('session_otp')==$myotp){
-            $user = User::where('mobile',Session::get('session_mobile'))->first();
-            $user->is_active = 1;
-            $user->save();
-            Session::put('session_otp','');
-            return response()->json(['code'=>200,'message' => 'Your account is verified successfully.']);
-        }else{
-            return response()->json(['code'=>400,'message' => 'Invalid OTP'],422);
+    /**
+     * Send OTP to email for Login.
+     */
+    public function SendEmailOtp(Request $request)
+    {
+        $request->validate([
+            'email'  => 'required|email',
+            'action' => 'nullable|string|in:login,reset_password',
+        ]);
+
+        $action = $request->input('action', 'login');
+        $result = OtpService::generateAndSendOtp($request->email, $action);
+
+        return response()->json($result, $result['status'] ?? 200);
+    }
+
+    /**
+     * Verify Email OTP and log the user in.
+     */
+    public function VerifyLoginOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|string|size:6',
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $otp = trim($request->otp);
+
+        $verify = OtpService::verifyOtp($email, $otp, 'login', true);
+
+        if (!$verify['success']) {
+            return response()->json($verify, 422);
         }
-        }else{
-            return response()->json(['code'=>400,'message' => 'Invalid OTP'],422);
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No registered user found with this email.',
+            ], 404);
+        }
+
+        if (isset($user->is_active) && (int)$user->is_active === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is currently inactive.',
+            ], 403);
+        }
+
+        Auth::login($user, (bool)$request->rememberme);
+        $this->handlePostLoginLocation($request);
+
+        $isAdmin = ($user->type === 'admin' || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('Super Admin'))));
+        $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Signed in successfully! Redirecting...',
+            'redirect_url' => $redirectUrl,
+            'is_admin'     => $isAdmin,
+        ]);
+    }
+
+    /**
+     * Send OTP for Forgot Password.
+     */
+    public function ForgotPasswordSendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $result = OtpService::generateAndSendOtp($request->email, 'reset_password');
+
+        return response()->json($result, $result['status'] ?? 200);
+    }
+
+    /**
+     * Reset password using verified 6-digit Email OTP.
+     */
+    public function ResetPasswordWithOtp(Request $request)
+    {
+        $request->validate([
+            'email'                 => 'required|email',
+            'otp'                   => 'required|string|size:6',
+            'password'              => 'required|min:6|confirmed',
+            'password_confirmation' => 'required',
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $otp = trim($request->otp);
+
+        $verify = OtpService::verifyOtp($email, $otp, 'reset_password', true);
+
+        if (!$verify['success']) {
+            return response()->json($verify, 422);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No account found with this email.',
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your password has been reset successfully. You can now sign in with your new password.',
+        ]);
+    }
+
+    /**
+     * Backward-compatible stub for legacy RegisterPostOtp if still invoked anywhere.
+     */
+    public function RegisterPostOtp(Request $request)
+    {
+        return response()->json([
+            'code'    => 200,
+            'message' => 'Your account is verified successfully.',
+        ]);
+    }
+
+    /**
+     * Helper to synchronize latitude & longitude on successful login.
+     */
+    private function handlePostLoginLocation(Request $request): void
+    {
+        if (!empty($request->latitude) && !empty($request->longitude)) {
+            Session::put('latitude', (string)$request->latitude);
+            Session::put('longitude', (string)$request->longitude);
+            Cookie::queue('user_lat', (string)$request->latitude, 43200);
+            Cookie::queue('user_lng', (string)$request->longitude, 43200);
+        } else {
+            $teacherProfile = Teacher::where('user_id', Auth::id())->first();
+            if ($teacherProfile && !empty($teacherProfile->latitude) && !empty($teacherProfile->longitude)) {
+                Session::put('latitude', (string)$teacherProfile->latitude);
+                Session::put('longitude', (string)$teacherProfile->longitude);
+                Cookie::queue('user_lat', (string)$teacherProfile->latitude, 43200);
+                Cookie::queue('user_lng', (string)$teacherProfile->longitude, 43200);
+            }
         }
     }
 }

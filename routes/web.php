@@ -148,6 +148,12 @@ Route::post('/RegisterPost',[FrontAuthController::class, 'RegisterPost'])->name(
 Route::post('/RegisterPostOtp',[FrontAuthController::class, 'RegisterPostOtp'])->name('front.RegisterPostOtp');
 Route::post('/LoginPost',[FrontAuthController::class, 'LoginPost'])->name('front.LoginPost');
 
+// Email OTP Authentication & Password Recovery Routes
+Route::post('/auth/email-otp/send', [FrontAuthController::class, 'SendEmailOtp'])->name('front.email_otp.send');
+Route::post('/auth/email-otp/login', [FrontAuthController::class, 'VerifyLoginOtp'])->name('front.email_otp.login');
+Route::post('/auth/forgot-password/send-otp', [FrontAuthController::class, 'ForgotPasswordSendOtp'])->name('front.forgot_password.send_otp');
+Route::post('/auth/forgot-password/reset', [FrontAuthController::class, 'ResetPasswordWithOtp'])->name('front.forgot_password.reset');
+
 Route::group(['middleware'=>'auth'],function(){
     
     Route::get('/searchhistory/result/{id}',[FrontController::class, 'showsearchresult'])->name('front.show.search');
