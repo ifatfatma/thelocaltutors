@@ -347,173 +347,165 @@ export default function TeacherCard({
                             {isModal ? (
                                 <div className="d-flex flex-column gap-2">
                                     {/* Qualification */}
-                                    <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-start gap-2">
                                         <div
-                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '28px', height: '28px', backgroundColor: '#0284c7' }}
                                         >
-                                            <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.85rem' }}></i>
+                                            <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.82rem' }}></i>
                                         </div>
-                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                                Qualification:
-                                            </span>
-                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.84rem', lineHeight: '1.4' }}>
+                                            <span className="fw-bold text-dark me-1">Qualification:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {qualification}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Subjects */}
-                                    <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-start gap-2">
                                         <div
-                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '28px', height: '28px', backgroundColor: '#0284c7' }}
                                         >
-                                            <i className="bi bi-book-fill" style={{ fontSize: '0.85rem' }}></i>
+                                            <i className="bi bi-book-fill" style={{ fontSize: '0.82rem' }}></i>
                                         </div>
-                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                                Subjects:
-                                            </span>
-                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.84rem', lineHeight: '1.4' }}>
+                                            <span className="fw-bold text-dark me-1">Subjects:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {subjects}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Board */}
-                                    <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-start gap-2">
                                         <div
-                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '28px', height: '28px', backgroundColor: '#0284c7' }}
                                         >
-                                            <i className="bi bi-layers-fill" style={{ fontSize: '0.85rem' }}></i>
+                                            <i className="bi bi-layers-fill" style={{ fontSize: '0.82rem' }}></i>
                                         </div>
-                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                                Board:
-                                            </span>
-                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.84rem', lineHeight: '1.4' }}>
+                                            <span className="fw-bold text-dark me-1">Board:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {boards}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Mode */}
-                                    <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-start gap-2">
                                         <div
-                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '28px', height: '28px', backgroundColor: '#0284c7' }}
                                         >
-                                            <i className="bi bi-display" style={{ fontSize: '0.85rem' }}></i>
+                                            <i className="bi bi-display" style={{ fontSize: '0.82rem' }}></i>
                                         </div>
-                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                                Mode:
-                                            </span>
-                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.84rem', lineHeight: '1.4' }}>
+                                            <span className="fw-bold text-dark me-1">Mode:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {mode}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Timings */}
-                                    <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-start gap-2">
                                         <div
-                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs"
-                                            style={{ width: '30px', height: '30px', backgroundColor: '#0284c7' }}
+                                            className="rounded-3 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '28px', height: '28px', backgroundColor: '#0284c7' }}
                                         >
-                                            <i className="bi bi-clock-fill" style={{ fontSize: '0.85rem' }}></i>
+                                            <i className="bi bi-clock-fill" style={{ fontSize: '0.82rem' }}></i>
                                         </div>
-                                        <div className="d-flex align-items-baseline flex-grow-1 min-w-0" style={{ fontSize: '0.84rem' }}>
-                                            <span className="fw-bold text-dark flex-shrink-0" style={{ minWidth: '95px' }}>
-                                                Timings:
-                                            </span>
-                                            <span className="text-secondary fw-semibold ms-1" style={{ lineHeight: 1.35 }}>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.84rem', lineHeight: '1.4' }}>
+                                            <span className="fw-bold text-dark me-1">Timings:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {timings}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                /* Compact 2-column layout for standard card height */
-                                <div className="row g-2 align-items-center">
-                                    <div className="col-12 col-sm-6">
-                                        <div className="d-flex flex-column gap-2">
-                                            {/* Qualification */}
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
-                                                >
-                                                    <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.78rem' }}></i>
-                                                </div>
-                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
-                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Qualification</span>
-                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={qualification}>{qualification}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Subjects */}
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
-                                                >
-                                                    <i className="bi bi-book-fill" style={{ fontSize: '0.78rem' }}></i>
-                                                </div>
-                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
-                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Subjects</span>
-                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={subjects}>{subjects}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Board */}
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
-                                                >
-                                                    <i className="bi bi-layers-fill" style={{ fontSize: '0.78rem' }}></i>
-                                                </div>
-                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
-                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Board</span>
-                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={boards}>{boards}</span>
-                                                </div>
-                                            </div>
+                                /* Clean single-column layout with word wrapping (prevents overlapping) */
+                                <div className="d-flex flex-column gap-2 py-1">
+                                    {/* Qualification */}
+                                    <div className="d-flex align-items-start gap-2">
+                                        <div
+                                            className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '24px', height: '24px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-mortarboard-fill" style={{ fontSize: '0.74rem' }}></i>
+                                        </div>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.80rem', lineHeight: '1.35' }}>
+                                            <span className="fw-bold text-dark me-1">Qualification:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                                {qualification}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div className="col-12 col-sm-6">
-                                        <div className="d-flex flex-column gap-2">
-                                            {/* Mode */}
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
-                                                >
-                                                    <i className="bi bi-display" style={{ fontSize: '0.78rem' }}></i>
-                                                </div>
-                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
-                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Mode</span>
-                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={mode}>{mode}</span>
-                                                </div>
-                                            </div>
+                                    {/* Subjects */}
+                                    <div className="d-flex align-items-start gap-2">
+                                        <div
+                                            className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '24px', height: '24px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-book-fill" style={{ fontSize: '0.74rem' }}></i>
+                                        </div>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.80rem', lineHeight: '1.35' }}>
+                                            <span className="fw-bold text-dark me-1">Subjects:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                                {subjects}
+                                            </span>
+                                        </div>
+                                    </div>
 
-                                            {/* Timings */}
-                                            <div className="d-flex align-items-center gap-2">
-                                                <div
-                                                    className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0"
-                                                    style={{ width: '26px', height: '26px', backgroundColor: '#0284c7' }}
-                                                >
-                                                    <i className="bi bi-clock-fill" style={{ fontSize: '0.78rem' }}></i>
-                                                </div>
-                                                <div className="min-w-0" style={{ fontSize: '0.80rem' }}>
-                                                    <span className="fw-bold text-dark d-block lh-1 mb-0" style={{ fontSize: '0.74rem' }}>Timings</span>
-                                                    <span className="text-secondary fw-semibold text-truncate d-block" title={timings}>{timings}</span>
-                                                </div>
-                                            </div>
+                                    {/* Board */}
+                                    <div className="d-flex align-items-start gap-2">
+                                        <div
+                                            className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '24px', height: '24px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-layers-fill" style={{ fontSize: '0.74rem' }}></i>
+                                        </div>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.80rem', lineHeight: '1.35' }}>
+                                            <span className="fw-bold text-dark me-1">Board:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                                {boards}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Mode */}
+                                    <div className="d-flex align-items-start gap-2">
+                                        <div
+                                            className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '24px', height: '24px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-display" style={{ fontSize: '0.74rem' }}></i>
+                                        </div>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.80rem', lineHeight: '1.35' }}>
+                                            <span className="fw-bold text-dark me-1">Mode:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                                {mode}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Timings */}
+                                    <div className="d-flex align-items-start gap-2">
+                                        <div
+                                            className="rounded-2 d-flex align-items-center justify-content-center text-white flex-shrink-0 mt-1 shadow-2xs"
+                                            style={{ width: '24px', height: '24px', backgroundColor: '#0284c7' }}
+                                        >
+                                            <i className="bi bi-clock-fill" style={{ fontSize: '0.74rem' }}></i>
+                                        </div>
+                                        <div className="flex-grow-1 min-w-0" style={{ fontSize: '0.80rem', lineHeight: '1.35' }}>
+                                            <span className="fw-bold text-dark me-1">Timings:</span>
+                                            <span className="text-secondary fw-semibold" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                                {timings}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
