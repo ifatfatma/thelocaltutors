@@ -85,6 +85,7 @@ class FrontAuthController extends Controller
 
         $email = strtolower(trim($request->email));
         $mobile = trim($request->mobile);
+        $isMobileOtp = ($request->verification_mode === 'mobile_otp');
 
         $user = new User();
         $user->name      = trim($request->name);
@@ -93,7 +94,7 @@ class FrontAuthController extends Controller
         $user->username  = $email;
         $user->password  = Hash::make($request->password);
         $user->type      = $request->usertype;
-        $user->is_active = 1; // Active immediately
+        $user->is_active = $isMobileOtp ? 0 : 1;
         $user->save();
 
         // Create teacher profile if educator
@@ -111,7 +112,24 @@ class FrontAuthController extends Controller
             );
         }
 
-        // Auto login the newly registered user
+        // If user chose Mobile OTP verification
+        if ($isMobileOtp) {
+            $otp = rand(1000, 9999);
+            Session::put('session_otp', (string)$otp);
+            Session::put('session_mobile', $user->mobile);
+            \App\Http\Controllers\Common::sendOTP($user->mobile, $otp);
+
+            return response()->json([
+                'success'       => true,
+                'otp_sent'      => true,
+                'mobile'        => $user->mobile,
+                'masked_mobile' => \App\Http\Controllers\Common::maskNumber($user->mobile),
+                'message'       => 'A 4-digit verification code has been sent to your mobile number (' . \App\Http\Controllers\Common::maskNumber($user->mobile) . '). Please verify your account.',
+                'dev_otp'       => config('app.debug') ? $otp : null,
+            ]);
+        }
+
+        // Instant registration - auto login
         Auth::login($user);
 
         $isAdmin = ($user->type === 'admin');
@@ -241,13 +259,59 @@ class FrontAuthController extends Controller
     }
 
     /**
-     * Backward-compatible stub for legacy RegisterPostOtp if still invoked anywhere.
+     * Verify Mobile OTP during registration.
      */
     public function RegisterPostOtp(Request $request)
     {
+        $myotp = trim($request->otp ?? ($request->first . $request->second . $request->third . $request->fourth));
+        $sessionOtp = Session::get('session_otp');
+        $sessionMobile = Session::get('session_mobile') ?? $request->mobile;
+
+        if (!empty($sessionOtp) && (string)$sessionOtp === (string)$myotp) {
+            $user = User::where('mobile', $sessionMobile)->first();
+            if ($user) {
+                $user->is_active = 1;
+                $user->save();
+                Auth::login($user);
+            }
+            Session::forget('session_otp');
+            Session::forget('session_mobile');
+
+            $isAdmin = ($user && $user->type === 'admin');
+            $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
+
+            return response()->json([
+                'code'         => 200,
+                'success'      => true,
+                'message'      => 'Mobile number verified successfully! Redirecting...',
+                'redirect_url' => $redirectUrl,
+            ]);
+        }
+
         return response()->json([
-            'code'    => 200,
-            'message' => 'Your account is verified successfully.',
+            'code'    => 400,
+            'message' => 'Invalid verification code. Please check the 4-digit code and try again.',
+        ], 422);
+    }
+
+    /**
+     * Resend 4-digit Mobile OTP during registration.
+     */
+    public function ResendRegisterOtp(Request $request)
+    {
+        $sessionMobile = Session::get('session_mobile') ?? $request->mobile;
+        if (!$sessionMobile) {
+            return response()->json(['message' => 'Session expired. Please register again.'], 400);
+        }
+
+        $otp = rand(1000, 9999);
+        Session::put('session_otp', (string)$otp);
+        \App\Http\Controllers\Common::sendOTP($sessionMobile, $otp);
+
+        return response()->json([
+            'success'       => true,
+            'message'       => 'A new 4-digit OTP has been sent to ' . \App\Http\Controllers\Common::maskNumber($sessionMobile) . '.',
+            'dev_otp'       => config('app.debug') ? $otp : null,
         ]);
     }
 

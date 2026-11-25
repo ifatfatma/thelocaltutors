@@ -146,6 +146,7 @@ Route::get('/login',[FrontController::class, 'login'])->name('front.login');
 Route::get('/register',[FrontController::class, 'register'])->name('front.register');
 Route::post('/RegisterPost',[FrontAuthController::class, 'RegisterPost'])->name('front.RegisterPost');
 Route::post('/RegisterPostOtp',[FrontAuthController::class, 'RegisterPostOtp'])->name('front.RegisterPostOtp');
+Route::post('/auth/register-mobile-otp/resend', [FrontAuthController::class, 'ResendRegisterOtp'])->name('front.register_otp.resend');
 Route::post('/LoginPost',[FrontAuthController::class, 'LoginPost'])->name('front.LoginPost');
 
 // Email OTP Authentication & Password Recovery Routes
