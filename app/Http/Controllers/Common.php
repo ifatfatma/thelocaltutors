@@ -167,29 +167,29 @@ class Common extends Controller
    }
    return $txt;
   }
-    public static function sendOTP($to,$otp){
-      $endpoint = "http://server.bulksmsserver.in/smsserver/?userid=&userpassword=Creation123&phonenumber=".$to."&text=your+OTP+is+".$otp;
-      $client = new \GuzzleHttp\Client();
-      $userid = "creationotp";
-      $userpassword = "Creation123";
-      $phonenumber = $to;
-      $text = "your+OTP+is+".$otp;
+    public static function sendOTP($to, $otp) {
+        try {
+            $endpoint = "http://server.bulksmsserver.in/smsserver/";
+            $client = new \GuzzleHttp\Client(['timeout' => 5]);
+            $userid = "creationotp";
+            $userpassword = "Creation123";
+            $phonenumber = $to;
+            $text = "your+OTP+is+" . $otp;
 
-      
-      $response = $client->request('GET', $endpoint, ['query' => [
-          'userid' => $userid, 
-          'userpassword'  => $userpassword,
-          'userpassword'  => $userpassword,
-          'phonenumber'   => $phonenumber,
-          'text'          => $text,
-      ]]);
-      
-      
-      $statusCode = $response->getStatusCode();
-      $content = $response->getBody();
-      
-      Log::info($content.'|'.$phonenumber);
-      return true;
+            $response = $client->request('GET', $endpoint, ['query' => [
+                'userid'       => $userid, 
+                'userpassword' => $userpassword,
+                'phonenumber'  => $phonenumber,
+                'text'         => $text,
+            ]]);
+
+            $content = (string)$response->getBody();
+            \Illuminate\Support\Facades\Log::info("SMS OTP dispatched to {$phonenumber}: {$content} | Code: {$otp}");
+            return true;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("BulkSMS Error for {$to}: " . $e->getMessage() . " | OTP: {$otp}");
+            return false;
+        }
     }
 
     //masked any number
