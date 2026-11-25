@@ -263,6 +263,8 @@ class TeacherCourseController extends Controller
         $statusStr = $course->is_active ? 'Active & Published' : 'Draft / Paused';
         return redirect()->route('front.dashboard.courses')
             ->with('success', "Course status changed to {$statusStr}.");
+    }
+
     /**
      * Teacher portal: Update student enrollment status (accepted, completed, canceled)
      */
