@@ -169,6 +169,7 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::post('/dashboard/courses/{id}/update', [TeacherCourseController::class, 'update'])->name('front.dashboard.courses.update');
     Route::delete('/dashboard/courses/{id}', [TeacherCourseController::class, 'destroy'])->name('front.dashboard.courses.destroy');
     Route::post('/dashboard/courses/{id}/toggle', [TeacherCourseController::class, 'toggleStatus'])->name('front.dashboard.courses.toggle');
+    Route::post('/dashboard/courses/enrollment/{id}/status', [TeacherCourseController::class, 'updateEnrollmentStatus'])->name('front.dashboard.courses.enrollment.status');
     Route::post('ChangePasswordPost',[FontDashboardController::class,'ChangePasswordPost'])->name('front.changepassword.post'); 
     Route::post('/logout',[FontDashboardController::class, 'logout'])->name('front.logout');
 

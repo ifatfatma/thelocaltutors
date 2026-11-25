@@ -166,7 +166,11 @@ export default function AllCourse({ courses, categories = [] }) {
                                                         <span className="fw-bold text-primary fs-5">
                                                             {course.price ? `₹${Number(course.price).toLocaleString('en-IN')}` : 'Free'}
                                                         </span>
-                                                        {course.price > 0 && <span className="text-muted small">/ month</span>}
+                                                        {course.price > 0 && (
+                                                            <span className="text-muted small">
+                                                                {course.price_type === 'per_month' ? '/ month' : ''}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <span className="badge badge-soft-success text-success small d-inline-block mt-1">
                                                         <i className="bi bi-patch-check me-1"></i>Trial Class Available

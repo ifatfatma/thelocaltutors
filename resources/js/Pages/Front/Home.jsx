@@ -1131,7 +1131,11 @@ export default function Home({
                                                             <span className="fw-bold text-primary fs-5">
                                                                 {course.price > 0 ? `₹${Number(course.price).toLocaleString('en-IN')}` : 'Free'}
                                                             </span>
-                                                            {course.price > 0 && <span className="text-muted small">/ month</span>}
+                                                            {course.price > 0 && (
+                                                                <span className="text-muted small">
+                                                                    {course.price_type === 'per_month' ? '/ month' : ''}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <Link href={`/course_details/${course.id}/${course.slug || 'detail'}`} className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold">

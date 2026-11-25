@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import IndiaLocationSelector from '../../../Components/IndiaLocationSelector';
+import MapLocationPicker from '../../../components/MapLocationPicker';
 import axios from 'axios';
 
 export default function UpdateMore({
@@ -291,49 +292,18 @@ export default function UpdateMore({
 
                         <div className="col-12 mt-2">
                             <div className="p-3 bg-light rounded-3 border">
-                                <div className="d-flex justify-content-between align-items-center mb-2">
-                                    <label className="form-label fw-bold mb-0">Serving GPS Coordinates (Latitude / Longitude)</label>
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-primary"
-                                        onClick={handleDetectLocation}
-                                        disabled={detectingLocation}
-                                    >
-                                        {detectingLocation ? 'Detecting...' : '📍 Detect Current Location'}
-                                    </button>
-                                </div>
-                                <div className="row g-2">
-                                    <div className="col-md-6">
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            placeholder="Latitude (e.g. 22.545120)"
-                                            value={form.latitude}
-                                            onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="col-md-6">
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm"
-                                            placeholder="Longitude (e.g. 88.305430)"
-                                            value={form.longitude}
-                                            onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                {form.latitude && form.longitude && (
-                                    <div className="mt-2 text-end">
-                                        <a
-                                            href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="small text-decoration-none"
-                                        >
-                                            View on Google Maps &rarr;
-                                        </a>
-                                    </div>
-                                )}
+                                <label className="form-label fw-bold mb-2 d-flex align-items-center gap-1">
+                                    <i className="bi bi-geo-alt-fill text-primary"></i>
+                                    Serving GPS Coordinates &amp; Interactive Map Location
+                                </label>
+                                <MapLocationPicker
+                                    latitude={form.latitude}
+                                    longitude={form.longitude}
+                                    onChange={({ lat, lng }) => setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+                                    stateName={form.state}
+                                    cityName={form.city}
+                                    height="300px"
+                                />
                             </div>
                         </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import IndiaLocationSelector from '../../Components/IndiaLocationSelector';
+import MapLocationPicker from '../../components/MapLocationPicker';
 import axios from 'axios';
 
 export default function EditProfile({
@@ -391,53 +392,26 @@ export default function EditProfile({
                                         pincodeLabel="PIN Code (6 digits)"
                                     />
 
-                                    {/* Geolocation / GPS Coordinates */}
+                                    {/* Interactive Map Picker & GPS Coordinates */}
                                     <div className="mt-4 pt-3 border-top">
-                                        <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                                            <div>
-                                                <span className="fw-bold small text-dark d-block">
-                                                    <i className="bi bi-crosshair text-primary me-1"></i>Proximity Matching Coordinates (Optional)
-                                                </span>
-                                                <span className="text-muted small">
-                                                    Enables "Near Me" radius matching for students within 1–15 km of your location.
-                                                </span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-primary btn-sm rounded-pill px-3"
-                                                onClick={handleDetectServingLocation}
-                                                disabled={detectingLocation}
-                                            >
-                                                {detectingLocation ? 'Detecting GPS...' : 'Use Current Location'}
-                                            </button>
+                                        <div className="mb-3">
+                                            <span className="fw-bold text-dark d-flex align-items-center gap-2 mb-1">
+                                                <i className="bi bi-map-fill text-primary"></i>
+                                                <span>Interactive Tutoring Location &amp; Map Coordinates</span>
+                                            </span>
+                                            <p className="text-secondary small mb-0">
+                                                Pin your exact location on the map below or click <strong>"Use My Current Location"</strong>. Parents and students will be able to easily locate and track you for home tuition or nearby classroom batches.
+                                            </p>
                                         </div>
 
-                                        {locationStatus.text && (
-                                            <div className={`alert alert-${locationStatus.type} py-2 px-3 small mb-2`}>
-                                                {locationStatus.text}
-                                            </div>
-                                        )}
-
-                                        <div className="row g-2">
-                                            <div className="col-sm-6">
-                                                <input
-                                                    type="text"
-                                                    className="form-control form-control-sm bg-white"
-                                                    placeholder="Latitude (e.g. 22.545120)"
-                                                    value={form.latitude}
-                                                    onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                                                />
-                                            </div>
-                                            <div className="col-sm-6">
-                                                <input
-                                                    type="text"
-                                                    className="form-control form-control-sm bg-white"
-                                                    placeholder="Longitude (e.g. 88.305430)"
-                                                    value={form.longitude}
-                                                    onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
+                                        <MapLocationPicker
+                                            latitude={form.latitude}
+                                            longitude={form.longitude}
+                                            onChange={({ lat, lng }) => setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+                                            stateName={form.state}
+                                            cityName={form.city}
+                                            height="360px"
+                                        />
                                     </div>
                                 </div>
 

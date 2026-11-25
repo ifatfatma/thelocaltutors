@@ -42,10 +42,18 @@ class TeacherCourseController extends Controller
         $allTeacherCourses = Course::where('teacher_id', $userId)->get();
         $totalCourses = $allTeacherCourses->count();
         $activeCourses = $allTeacherCourses->where('is_active', 1)->count();
-        $totalEnrollments = enrollCourse::whereIn('course_id', $allTeacherCourses->pluck('id'))->count();
+        $allCourseIds = $allTeacherCourses->pluck('id');
+        $totalEnrollments = enrollCourse::whereIn('course_id', $allCourseIds)->count();
+
+        // Retrieve full list of students enrolled in this teacher's courses
+        $enrolledStudents = enrollCourse::whereIn('course_id', $allCourseIds)
+            ->with(['user', 'course'])
+            ->latest('id')
+            ->get();
 
         return Inertia::render('Dashboard/TeacherCourses', [
             'courses' => $courses,
+            'enrolledStudents' => $enrolledStudents,
             'categories' => $categories,
             'subjects' => $subjects,
             'teacher' => $teacher,
@@ -115,6 +123,7 @@ class TeacherCourseController extends Controller
 
         $course->name = trim($request->name);
         $course->price = (float)$request->price;
+        $course->price_type = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         $course->duration = trim($request->duration ?? '');
         $course->teacher_id = $userId;
         $course->category_id = $request->category_id ?: 0;
@@ -194,6 +203,7 @@ class TeacherCourseController extends Controller
 
         $course->name = trim($request->name);
         $course->price = (float)$request->price;
+        $course->price_type = $request->price_type === 'per_month' ? 'per_month' : 'one_time';
         $course->duration = trim($request->duration ?? '');
         $course->category_id = $request->category_id ?: 0;
 
@@ -253,5 +263,20 @@ class TeacherCourseController extends Controller
         $statusStr = $course->is_active ? 'Active & Published' : 'Draft / Paused';
         return redirect()->route('front.dashboard.courses')
             ->with('success', "Course status changed to {$statusStr}.");
+    /**
+     * Teacher portal: Update student enrollment status (accepted, completed, canceled)
+     */
+    public function updateEnrollmentStatus(Request $request, $id)
+    {
+        $userId = Auth::id();
+        $allTeacherCourseIds = Course::where('teacher_id', $userId)->pluck('id');
+        $enrollment = enrollCourse::whereIn('course_id', $allTeacherCourseIds)->findOrFail($id);
+        
+        if (in_array($request->status, ['pending', 'accepted', 'completed', 'canceled'])) {
+            $enrollment->status = $request->status;
+            $enrollment->save();
+        }
+
+        return redirect()->back()->with('success', 'Student enrollment status updated.');
     }
 }

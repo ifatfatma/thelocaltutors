@@ -27,7 +27,16 @@ export default function CourseDetails({ course_details, coursecategories = [], f
     const [inquirySuccess, setInquirySuccess] = useState('');
     const [inquiryError, setInquiryError] = useState('');
 
+    const [enrolling, setEnrolling] = useState(false);
+
     const handleEnroll = async () => {
+        if (!auth?.user) {
+            alert('Please login as a student to enroll in this course.');
+            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+            return;
+        }
+
+        setEnrolling(true);
         try {
             const res = await axios.get(`/enrollcourse/ajax?id=${course_details?.id}`);
             if (res.data.status === 200) {
@@ -37,6 +46,8 @@ export default function CourseDetails({ course_details, coursecategories = [], f
             }
         } catch (err) {
             alert('Please login to enroll in this course.');
+        } finally {
+            setEnrolling(false);
         }
     };
 
@@ -156,49 +167,39 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                             <div className="card-body p-4 p-md-5">
                                 <h3 className="fw-bold text-dark mb-3">About this Course &amp; Curriculum</h3>
                                 <div
-                                    className="text-secondary mb-4 fs-6 lh-lg"
-                                    dangerouslySetInnerHTML={{ __html: course_details.description || 'No detailed syllabus outline provided.' }}
+                                    className="course-description-content text-secondary mb-4 fs-6 lh-lg"
+                                    dangerouslySetInnerHTML={{ __html: course_details.description || '<p class="text-muted">No detailed syllabus outline provided.</p>' }}
                                 />
 
-                                {/* Highlights grid */}
-                                <div className="row g-3 my-4">
-                                    <div className="col-sm-6">
-                                        <div className="p-3 bg-light rounded-3 d-flex align-items-start gap-3">
-                                            <i className="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 className="fw-bold text-dark mb-1">Tailored Learning Pace</h6>
-                                                <p className="text-muted small mb-0">Personalized attention addressing specific learning gaps.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-sm-6">
-                                        <div className="p-3 bg-light rounded-3 d-flex align-items-start gap-3">
-                                            <i className="bi bi-file-earmark-text-fill text-primary fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 className="fw-bold text-dark mb-1">Comprehensive Study Notes</h6>
-                                                <p className="text-muted small mb-0">Chapter-wise question banks and board paper solutions.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-sm-6">
-                                        <div className="p-3 bg-light rounded-3 d-flex align-items-start gap-3">
-                                            <i className="bi bi-graph-up-arrow text-info fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 className="fw-bold text-dark mb-1">Weekly Mock Assessments</h6>
-                                                <p className="text-muted small mb-0">Continuous evaluation with reports shared with parents.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-sm-6">
-                                        <div className="p-3 bg-light rounded-3 d-flex align-items-start gap-3">
-                                            <i className="bi bi-chat-heart-fill text-danger fs-5 mt-1"></i>
-                                            <div>
-                                                <h6 className="fw-bold text-dark mb-1">Bilingual Doubt Clearing</h6>
-                                                <p className="text-muted small mb-0">Explanations in English, Bengali, or Hindi as preferred.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <style>{`
+                                    .course-description-content h1, 
+                                    .course-description-content h2, 
+                                    .course-description-content h3,
+                                    .course-description-content h4 {
+                                        color: #0f172a;
+                                        font-weight: 700;
+                                        margin-top: 1.5rem;
+                                        margin-bottom: 0.75rem;
+                                    }
+                                    .course-description-content ul, 
+                                    .course-description-content ol {
+                                        padding-left: 1.5rem;
+                                        margin-bottom: 1rem;
+                                    }
+                                    .course-description-content li {
+                                        margin-bottom: 0.35rem;
+                                    }
+                                    .course-description-content blockquote {
+                                        border-left: 4px solid #0284c7;
+                                        padding-left: 1rem;
+                                        font-style: italic;
+                                        color: #475569;
+                                        margin: 1rem 0;
+                                    }
+                                    .course-description-content p {
+                                        margin-bottom: 0.85rem;
+                                    }
+                                `}</style>
 
                                 {course_details.youtube_url && (
                                     <div className="my-4">
@@ -332,11 +333,15 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                     <div className="col-lg-4">
                         <div className="card card-modern p-4 sticky-top" style={{ top: '90px' }}>
                             <div className="text-center mb-3">
-                                <span className="text-muted small text-uppercase fw-semibold d-block mb-1">Monthly Tuition Fee</span>
+                                <span className="text-muted small text-uppercase fw-semibold d-block mb-1">
+                                    {course_details.price_type === 'per_month' ? 'Monthly Tuition Fee' : 'Course Fee'}
+                                </span>
                                 <h2 className="fw-bold text-primary display-6 mb-0">
                                     {course_details.price ? `₹${Number(course_details.price).toLocaleString('en-IN')}` : 'Free'}
                                 </h2>
-                                <span className="text-muted small">per student / month</span>
+                                <span className="text-muted small">
+                                    {course_details.price_type === 'per_month' ? 'per student / month' : 'one-time complete fee'}
+                                </span>
                             </div>
 
                             <div className="text-center mb-4">
@@ -360,9 +365,17 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                                 </button>
                                 <button
                                     onClick={handleEnroll}
+                                    disabled={enrolling}
                                     className="btn btn-outline-primary py-2 fw-semibold"
                                 >
-                                    Instant Enroll
+                                    {enrolling ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2"></span>
+                                            Enrolling...
+                                        </>
+                                    ) : (
+                                        'Instant Enroll'
+                                    )}
                                 </button>
                             </div>
 
