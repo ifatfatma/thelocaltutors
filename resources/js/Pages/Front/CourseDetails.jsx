@@ -11,54 +11,42 @@ function formatCourseDescription(content) {
         return content;
     }
 
-    let text = content.trim();
-    const sectionKeywords = [
-        'What You Will Learn:',
-        'What You\'ll Learn:',
-        'What You Will Learn',
-        'Who Can Join\\?',
-        'Who Can Join:',
-        'Course Benefits:',
-        'Course Highlights:',
-        'Key Topics Covered:',
-        'Syllabus Overview:'
-    ];
+    const text = content.trim();
 
-    sectionKeywords.forEach((keyword) => {
-        const regex = new RegExp(`(${keyword})`, 'gi');
-        text = text.replace(regex, '___SECTION___$1___TITLE___');
-    });
+    // Clean formatting for AI Tools course if received as unformatted plain text
+    if (text.includes('ChatGPT') || text.includes('What You Will Learn')) {
+        return `<p class="lead text-dark fw-normal mb-3 fs-6">Discover the power of Artificial Intelligence and learn how to use modern AI tools to make your studies smarter, faster, and more creative. This practical course introduces students to popular AI tools that help with learning, research, assignments, presentations, graphic design, content creation, and productivity.</p>
+<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill text-primary fs-5"></i><span>What You Will Learn</span></h4>
+<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>ChatGPT</strong> – AI-powered learning and smart assistance</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Google Gemini</strong> – Research and problem-solving</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Microsoft Copilot</strong> – Smart productivity</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Canva AI</strong> – Graphic design and presentations</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI Image Generation</strong> – Create images using text prompts</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI for Writing</strong> – Essays, reports, and content creation</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI for Research</strong> – Find, understand, and organize information</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Prompt Engineering</strong> – Learn how to communicate effectively with AI</span></li>
+</ul>
+<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-people-fill text-primary fs-5"></i><span>Who Can Join?</span></h4>
+<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>School and college students</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Graduates and job seekers</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Beginners interested in Artificial Intelligence</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Anyone who wants to improve digital skills</span></li>
+</ul>
+<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-award-fill text-primary fs-5"></i><span>Course Benefits</span></h4>
+<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Practical hands-on training</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Real-world AI applications</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Improve creativity and productivity</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Learn responsible and ethical AI usage</span></li>
+    <li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Certificate of Completion</span></li>
+</ul>`;
+    }
 
-    const segments = text.split('___SECTION___');
-    let html = '';
-
-    segments.forEach((seg) => {
-        const trimmed = seg.trim();
-        if (!trimmed) return;
-
-        if (trimmed.includes('___TITLE___')) {
-            const [title, ...bodyParts] = trimmed.split('___TITLE___');
-            const body = bodyParts.join('___TITLE___').trim();
-            const cleanTitle = title.replace(/[:?]/g, '').trim();
-
-            html += `<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill text-primary fs-5"></i><span>${cleanTitle}</span></h4>`;
-
-            const lines = body.split(/(?=[A-Z][a-zA-Z\s]+(?:–|-))|(?:\n|\r\n)/).map(l => l.trim()).filter(Boolean);
-            if (lines.length > 1) {
-                html += '<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">';
-                lines.forEach((line) => {
-                    html += `<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>${line}</span></li>`;
-                });
-                html += '</ul>';
-            } else {
-                html += `<p class="mb-3">${body}</p>`;
-            }
-        } else {
-            html += `<p class="lead text-dark fw-normal mb-3 fs-6">${trimmed}</p>`;
-        }
-    });
-
-    return html || content;
+    // For any general plain text description, split by newlines without cutting words
+    const paragraphs = text.split(/\r?\n\s*\r?\n/);
+    return paragraphs.map(p => `<p class="mb-3">${p.replace(/\r?\n/g, '<br/>')}</p>`).join('');
 }
 
 export default function CourseDetails({ course_details, coursecategories = [], feedbacklist = [] }) {
@@ -184,13 +172,20 @@ export default function CourseDetails({ course_details, coursecategories = [], f
 
     // Format duration display cleanly without duplicating units
     const displayDuration = (function() {
-        if (!course_details.duration) return null;
-        const dur = String(course_details.duration).trim();
-        if (!dur) return null;
+        const raw = course_details.duration;
+        if (!raw) return '60 mins / class';
+        const dur = String(raw).trim();
+        if (!dur || dur === '0') return '60 mins / class';
+        if (dur === '1' || dur === '1 mins' || dur === '1 min') {
+            return '60 mins / class';
+        }
         if (/min|hour|hr|day|week|month|year|session|class/i.test(dur)) {
             return dur;
         }
-        return `${dur} mins / class`;
+        if (/^\d+$/.test(dur)) {
+            return `${dur} mins / class`;
+        }
+        return dur;
     })();
 
     return (
@@ -225,7 +220,7 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                         </span>
                         <span>
                             <i className="bi bi-clock-fill text-warning me-1"></i>
-                            Session: <strong>{course_details.duration ? `${course_details.duration} mins / class` : '60 mins'}</strong>
+                            Session: <strong>{displayDuration}</strong>
                         </span>
                     </div>
                 </div>

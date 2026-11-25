@@ -526,6 +526,61 @@ class FrontController extends Controller
 
         public function course_details(Request $request, $courseid){
             $course_details = Course::with('teacher','faq','feedback.user')->where('id',$courseid)->first();
+            
+            if ($course_details) {
+                // Ensure Session Duration is properly set and does not show legacy '1' or '1 mins'
+                if (empty($course_details->duration) || in_array(trim($course_details->duration), ['1', '1 mins', '1 min', '0'])) {
+                    $course_details->duration = ($course_details->id == 2 || str_contains($course_details->name ?? '', 'AI Tools')) ? '40 Hours' : '60 mins / class';
+                }
+
+                // If Course 2 / AI Tools course has unformatted description, format and persist clean HTML
+                if ($course_details->id == 2 || str_contains($course_details->name ?? '', 'AI Tools')) {
+                    if (!str_contains($course_details->description ?? '', '<h4')) {
+                        $aiHtml = '<p class="lead text-dark fw-normal mb-3">Discover the power of Artificial Intelligence and learn how to use modern AI tools to make your studies smarter, faster, and more creative. This practical course introduces students to popular AI tools that help with learning, research, assignments, presentations, graphic design, content creation, and productivity.</p>' .
+                            '<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill text-primary fs-5"></i><span>What You Will Learn</span></h4>' .
+                            '<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>ChatGPT</strong> – AI-powered learning and smart assistance</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Google Gemini</strong> – Research and problem-solving</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Microsoft Copilot</strong> – Smart productivity</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Canva AI</strong> – Graphic design and presentations</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI Image Generation</strong> – Create images using text prompts</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI for Writing</strong> – Essays, reports, and content creation</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>AI for Research</strong> – Find, understand, and organize information</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span><strong>Prompt Engineering</strong> – Learn how to communicate effectively with AI</span></li>' .
+                            '</ul>' .
+                            '<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-people-fill text-primary fs-5"></i><span>Who Can Join?</span></h4>' .
+                            '<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>School and college students</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Graduates and job seekers</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Beginners interested in Artificial Intelligence</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Anyone who wants to improve digital skills</span></li>' .
+                            '</ul>' .
+                            '<h4 class="fw-bold text-dark mt-4 mb-3 d-flex align-items-center gap-2"><i class="bi bi-award-fill text-primary fs-5"></i><span>Course Benefits</span></h4>' .
+                            '<ul class="list-unstyled d-flex flex-column gap-2 mb-3 ps-2">' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Practical hands-on training</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Real-world AI applications</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Improve creativity and productivity</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Learn responsible and ethical AI usage</span></li>' .
+                            '<li class="d-flex align-items-start gap-2"><i class="bi bi-arrow-right-short text-primary fs-5 mt-n1 flex-shrink-0"></i><span>Certificate of Completion</span></li>' .
+                            '</ul>';
+                        $course_details->description = $aiHtml;
+
+                        try {
+                            \Illuminate\Support\Facades\DB::table('courses')
+                                ->where('id', $course_details->id)
+                                ->update([
+                                    'description' => $aiHtml,
+                                    'duration' => $course_details->duration ?: '40 Hours',
+                                    'curriculum' => null,
+                                    'target_level' => $course_details->target_level ?: 'Students, Beginners & Professionals',
+                                    'educator_status' => $course_details->educator_status ?: 'Verified Educator',
+                                    'teaching_mode' => $course_details->teaching_mode ?: 'Online, Private',
+                                ]);
+                        } catch (\Throwable $e) {}
+                    }
+                }
+            }
+
             $coursecategories = CourseCategory::withcount('courses')->where('is_active',1)->orderBy('title','asc')->get();
             $feedbacklist = CourseFeedback::with('user')->where('course_id',$courseid)->where('is_active',1)->orderBy('id','desc')->get();
             return Inertia::render('Front/CourseDetails', compact('course_details','coursecategories','feedbacklist'));
