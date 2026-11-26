@@ -54,21 +54,8 @@ class BrevoMailService
             }
 
             // Key is an SMTP key, but login username is missing
-            $msg = "Detected Brevo SMTP key (starts with 'xsmtpsib-'), but BREVO_SMTP_USERNAME is missing in .env. Please add your Brevo login email in BREVO_SMTP_USERNAME, or generate an API key (starts with 'xkeysib-') in Brevo under SMTP & API > API Keys.";
-            Log::warning($msg);
-
-            // Attempt fallback to local/debug if available
-            if (config('mail.default') === 'log' || config('app.debug')) {
-                Log::info("Email '{$subject}' logged locally for {$toEmail}.");
-                return [
-                    'success'    => true,
-                    'provider'   => 'local_logged',
-                    'message_id' => null,
-                    'error'      => null,
-                    'logged'     => true,
-                    'notice'     => $msg,
-                ];
-            }
+            $msg = "Your BREVO_API_KEY is an SMTP key ('xsmtpsib-...'). To use SMTP, add BREVO_SMTP_USERNAME=your-brevo-login-email in .env. Or to use the REST API (recommended), generate an API key starting with 'xkeysib-' from Brevo Dashboard > SMTP & API > API Keys.";
+            Log::error($msg);
 
             return [
                 'success'    => false,

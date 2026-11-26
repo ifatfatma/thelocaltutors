@@ -113,21 +113,10 @@ class OtpService
         if (!$mailResult['success']) {
             Log::error("Failed to send OTP email to {$email}: " . ($mailResult['error'] ?? 'Unknown error') . " | OTP: {$otp}");
 
-            // Still allow flow in local/log or debug mode with logged code
-            if (config('mail.default') === 'log' || config('app.debug')) {
-                return [
-                    'success'  => true,
-                    'status'   => 200,
-                    'message'  => "A 6-digit verification code has been sent to " . self::maskEmail($email) . " (Valid for 10 minutes).",
-                    'cooldown' => 60,
-                    'dev_otp'  => config('app.debug') ? $otp : null,
-                ];
-            }
-
             return [
                 'success' => false,
                 'status'  => 500,
-                'message' => 'Unable to send verification email. ' . ($mailResult['error'] ?? 'Please check mail settings.'),
+                'message' => 'Unable to deliver verification email: ' . ($mailResult['error'] ?? 'Please check mail settings.'),
             ];
         }
 
