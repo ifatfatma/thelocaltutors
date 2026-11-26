@@ -85,12 +85,12 @@ class FrontController extends Controller
         $locParts[] = 'India';
         $locationFormatted = implode(', ', $locParts);
 
-        $qualification = $teacher->qualification_name ?: (Common::tmodeName($teacherUser->teachermore->qualification ?? 0) ?: 'Graduation');
-        $subjects = $teacher->subject_names ?: (Common::getSubjects($teacherUser->teachermore->subjects ?? '') ?: 'English, Mathematics');
-        $boards = $teacher->board_names ?: 'CBSE, ICSE, WBBSE';
-        $teachingMode = $teacher->teaching_mode_name ?: 'Both (Online & Offline)';
-        $timings = $teacher->timings ?: ($teacherUser->teachermore->timings ?? '10 AM – 10 PM');
-        $description = $teacher->description ?: ($teacherUser->teachermore->description ?? 'Dedicated and certified educator committed to conceptual clarity, personalized doubt clearing, and continuous academic growth for students.');
+        $qualification = $teacher->qualification_name ?: (Common::tmodeName($teacherUser->teachermore->qualification ?? 0) ?: '');
+        $subjects = $teacher->subject_names ?: (Common::getSubjects($teacherUser->teachermore->subjects ?? '') ?: '');
+        $boards = $teacher->board_names ?: '';
+        $teachingMode = $teacher->teaching_mode_name ?: '';
+        $timings = $teacher->timings ?: ($teacherUser->teachermore->timings ?? '');
+        $description = $teacher->description ?: ($teacherUser->teachermore->description ?? '');
 
         // Compute real review rating & count
         $reviewUserId = $teacherUser->id ?? ($teacher->user_id ?? 0);
@@ -1345,17 +1345,16 @@ class FrontController extends Controller
 
                 $teachers = $allTeachers->filter(function ($t) use ($subId, $subNameLower) {
                     $rawSubjects = (string)($t->subjects ?? '');
-                    if (!empty($rawSubjects)) {
-                        $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
-                        foreach ($parts as $part) {
-                            if ($part === $subId || strtolower($part) === $subNameLower) {
-                                return true;
-                            }
+                    if (empty($rawSubjects)) {
+                        return false;
+                    }
+                    $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
+                    foreach ($parts as $part) {
+                        if ($part === $subId || strtolower($part) === $subNameLower) {
+                            return true;
                         }
                     }
-
-                    $subjectNames = strtolower((string)($t->subject_names ?? ''));
-                    return str_contains($subjectNames, $subNameLower);
+                    return false;
                 })->values();
             } else {
                 $teachers = $allTeachers;
@@ -1392,17 +1391,16 @@ class FrontController extends Controller
 
                 $count = $teachers->filter(function ($t) use ($subId, $subNameLower) {
                     $rawSubjects = (string)($t->subjects ?? '');
-                    if (!empty($rawSubjects)) {
-                        $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
-                        foreach ($parts as $part) {
-                            if ($part === $subId || strtolower($part) === $subNameLower) {
-                                return true;
-                            }
+                    if (empty($rawSubjects)) {
+                        return false;
+                    }
+                    $parts = array_filter(array_map('trim', explode(',', $rawSubjects)));
+                    foreach ($parts as $part) {
+                        if ($part === $subId || strtolower($part) === $subNameLower) {
+                            return true;
                         }
                     }
-
-                    $subjectNames = strtolower((string)($t->subject_names ?? ''));
-                    return !empty($subjectNames) && str_contains($subjectNames, $subNameLower);
+                    return false;
                 })->count();
 
                 $icon = match ($subNameLower) {

@@ -49,36 +49,36 @@ class Teacher extends Model
     }
 
     public function getQualificationNameAttribute() {
-        if (!$this->qualification) return 'Master Degree / Qualified Educator';
+        if (!$this->qualification) return '';
         $item = CustomData::find($this->qualification);
         return $item ? $item->name : $this->qualification;
     }
 
     public function getTeachingModeNameAttribute() {
-        if (!$this->teaching_mode) return 'Home & Online Tuition';
+        if (!$this->teaching_mode) return '';
         $item = CustomData::find($this->teaching_mode);
         return $item ? $item->name : $this->teaching_mode;
     }
 
     public function getSubjectNamesAttribute() {
-        if (!$this->subjects) return 'Mathematics & Science';
+        if (!$this->subjects) return '';
         $ids = array_filter(explode(',', (string)$this->subjects));
-        if (empty($ids)) return 'All Academic Subjects';
+        if (empty($ids)) return '';
         $numericIds = array_filter($ids, 'is_numeric');
         $customNames = array_diff($ids, $numericIds);
         $names = !empty($numericIds) ? CustomData::whereIn('id', $numericIds)->pluck('name')->toArray() : [];
         $all = array_merge($names, $customNames);
-        return !empty($all) ? implode(', ', $all) : 'Mathematics, Science, English';
+        return !empty($all) ? implode(', ', $all) : '';
     }
 
     public function getBoardNamesAttribute() {
-        if (!$this->board) return 'CBSE / ICSE / WBBSE';
+        if (!$this->board) return '';
         $ids = array_filter(explode(',', (string)$this->board));
-        if (empty($ids)) return 'All Boards';
+        if (empty($ids)) return '';
         $numericIds = array_filter($ids, 'is_numeric');
         $customNames = array_diff($ids, $numericIds);
         $names = !empty($numericIds) ? CustomData::whereIn('id', $numericIds)->pluck('name')->toArray() : [];
         $all = array_merge($names, $customNames);
-        return !empty($all) ? implode(', ', $all) : 'CBSE, ICSE, WBBSE';
+        return !empty($all) ? implode(', ', $all) : '';
     }
 }
