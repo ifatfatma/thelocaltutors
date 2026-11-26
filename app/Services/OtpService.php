@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Services\BrevoMailService;
 
 class OtpService
 {
@@ -31,7 +32,7 @@ class OtpService
 
         // For login and password reset, ensure account exists
         $user = User::where('email', $email)->first();
-        if (!$user) {
+        if (!$user && !in_array($action, ['register', 'verify_email'])) {
             return [
                 'success' => false,
                 'status'  => 404,
@@ -39,7 +40,7 @@ class OtpService
             ];
         }
 
-        if (isset($user->is_active) && (int)$user->is_active === 0 && $action === 'login') {
+        if ($user && isset($user->is_active) && (int)$user->is_active === 0 && $action === 'login') {
             return [
                 'success' => false,
                 'status'  => 403,
@@ -90,46 +91,54 @@ class OtpService
         ]);
 
         // Build email subject and purpose
-        $actionTitle = ($action === 'reset_password') ? 'Password Reset Code' : 'Sign-In Verification Code';
-        $userName = $user->name ?: 'Learner / Educator';
+        $actionTitle = match ($action) {
+            'reset_password' => 'Password Reset Code',
+            'register'       => 'Registration Verification Code',
+            'verify_email'   => 'Email Verification Code',
+            default          => 'Sign-In Verification Code',
+        };
+        $userName = $user ? ($user->name ?: 'Learner / Educator') : 'Learner / Educator';
         $appName = config('app.name', 'The Local Tutors');
 
         $htmlBody = self::buildHtmlEmail($userName, $otp, $action, $appName);
 
-        try {
-            Mail::html($htmlBody, function ($message) use ($email, $actionTitle, $appName) {
-                $fromAddress = config('mail.from.address', 'info@thelocaltutors.com');
-                $fromName = config('mail.from.name', $appName);
-                $message->to($email)
-                        ->from($fromAddress, $fromName)
-                        ->subject("{$actionTitle} - {$appName}");
-            });
+        // Send via BrevoMailService (bypasses blocked SMTP ports via REST API, with fallback)
+        $mailResult = BrevoMailService::sendTransactionalEmail(
+            toEmail: $email,
+            subject: "{$actionTitle} - {$appName}",
+            htmlContent: $htmlBody,
+            toName: $userName
+        );
 
-            Log::info("Email OTP successfully sent to {$email} for {$action}. Code: {$otp}");
-        } catch (\Throwable $e) {
-            Log::error("Failed to send OTP email to {$email}: " . $e->getMessage() . " | OTP: {$otp}");
-            // Still allow flow in local/log or when SMTP fails with logging
+        if (!$mailResult['success']) {
+            Log::error("Failed to send OTP email to {$email}: " . ($mailResult['error'] ?? 'Unknown error') . " | OTP: {$otp}");
+
+            // Still allow flow in local/log or debug mode with logged code
             if (config('mail.default') === 'log' || config('app.debug')) {
                 return [
                     'success'  => true,
                     'status'   => 200,
                     'message'  => "A 6-digit verification code has been sent to " . self::maskEmail($email) . " (Valid for 10 minutes).",
                     'cooldown' => 60,
+                    'dev_otp'  => config('app.debug') ? $otp : null,
                 ];
             }
 
             return [
                 'success' => false,
                 'status'  => 500,
-                'message' => 'Unable to send email right now. Please verify your mail settings or try again later.',
+                'message' => 'Unable to send verification email. ' . ($mailResult['error'] ?? 'Please check mail settings.'),
             ];
         }
+
+        Log::info("Email OTP successfully sent to {$email} via {$mailResult['provider']} for {$action}. Code: {$otp}");
 
         return [
             'success'  => true,
             'status'   => 200,
             'message'  => "A 6-digit verification code has been sent to " . self::maskEmail($email) . " (Valid for 10 minutes).",
             'cooldown' => 60,
+            'dev_otp'  => config('app.debug') ? $otp : null,
         ];
     }
 
@@ -213,13 +222,19 @@ class OtpService
      */
     private static function buildHtmlEmail(string $userName, string $otp, string $action, string $appName): string
     {
-        $actionDesc = ($action === 'reset_password')
-            ? 'use the verification code below to reset your password'
-            : 'use the verification code below to sign in to your account';
+        $actionDesc = match ($action) {
+            'reset_password' => 'use the verification code below to reset your password',
+            'register'       => 'use the verification code below to complete your registration',
+            'verify_email'   => 'use the verification code below to verify your email address',
+            default          => 'use the verification code below to sign in to your account',
+        };
 
-        $actionNote = ($action === 'reset_password')
-            ? 'If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.'
-            : 'If you did not attempt to sign in, please secure your account immediately.';
+        $actionNote = match ($action) {
+            'reset_password' => 'If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.',
+            'register'       => 'If you did not initiate this registration, please disregard this email.',
+            'verify_email'   => 'If you did not request this verification code, please disregard this email.',
+            default          => 'If you did not attempt to sign in, please secure your account immediately.',
+        };
 
         return <<<HTML
 <!DOCTYPE html>

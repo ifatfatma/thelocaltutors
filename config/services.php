@@ -28,6 +28,14 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    'brevo' => [
+        'key' => env('BREVO_API_KEY', env('BREVO_KEY', env('SENDINBLUE_API_KEY'))),
+        'smtp_username' => env('BREVO_SMTP_USERNAME', env('MAIL_USERNAME')),
+        'smtp_password' => env('BREVO_SMTP_PASSWORD', env('BREVO_API_KEY', env('MAIL_PASSWORD'))),
+        'sender_email' => env('BREVO_SENDER_EMAIL', env('MAIL_FROM_ADDRESS', 'info@thelocaltutors.com')),
+        'sender_name' => env('BREVO_SENDER_NAME', env('MAIL_FROM_NAME', 'The Local Tutors')),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
