@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import IndiaLocationSelector from '../../Components/IndiaLocationSelector';
