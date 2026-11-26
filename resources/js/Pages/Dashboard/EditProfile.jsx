@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import IndiaLocationSelector from '../../Components/IndiaLocationSelector';
@@ -57,6 +57,15 @@ export default function EditProfile({
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [detectingLocation, setDetectingLocation] = useState(false);
     const [locationStatus, setLocationStatus] = useState({ type: '', text: '' });
+
+    // Auto-dismiss status toast after 4.5 seconds
+    useEffect(() => {
+        if (!statusMsg.text) return;
+        const timer = setTimeout(() => {
+            setStatusMsg({ type: '', text: '' });
+        }, 4500);
+        return () => clearTimeout(timer);
+    }, [statusMsg.text]);
 
     // Extract any existing custom "other" entries that don't match predefined IDs or names
     const getInitialOther = (storedList, predefinedList) => {
@@ -216,8 +225,8 @@ export default function EditProfile({
             setStatusMsg({ type: 'success', text: res.data?.message || 'Profile updated successfully!' });
             setImageFile(null);
             setTimeout(() => {
-                router.reload();
-            }, 800);
+                router.reload({ preserveScroll: true });
+            }, 1800);
         } catch (err) {
             console.error(err);
             const msg = err.response?.data?.message || 'Error updating profile. Please check your inputs.';
@@ -273,10 +282,52 @@ export default function EditProfile({
                 <div className="row justify-content-center">
                     <div className="col-lg-10">
                         <div className="card card-modern p-4 p-md-5 border-0 shadow-sm">
+                            {/* Floating Toast Popup in Right Bottom Corner */}
                             {statusMsg.text && (
-                                <div className={`alert alert-${statusMsg.type} mb-4 d-flex align-items-center gap-2 rounded-3`}>
-                                    <i className={`bi ${statusMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} fs-5`}></i>
-                                    <div>{statusMsg.text}</div>
+                                <div
+                                    className="position-fixed"
+                                    style={{
+                                        bottom: '24px',
+                                        right: '24px',
+                                        zIndex: 9999,
+                                        maxWidth: '380px',
+                                        animation: 'toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                    }}
+                                >
+                                    <div
+                                        className="toast show align-items-center border-0 shadow-lg rounded-3 overflow-hidden bg-white"
+                                        style={{
+                                            borderLeft: `5px solid ${statusMsg.type === 'success' ? '#10b981' : '#ef4444'}`,
+                                            boxShadow: '0 12px 32px -4px rgba(15, 23, 42, 0.18)',
+                                        }}
+                                        role="alert"
+                                        aria-live="assertive"
+                                        aria-atomic="true"
+                                    >
+                                        <div className="d-flex p-3 align-items-start gap-3">
+                                            <i
+                                                className={`bi ${
+                                                    statusMsg.type === 'success'
+                                                        ? 'bi-check-circle-fill text-success'
+                                                        : 'bi-exclamation-circle-fill text-danger'
+                                                } fs-4 flex-shrink-0`}
+                                            ></i>
+                                            <div className="flex-grow-1">
+                                                <h6 className="fw-bold mb-1 text-dark" style={{ fontSize: '0.925rem' }}>
+                                                    {statusMsg.type === 'success' ? 'Success' : 'Notice'}
+                                                </h6>
+                                                <p className="mb-0 text-secondary small" style={{ lineHeight: 1.4 }}>
+                                                    {statusMsg.text}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn-close ms-2 mt-1"
+                                                aria-label="Close"
+                                                onClick={() => setStatusMsg({ type: '', text: '' })}
+                                            ></button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
