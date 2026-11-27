@@ -35,12 +35,21 @@ class TeacherController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $teachers = User::latest('id')->where('type','teacher');
+        $sq = trim((string) $request->input('sq', ''));
+        $teachers = User::latest('id')->where('type', 'teacher');
+        if ($sq !== '') {
+            $teachers->where(function ($q) use ($sq) {
+                $q->where('name', 'LIKE', "%{$sq}%")
+                  ->orWhere('email', 'LIKE', "%{$sq}%")
+                  ->orWhere('mobile', 'LIKE', "%{$sq}%");
+            });
+        }
         $teachers = $teachers->paginate(50)->withQueryString();
         return Inertia::render('Admin/Teachers/Index', [
-            'teachers' => $teachers
+            'teachers' => $teachers,
+            'sq' => $sq,
         ]);
     }
 
@@ -79,11 +88,13 @@ class TeacherController extends Controller
 
         // Main Image Upload on Folder Code
         $imageName = time().'-'.$request->file('image')->getClientOriginalName();
-        $destinationPath = public_path('users/');
+        $destinationPath = public_path('user/');
+        $destinationPathThumbnail = public_path('user/thumbnail/');
+        File::ensureDirectoryExists($destinationPath);
+        File::ensureDirectoryExists($destinationPathThumbnail);
         $image->save($destinationPath.$imageName);
 
         // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('users/thumbnail/');
         $image->resize(100,100);
         $image->save($destinationPathThumbnail.$imageName);
         $user->image = $imageName;
@@ -99,7 +110,7 @@ class TeacherController extends Controller
      */
     public function show($id)
     {
-        $teacher = User::with('teachermore')->where('id',$id)->first();
+        $teacher = User::with('teachermore')->where('id', $id)->firstOrFail();
 
         return Inertia::render('Admin/Teachers/Show', [
             'teacher' => $teacher
@@ -145,7 +156,10 @@ class TeacherController extends Controller
      */
     public function update(UpdateTeacherRequest $request, User $teacher) :RedirectResponse
     {
-        $teacher->update($request->all());
+        $updateData = $request->filled('password')
+            ? $request->all()
+            : $request->except('password');
+        $teacher->update($updateData);
 
            if(!empty($request->file('image'))){
             //unlink old image
@@ -157,18 +171,22 @@ class TeacherController extends Controller
                     File::delete($image_path_thumb);
                 }
             }
-            $image = Image::read($request->file('image'));
-            // Main Image Upload on Folder Code
-            $imageName = time().'-'.$request->file('image')->getClientOriginalName();
-            $destinationPath = public_path('user/');
-            $image->save($destinationPath.$imageName);
-    
-            // Generate Thumbnail Image Upload on Folder Code
-            $destinationPathThumbnail = public_path('user/thumbnail/');
-            $image->resize(100,100);
-            $image->save($destinationPathThumbnail.$imageName);
-            $teacher->image = $imageName;
-            $teacher->save();
+            try {
+                $image = Image::read($request->file('image'));
+                $imageName = time().'-'.$request->file('image')->getClientOriginalName();
+                $destinationPath = public_path('user/');
+                $destinationPathThumbnail = public_path('user/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $teacher->image = $imageName;
+                $teacher->save();
+            } catch (\Throwable $e) {
+                return redirect()->back()->with('error', 'Failed to process uploaded image: ' . $e->getMessage());
+            }
             }
         return redirect()->back()
                          ->withSuccess('Teacher is updated successfully.');

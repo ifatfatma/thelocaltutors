@@ -103,25 +103,29 @@ class TeacherCourseController extends Controller
 
         // Handle Image Upload
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $imageFile = $request->file('image');
-            $image = Image::read($imageFile);
-            $cleanName = preg_replace('/[^A-Za-z0-9\._-]/', '', $imageFile->getClientOriginalName());
-            $imageName = time() . '-' . $cleanName;
+            try {
+                $imageFile = $request->file('image');
+                $image = Image::read($imageFile);
+                $cleanName = preg_replace('/[^A-Za-z0-9\._-]/', '', $imageFile->getClientOriginalName());
+                $imageName = time() . '-' . $cleanName;
 
-            $destPath = public_path('course/');
-            if (!file_exists($destPath)) {
-                mkdir($destPath, 0777, true);
+                $destPath = public_path('course/');
+                if (!file_exists($destPath)) {
+                    mkdir($destPath, 0777, true);
+                }
+                $image->save($destPath . $imageName);
+
+                $destThumb = public_path('course/thumbnail/');
+                if (!file_exists($destThumb)) {
+                    mkdir($destThumb, 0777, true);
+                }
+                $image->resize(150, 150);
+                $image->save($destThumb . $imageName);
+
+                $course->image = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->withInput()->with('error', 'Failed to process uploaded course image.');
             }
-            $image->save($destPath . $imageName);
-
-            $destThumb = public_path('course/thumbnail/');
-            if (!file_exists($destThumb)) {
-                mkdir($destThumb, 0777, true);
-            }
-            $image->resize(150, 150);
-            $image->save($destThumb . $imageName);
-
-            $course->image = $imageName;
         }
 
         $course->name = trim($request->name);
@@ -189,25 +193,29 @@ class TeacherCourseController extends Controller
 
         // Handle Image Upload if updated
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $imageFile = $request->file('image');
-            $image = Image::read($imageFile);
-            $cleanName = preg_replace('/[^A-Za-z0-9\._-]/', '', $imageFile->getClientOriginalName());
-            $imageName = time() . '-' . $cleanName;
+            try {
+                $imageFile = $request->file('image');
+                $image = Image::read($imageFile);
+                $cleanName = preg_replace('/[^A-Za-z0-9\._-]/', '', $imageFile->getClientOriginalName());
+                $imageName = time() . '-' . $cleanName;
 
-            $destPath = public_path('course/');
-            if (!file_exists($destPath)) {
-                mkdir($destPath, 0777, true);
+                $destPath = public_path('course/');
+                if (!file_exists($destPath)) {
+                    mkdir($destPath, 0777, true);
+                }
+                $image->save($destPath . $imageName);
+
+                $destThumb = public_path('course/thumbnail/');
+                if (!file_exists($destThumb)) {
+                    mkdir($destThumb, 0777, true);
+                }
+                $image->resize(150, 150);
+                $image->save($destThumb . $imageName);
+
+                $course->image = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->withInput()->with('error', 'Failed to process uploaded course image.');
             }
-            $image->save($destPath . $imageName);
-
-            $destThumb = public_path('course/thumbnail/');
-            if (!file_exists($destThumb)) {
-                mkdir($destThumb, 0777, true);
-            }
-            $image->resize(150, 150);
-            $image->save($destThumb . $imageName);
-
-            $course->image = $imageName;
         }
 
         $course->name = trim($request->name);

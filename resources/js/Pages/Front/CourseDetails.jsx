@@ -392,7 +392,10 @@ export default function CourseDetails({ course_details, coursecategories = [], f
                                             <div className="d-flex justify-content-between align-items-center mb-1">
                                                 <strong className="text-dark">{rev.user?.name || 'Verified Student'}</strong>
                                                 <span className="text-warning small">
-                                                    {'★'.repeat(rev.rating || 5)}{'☆'.repeat(5 - (rev.rating || 5))}
+                                                    {(() => {
+                                                        const r = Math.min(5, Math.max(0, Math.round(Number(rev.rating) || 5)));
+                                                        return `${'★'.repeat(r)}${'☆'.repeat(5 - r)}`;
+                                                    })()}
                                                 </span>
                                             </div>
                                             <p className="text-secondary small mb-1">{rev.feedback}</p>

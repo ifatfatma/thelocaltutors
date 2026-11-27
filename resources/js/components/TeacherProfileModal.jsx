@@ -24,9 +24,9 @@ export default function TeacherProfileModal({
     reviewMsg = '',
     submittingReview = false,
 }) {
-    if (!isOpen || !teacher) return null;
-
     const { auth } = usePage().props;
+
+    if (!isOpen || !teacher) return null;
     const currentUserId = auth?.user?.id ? Number(auth.user.id) : null;
     const currentUserEmail = auth?.user?.email ? auth.user.email.toLowerCase().trim() : null;
     const currentUserName = auth?.user?.name ? auth.user.name.toLowerCase().trim() : null;

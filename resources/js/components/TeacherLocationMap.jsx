@@ -64,6 +64,7 @@ export default function TeacherLocationMap({
 }) {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
+    const markerRef = useRef(null);
     const [leafletReady, setLeafletReady] = useState(false);
 
     const lat = teacher?.latitude ? parseFloat(teacher.latitude) : null;
@@ -100,6 +101,18 @@ export default function TeacherLocationMap({
         const L = window.L;
         if (!L) return;
 
+        const popupHtml = `
+            <div style="font-family: inherit; font-size: 13px; line-height: 1.4; padding: 2px;">
+                <strong style="color: #0f172a; display: block; font-weight: 700;">${teacherName}</strong>
+                <span style="color: #475569; font-size: 11px;">📍 ${locationFormatted}</span>
+                <div style="margin-top: 6px;">
+                    <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #0d6efd; color: #ffffff; text-decoration: none; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">
+                        Get Directions &rarr;
+                    </a>
+                </div>
+            </div>
+        `;
+
         if (!mapInstanceRef.current) {
             const map = L.map(mapContainerRef.current, {
                 center: [lat, lng],
@@ -116,29 +129,36 @@ export default function TeacherLocationMap({
                 icon: createMarkerIcon(L),
             }).addTo(map);
 
-            marker.bindPopup(`
-                <div style="font-family: inherit; font-size: 13px; line-height: 1.4; padding: 2px;">
-                    <strong style="color: #0f172a; display: block; font-weight: 700;">${teacherName}</strong>
-                    <span style="color: #475569; font-size: 11px;">📍 ${locationFormatted}</span>
-                    <div style="margin-top: 6px;">
-                        <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: #0d6efd; color: #ffffff; text-decoration: none; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">
-                            Get Directions &rarr;
-                        </a>
-                    </div>
-                </div>
-            `).openPopup();
+            marker.bindPopup(popupHtml).openPopup();
 
+            markerRef.current = marker;
             mapInstanceRef.current = map;
         } else {
             mapInstanceRef.current.setView([lat, lng], 14);
+            if (markerRef.current) {
+                markerRef.current.setLatLng([lat, lng]);
+                markerRef.current.setPopupContent(popupHtml);
+            }
         }
 
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.invalidateSize();
             }
         }, 150);
+
+        return () => clearTimeout(timer);
     }, [hasCoordinates, leafletReady, lat, lng, teacherName, locationFormatted, directionsUrl]);
+
+    useEffect(() => {
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+                markerRef.current = null;
+            }
+        };
+    }, []);
 
     return (
         <div className="card border-0 rounded-4 shadow-xs overflow-hidden mb-3 bg-white">

@@ -70,7 +70,7 @@ class RoleController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Role $role): View
+    public function edit(Role $role): \Inertia\Response
     {
         if($role->name=='Super Admin'){
             abort(403, 'SUPER ADMIN ROLE CAN NOT BE EDITED');
@@ -92,6 +92,10 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
+        if ($role->name == 'Super Admin') {
+            abort(403, 'SUPER ADMIN ROLE CAN NOT BE EDITED');
+        }
+
         $input = $request->only('name');
 
         $role->update($input);

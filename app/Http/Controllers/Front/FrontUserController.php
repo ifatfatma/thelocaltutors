@@ -239,8 +239,18 @@ class FrontUserController extends Controller
         }
 
         if ($request->hasFile('image')) {
+            $request->validate([
+                'image' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            ]);
+
             $file = $request->file('image');
-            $imageName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            $ext = strtolower($file->guessExtension() ?: $file->getClientOriginalExtension());
+            if (!in_array($ext, $allowedExts, true)) {
+                return response()->json(['status' => 422, 'message' => 'Invalid image file format.'], 422);
+            }
+
+            $imageName = time() . '-' . \Illuminate\Support\Str::random(12) . '.' . $ext;
             $destinationPath = public_path('user/');
             $destinationPathThumbnail = public_path('user/thumbnail/');
 
@@ -254,11 +264,8 @@ class FrontUserController extends Controller
                 $image->resize(100, 100);
                 $image->save($destinationPathThumbnail . $imageName);
             } catch (\Throwable $e) {
-                Log::warning('Intervention image processing failed, fallback to direct upload: ' . $e->getMessage());
-                $file->move($destinationPath, $imageName);
-                if (file_exists($destinationPath . $imageName)) {
-                    @copy($destinationPath . $imageName, $destinationPathThumbnail . $imageName);
-                }
+                Log::warning('Intervention image processing failed: ' . $e->getMessage());
+                return response()->json(['status' => 422, 'message' => 'Uploaded file could not be processed as a valid image.'], 422);
             }
 
             $teacherbasic->image = $imageName;
@@ -334,10 +341,16 @@ class FrontUserController extends Controller
     }
 
      public function EditUserProfilePost(Request $request){
-        $edituserprofile = User::findorfail($request->id);
-        $edituserprofile->name = $request->name;
-        $edituserprofile->email = $request->email;
-        $edituserprofile->mobile = $request->mobile;
+        $edituserprofile = Auth::user();
+        if (!$edituserprofile) {
+            abort(401);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $edituserprofile->name = $validated['name'];
         $edituserprofile->save();
         return ["status"=>200,"message"=>"Information Updated Successfully"];
     } 

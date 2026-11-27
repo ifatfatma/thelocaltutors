@@ -3,8 +3,6 @@ import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 
 export default function PlatformFeedbackModal({ isOpen, onClose }) {
-    if (!isOpen) return null;
-
     const { auth } = usePage().props;
     const user = auth?.user || {};
 
@@ -21,6 +19,8 @@ export default function PlatformFeedbackModal({ isOpen, onClose }) {
     const [submitting, setSubmitting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
+
+    if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();

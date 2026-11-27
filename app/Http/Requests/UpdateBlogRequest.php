@@ -23,7 +23,11 @@ class UpdateBlogRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'blog_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'blog_cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'is_active' => 'nullable',
         ];
     }
 }

@@ -26,9 +26,15 @@ class CourseFaqController extends Controller
      */
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'is_active' => 'nullable',
+        ]);
+
         $course_faq = new CourseFaq;
-        $course_faq->title       = $request->title ?? '';
-        $course_faq->description = HtmlSanitizer::clean($request->description ?? '');
+        $course_faq->title       = $validated['title'];
+        $course_faq->description = HtmlSanitizer::clean($validated['description']);
         $course_faq->is_active   = $request->is_active ?? 1;
         $course_faq->save();
 
@@ -40,9 +46,15 @@ class CourseFaqController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'is_active' => 'nullable',
+        ]);
+
         $course_faq = CourseFaq::findOrFail($id);
-        $course_faq->title       = $request->title ?? '';
-        $course_faq->description = HtmlSanitizer::clean($request->description ?? '');
+        $course_faq->title       = $validated['title'];
+        $course_faq->description = HtmlSanitizer::clean($validated['description']);
         $course_faq->is_active   = $request->is_active ?? 1;
         $course_faq->save();
 

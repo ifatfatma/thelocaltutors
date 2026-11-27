@@ -54,6 +54,9 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $input = $request->all();
+        if (empty($input['username'])) {
+            $input['username'] = $input['email'];
+        }
         $input['password'] = Hash::make($request->password);
 
         $user = User::create($input);
@@ -74,7 +77,7 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user): View
+    public function edit(User $user): \Inertia\Response
     {
         // Check Only Super Admin can update his own Profile
         if ($user->hasRole('Super Admin')){
@@ -96,6 +99,10 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        if ($user->hasRole('Super Admin') && $user->id != auth()->user()->id) {
+            abort(403, 'USER DOES NOT HAVE THE RIGHT PERMISSIONS');
+        }
+
         $input = $request->all();
  
         if(!empty($request->password)){

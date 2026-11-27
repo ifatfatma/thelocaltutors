@@ -135,14 +135,14 @@ export default function UpdateMore({
             axios.get(`/get-districts?state_id=${form.state}`).then((res) => {
                 setDistricts(res.data || []);
             }).catch(() => {
-                axios.get(`/getDistrictAjax/${form.state}`).then((res) => setDistricts(res.data || []));
+                axios.get(`/getDistrictAjax/${form.state}`).then((res) => setDistricts(res.data || [])).catch(() => {});
             });
         }
         if (form.district && form.district !== '0') {
             axios.get(`/get-cities?district_id=${form.district}`).then((res) => {
                 setCities(res.data || []);
             }).catch(() => {
-                axios.get(`/getCityAjax/${form.district}`).then((res) => setCities(res.data || []));
+                axios.get(`/getCityAjax/${form.district}`).then((res) => setCities(res.data || [])).catch(() => {});
             });
         }
     }, []);

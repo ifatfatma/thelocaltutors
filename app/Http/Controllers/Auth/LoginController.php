@@ -44,7 +44,7 @@ class LoginController extends Controller
         $this->middleware('auth')->only('logout');
     }
 
-   protected function logout(Request $request)
+    public function logout(Request $request)
     {
         $this->guard()->logout();
         $request->session()->flush();

@@ -166,10 +166,14 @@ class InstallController extends Controller
      */
     public function testDatabase(Request $request)
     {
+        if (file_exists(storage_path('installed'))) {
+            abort(403, 'Application is already installed.');
+        }
+
         $request->validate([
             'host' => 'required',
             'port' => 'required|numeric',
-            'database' => 'required',
+            'database' => ['required', 'regex:/^[A-Za-z0-9_]+$/'],
             'username' => 'required'
         ]);
 
@@ -199,10 +203,14 @@ class InstallController extends Controller
      */
     public function saveDatabase(Request $request)
     {
+        if (file_exists(storage_path('installed'))) {
+            abort(403, 'Application is already installed.');
+        }
+
         $request->validate([
             'host' => 'required',
             'port' => 'required|numeric',
-            'database' => 'required',
+            'database' => ['required', 'regex:/^[A-Za-z0-9_]+$/'],
             'username' => 'required'
         ]);
 
@@ -472,6 +480,10 @@ class InstallController extends Controller
      */
     public function finish()
     {
+        if (file_exists(storage_path('installed')) && !session()->has('admin_email')) {
+            return redirect('/')->with('info', 'Application is already installed.');
+        }
+
         return view('installer.finish');
     }
 

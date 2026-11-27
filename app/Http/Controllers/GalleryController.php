@@ -47,17 +47,24 @@ class GalleryController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'gallery_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'title' => 'nullable|string|max:255',
+            'is_active' => 'nullable',
+        ]);
+
         $gallery = new Gallery;
-        if(!empty($request->file('gallery_image'))){
         $image = Image::read($request->file('gallery_image'));
 
         // Main Image Upload on Folder Code
-        $imageName = time().'-'.$request->file('gallery_image')->getClientOriginalName(); 
+        $imageName = time().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $request->file('gallery_image')->getClientOriginalName());
         $destinationPath = public_path('gallery/');
+        $destinationPathThumbnail = public_path('gallery/thumbnail/');
+        \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPath);
+        \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPathThumbnail);
         $image->save($destinationPath.$imageName);
 
         // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('gallery/thumbnail/');
         $image->resize(100,100);
         $image->save($destinationPathThumbnail.$imageName);
         $gallery->gallery_image  = $imageName;
@@ -65,7 +72,6 @@ class GalleryController extends Controller
         $gallery->is_active   = $request->is_active??0;
         $gallery->save();
         return redirect()->back()->withSuccess('Gallery added successfully.');
-        }
     }
 
     /**
@@ -101,18 +107,20 @@ class GalleryController extends Controller
                     File::delete($image_path_thumb);
                 }
             }
-            $image = Image::read($request->file('gallery_image'));
-    
-            // Main Image Upload on Folder Code
-            $imageName = time().'-'.$request->file('gallery_image')->getClientOriginalName();
-            $destinationPath = public_path('gallery/');
-            $image->save($destinationPath.$imageName);
-    
-            // Generate Thumbnail Image Upload on Folder Code
-            $destinationPathThumbnail = public_path('gallery/thumbnail/');
-            $image->resize(100,100);
-            $image->save($destinationPathThumbnail.$imageName);
-            $gallery->gallery_image  = $imageName; 
+            try {
+                $image = Image::read($request->file('gallery_image'));
+                $imageName = time().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $request->file('gallery_image')->getClientOriginalName());
+                $destinationPath = public_path('gallery/');
+                $destinationPathThumbnail = public_path('gallery/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $gallery->gallery_image  = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->with('error', 'Failed to process uploaded gallery image: ' . $e->getMessage());
+            }
         }
             
             $gallery->title       = $request->title??'';

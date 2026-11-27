@@ -224,7 +224,10 @@ export default function BlogDetails({ blogdetails, bloglist = [], feedbacklist =
                                             <div className="d-flex justify-content-between align-items-center mb-1">
                                                 <strong className="text-dark small">{f.user?.name || 'Verified Reader'}</strong>
                                                 <span className="text-warning small">
-                                                    {'★'.repeat(f.rating || 5)}{'☆'.repeat(5 - (f.rating || 5))}
+                                                    {(() => {
+                                                        const r = Math.min(5, Math.max(0, Math.round(Number(f.rating) || 5)));
+                                                        return `${'★'.repeat(r)}${'☆'.repeat(5 - r)}`;
+                                                    })()}
                                                 </span>
                                             </div>
                                             <p className="text-secondary small mb-1">{f.blogfeedback}</p>

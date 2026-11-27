@@ -35,7 +35,7 @@ class Course extends Model
     }
 
     public function faq(){
-        return $this->hasMany(Faq::class, 'id', 'is_active');
+        return $this->hasMany(CourseFaq::class, 'course_id', 'id');
     }
 
     public function category(){
@@ -43,7 +43,7 @@ class Course extends Model
     }
 
     public function feedback(){
-        return $this->hasMany(CourseFeedback::class, 'id', 'course_id');
+        return $this->hasMany(CourseFeedback::class, 'course_id', 'id');
     }
 
     public function enrollments(){

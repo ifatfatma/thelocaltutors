@@ -35,11 +35,15 @@ class CustomDataController extends Controller
     {
         // Validate incoming request data
         $request->validate([
-            'excelfile' => 'required|max:2048',
+            'excelfile' => 'required|file|mimes:xlsx,xls,csv|max:2048',
         ]);
-  
-        Excel::import(new ImportCustomData, $request->file('excelfile'));
-                 
+
+        try {
+            Excel::import(new ImportCustomData, $request->file('excelfile'));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Failed to import file: ' . $e->getMessage());
+        }
+
         return back()->with('success', 'Data imported successfully.');
     }
     /**
@@ -73,19 +77,20 @@ class CustomDataController extends Controller
    
     public function store(StoreCustomDataRequest $request): RedirectResponse
     {
-        
+        $type = $request->input('type') ?: $request->input('key_name', '');
+        $parentId = $request->input('parent_id', 0);
+
         $req = CustomData::create($request->all());
-        $linkurl='';
-        if(!empty($request->type)){
-            $linkurl.='?type='.$request->type;
-        }
-        if(isset($request->parent_id)){
-            $linkurl.='&parent_id='.$request->parent_id;
-        }
-        $req->key_name  = $request->type??'';
-        $req->parent_id = $request->parent_id??0;
+        $req->key_name  = $type;
+        $req->parent_id = $parentId;
         $req->save();
-        return redirect(route('customdata.index').$linkurl)
+
+        $query = array_filter([
+            'type' => $type !== '' ? $type : null,
+            'parent_id' => $parentId,
+        ], fn ($v) => $v !== null);
+
+        return redirect()->route('customdata.index', $query)
                 ->withSuccess('New record is added successfully.');
     }
 

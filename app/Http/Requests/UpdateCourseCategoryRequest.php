@@ -25,7 +25,7 @@ class UpdateCourseCategoryRequest extends FormRequest
             'title'=>'required|string|max:192',
             'description'=>'required',
             'is_active'=>'nullable',
-            'image'    => 'nullable'
+            'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4096'
 
         ];
     }

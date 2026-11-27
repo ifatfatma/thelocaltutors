@@ -11,6 +11,7 @@ class Teacher extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'gender',        
         'description',
         'name',
@@ -31,9 +32,12 @@ class Teacher extends Model
         'experience',
         'subjects',
         'board',
+        'district',
         'city',
         'state',
         'pincode',
+        'latitude',
+        'longitude',
         'whatsapp',
         'type',
     ];

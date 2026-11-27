@@ -23,6 +23,7 @@ export default function Index({ customdatas, keyname = 'state', parent_id = 0 })
         e.preventDefault();
         router.post('/admin/customdata', {
             name,
+            type: currentType,
             key_name: currentType,
             parent_id: parent_id || 0,
         }, {
