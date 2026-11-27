@@ -34,8 +34,9 @@ class HtmlSanitizer
         $cleaned = preg_replace('/\s*on[a-zA-Z]+\s*=\s*(["\']).*?\1/is', '', $cleaned);
         $cleaned = preg_replace('/\s*on[a-zA-Z]+\s*=\s*[^"\'>\s]+/is', '', $cleaned);
 
-        // 4. Neutralize javascript: and vbscript: URIs
-        $cleaned = preg_replace('/href\s*=\s*(["\'])\s*(javascript|vbscript):[^"\']*\1/is', 'href="#"', $cleaned);
+        // 4. Neutralize javascript:, vbscript:, and data: URIs (both quoted and unquoted)
+        $cleaned = preg_replace('/href\s*=\s*(["\'])\s*(javascript|vbscript|data):[^"\']*\1/is', 'href="#"', $cleaned);
+        $cleaned = preg_replace('/href\s*=\s*(javascript|vbscript|data):[^\s>]+/is', 'href="#"', $cleaned);
 
         // 5. If content is just empty tags (e.g. <p><br></p> or whitespace), return empty string
         $plain = trim(strip_tags($cleaned));

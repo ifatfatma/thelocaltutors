@@ -49,35 +49,35 @@ class BlogController extends Controller
     public function store(StoreBlogRequest $request):RedirectResponse
     {
         $blog = new Blog;
-        if(!empty($request->file('blog_image'))){
-        $image = Image::read($request->file('blog_image'));
+        try {
+            if(!empty($request->file('blog_image'))){
+                $image = Image::read($request->file('blog_image'));
+                $imageName = time().'-'.$request->file('blog_image')->getClientOriginalName();
+                $destinationPath = public_path('blog/');
+                $destinationPathThumbnail = public_path('blog/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $blog->blog_image  = $imageName;
+            }
 
-        // Main Image Upload on Folder Code
-        $imageName = time().'-'.$request->file('blog_image')->getClientOriginalName();
-        $destinationPath = public_path('blog/');
-        $image->save($destinationPath.$imageName);
-
-        // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('blog/thumbnail/');
-        $image->resize(100,100);
-        $image->save($destinationPathThumbnail.$imageName);
-        $blog->blog_image  = $imageName;
-        } 
-
-        if(!empty($request->file('blog_cover_image'))){
-        $image = Image::read($request->file('blog_cover_image'));
-
-        // Main Image Upload on Folder Code
-        $coverimageName = time().'-'.$request->file('blog_cover_image')->getClientOriginalName();
-        $destinationPath = public_path('blog_cover_image/');
-        $image->save($destinationPath.$coverimageName);
-
-        // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('blog_cover_image/thumbnail/');
-        $image->resize(100,100);
-        $image->save($destinationPathThumbnail.$coverimageName);
-        $blog->blog_cover_image  = $coverimageName;
-        } 
+            if(!empty($request->file('blog_cover_image'))){
+                $image = Image::read($request->file('blog_cover_image'));
+                $coverimageName = time().'-'.$request->file('blog_cover_image')->getClientOriginalName();
+                $destinationPath = public_path('blog_cover_image/');
+                $destinationPathThumbnail = public_path('blog_cover_image/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$coverimageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$coverimageName);
+                $blog->blog_cover_image  = $coverimageName;
+            }
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Failed to process uploaded blog image: ' . $e->getMessage());
+        }
 
         $blog->title       = $request->title??'';
         $blog->short_description = $request->short_description??'';
@@ -112,52 +112,50 @@ class BlogController extends Controller
     {
         $blog = Blog::findorfail($id);
 
-        if(!empty($request->file('blog_image'))){
-            //unlink old image
-            if(!empty($blog->blog_image)){
-                $image_path = public_path('blog/').$blog->blog_image;
-                $image_path_thumb = public_path('blog/thumbnail/').$blog->blog_image;
-                if(File::exists($image_path)) {
-                    File::delete($image_path);
-                    File::delete($image_path_thumb);
+        try {
+            if(!empty($request->file('blog_image'))){
+                if(!empty($blog->blog_image)){
+                    $image_path = public_path('blog/').$blog->blog_image;
+                    $image_path_thumb = public_path('blog/thumbnail/').$blog->blog_image;
+                    if(File::exists($image_path)) {
+                        File::delete($image_path);
+                        File::delete($image_path_thumb);
+                    }
                 }
+                $image = Image::read($request->file('blog_image'));
+                $imageName = time().'-'.$request->file('blog_image')->getClientOriginalName();
+                $destinationPath = public_path('blog/');
+                $destinationPathThumbnail = public_path('blog/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $blog->blog_image  = $imageName;
             }
-            $image = Image::read($request->file('blog_image'));
-    
-            // Main Image Upload on Folder Code
-            $imageName = time().'-'.$request->file('blog_image')->getClientOriginalName();
-            $destinationPath = public_path('blog/');
-            $image->save($destinationPath.$imageName);
-    
-            // Generate Thumbnail Image Upload on Folder Code
-            $destinationPathThumbnail = public_path('blog/thumbnail/');
-            $image->resize(100,100);
-            $image->save($destinationPathThumbnail.$imageName);
-            $blog->blog_image  = $imageName;
-        }
 
-        if(!empty($request->file('blog_cover_image'))){
-            //unlink old image
-            if(!empty($blog->blog_cover_image)){
-                $image_path = public_path('blog_cover_image/').$blog->blog_cover_image;
-                $image_path_thumb = public_path('blog_cover_image/thumbnail/').$blog->blog_cover_image;
-                if(File::exists($image_path)) {
-                    File::delete($image_path);
-                    File::delete($image_path_thumb);
+            if(!empty($request->file('blog_cover_image'))){
+                if(!empty($blog->blog_cover_image)){
+                    $image_path = public_path('blog_cover_image/').$blog->blog_cover_image;
+                    $image_path_thumb = public_path('blog_cover_image/thumbnail/').$blog->blog_cover_image;
+                    if(File::exists($image_path)) {
+                        File::delete($image_path);
+                        File::delete($image_path_thumb);
+                    }
                 }
+                $image = Image::read($request->file('blog_cover_image'));
+                $coverimageName = time().'-'.$request->file('blog_cover_image')->getClientOriginalName();
+                $destinationPath = public_path('blog_cover_image/');
+                $destinationPathThumbnail = public_path('blog_cover_image/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$coverimageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$coverimageName);
+                $blog->blog_cover_image  = $coverimageName;
             }
-            $image = Image::read($request->file('blog_cover_image'));
-    
-            // Main Image Upload on Folder Code
-            $coverimageName = time().'-'.$request->file('blog_cover_image')->getClientOriginalName();
-            $destinationPath = public_path('blog_cover_image/');
-            $image->save($destinationPath.$coverimageName);
-    
-            // Generate Thumbnail Image Upload on Folder Code
-            $destinationPathThumbnail = public_path('blog_cover_image/thumbnail/');
-            $image->resize(100,100);
-            $image->save($destinationPathThumbnail.$coverimageName);
-            $blog->blog_cover_image  = $coverimageName;
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Failed to process uploaded blog image: ' . $e->getMessage());
         }
             
             $blog->title       = $request->title??'';

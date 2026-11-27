@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
+import Pagination from '../../components/Pagination';
 
 export default function TeacherDemos({ demos, teacher }) {
     const list = demos?.data || demos || [];
@@ -186,7 +187,7 @@ export default function TeacherDemos({ demos, teacher }) {
                             <div className="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
                                 <div>
                                     <h5 className="fw-bold text-dark mb-1">Your Submitted Demos</h5>
-                                    <span className="text-secondary small">Total submissions: {list.length}</span>
+                                    <span className="text-secondary small">Total submissions: {demos?.total ?? list.length}</span>
                                 </div>
                             </div>
 
@@ -290,6 +291,8 @@ export default function TeacherDemos({ demos, teacher }) {
                                     })}
                                 </div>
                             )}
+
+                            <Pagination links={demos?.links} />
                         </div>
                     </div>
                 </div>

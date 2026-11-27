@@ -20,11 +20,9 @@ class ContactUsController extends Controller
 
     public function view($id)
     {
-        $messagesdetails = ContactUs::find($id);
-        if ($messagesdetails) {
-            $messagesdetails->is_read = 1;
-            $messagesdetails->save();
-        }
+        $messagesdetails = ContactUs::findOrFail($id);
+        $messagesdetails->is_read = 1;
+        $messagesdetails->save();
 
         $approvedDemos = TeacherDemo::with('user')->where('status', 'approved')->get();
         $shares = DemoShare::where('contact_id', $id)->with('teacherDemo.user')->latest()->get();

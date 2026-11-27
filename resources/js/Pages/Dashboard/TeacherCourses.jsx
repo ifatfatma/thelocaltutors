@@ -500,14 +500,15 @@ export default function TeacherCourses({
 
                                                         <td className="text-end pe-4">
                                                             <div className="d-flex align-items-center justify-content-end gap-1">
-                                                                <Link
+                                                                <a
                                                                     href={`/course_details/${course.id}/${course.slug || 'course'}`}
                                                                     target="_blank"
+                                                                    rel="noopener noreferrer"
                                                                     className="btn btn-sm btn-light border text-primary"
                                                                     title="Preview public course page"
                                                                 >
                                                                     <i className="bi bi-eye"></i>
-                                                                </Link>
+                                                                </a>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => openEditModal(course)}
@@ -667,13 +668,14 @@ export default function TeacherCourses({
                                                             {course.name || 'Course'}
                                                         </div>
                                                         {course.id && (
-                                                            <Link
+                                                            <a
                                                                 href={`/course_details/${course.id}/${course.slug || 'course'}`}
                                                                 target="_blank"
+                                                                rel="noopener noreferrer"
                                                                 className="badge bg-light text-primary border text-decoration-none"
                                                             >
                                                                 <i className="bi bi-box-arrow-up-right me-1"></i>View Course
-                                                            </Link>
+                                                            </a>
                                                         )}
                                                     </td>
 

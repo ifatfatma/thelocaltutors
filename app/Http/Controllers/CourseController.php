@@ -50,18 +50,20 @@ class CourseController extends Controller
     {
         $course = new Course;
         if(!empty($request->file('image'))){
-        $image = Image::read($request->file('image'));
-
-        // Main Image Upload on Folder Code
-        $imageName = time().'-'.$request->file('image')->getClientOriginalName();
-        $destinationPath = public_path('course/');
-        $image->save($destinationPath.$imageName);
-
-        // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('course/thumbnail/');
-        $image->resize(100,100);
-        $image->save($destinationPathThumbnail.$imageName);
-        $course->image = $imageName;
+            try {
+                $image = Image::read($request->file('image'));
+                $imageName = time().'-'.$request->file('image')->getClientOriginalName();
+                $destinationPath = public_path('course/');
+                $destinationPathThumbnail = public_path('course/thumbnail/');
+                \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPath);
+                \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $course->image = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->withInput()->with('error', 'Failed to process uploaded course image: ' . $e->getMessage());
+            }
         }
         $course->category_id  = $request->category_id??0;
         $course->name         = $request->name??'';
@@ -115,18 +117,20 @@ class CourseController extends Controller
     {
         $course = Course::findorfail($id);
         if(!empty($request->file('image'))){
-        $image = Image::read($request->file('image'));
-
-        // Main Image Upload on Folder Code
-        $imageName = time().'-'.$request->file('image')->getClientOriginalName();
-        $destinationPath = public_path('course/');
-        $image->save($destinationPath.$imageName);
-
-        // Generate Thumbnail Image Upload on Folder Code
-        $destinationPathThumbnail = public_path('course/thumbnail/');
-        $image->resize(100,100);
-        $image->save($destinationPathThumbnail.$imageName);
-        $course->image = $imageName;
+            try {
+                $image = Image::read($request->file('image'));
+                $imageName = time().'-'.$request->file('image')->getClientOriginalName();
+                $destinationPath = public_path('course/');
+                $destinationPathThumbnail = public_path('course/thumbnail/');
+                \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPath);
+                \Illuminate\Support\Facades\File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $course->image = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->withInput()->with('error', 'Failed to process uploaded course image: ' . $e->getMessage());
+            }
         }
         $course->category_id  = $request->category_id??0;
         $course->name         = $request->name??'';

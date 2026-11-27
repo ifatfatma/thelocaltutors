@@ -36,22 +36,6 @@
    $("#deleteModal").modal('show');
   });  
 
-$(document).on("click",".changestatus",function(){
-var val = $(this).val();
-      $.ajax({
-            type:"get",
-            url:"/admin/changetreview/"+val,
-            success:function(res)
-            {       
-                    if(res==200)
-                    {
-                        
-                    }
-            }
-
-            });
-});
-
 /*get district & city*/
     $('#admin_state').change(function(){
         var nid = $(this).val();

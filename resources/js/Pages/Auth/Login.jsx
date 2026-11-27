@@ -229,17 +229,28 @@ export default function Login() {
                             <button
                                 type="submit"
                                 className="btn btn-primary w-100 py-2 fw-semibold"
-                                disabled={loading || !otpEmail}
+                                disabled={loading || !otpEmail || cooldown > 0}
                             >
                                 {loading ? (
                                     <>
                                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                         Sending Code...
                                     </>
+                                ) : cooldown > 0 ? (
+                                    `Wait ${cooldown}s to Request New Code`
                                 ) : (
                                     'Send Verification Code'
                                 )}
                             </button>
+                            {cooldown > 0 && otpEmail && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setOtpSent(true); setErrorMsg(''); }}
+                                    className="btn btn-outline-primary w-100 py-2 mt-2 fw-semibold"
+                                >
+                                    Enter Already Sent Code
+                                </button>
+                            )}
                         </form>
                     ) : (
                         <form onSubmit={handleVerifyOtp} noValidate>
@@ -250,7 +261,7 @@ export default function Login() {
                                     </label>
                                     <button
                                         type="button"
-                                        onClick={() => { setOtpSent(false); setOtpCode(''); }}
+                                        onClick={() => { setOtpSent(false); setOtpCode(''); setErrorMsg(''); setSuccessMsg(''); }}
                                         className="btn btn-link p-0 text-decoration-none small text-muted"
                                     >
                                         Change Email

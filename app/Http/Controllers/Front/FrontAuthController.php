@@ -86,7 +86,7 @@ class FrontAuthController extends Controller
         $email = strtolower(trim($request->email));
         $mobile = trim($request->mobile);
 
-        $user = new User();
+        $user = User::where('email', $email)->where('is_active', 0)->first() ?? new User();
         $user->name              = trim($request->name);
         $user->email             = $email;
         $user->mobile            = $mobile;

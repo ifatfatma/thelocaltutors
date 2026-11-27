@@ -200,7 +200,8 @@ export default function MapLocationPicker({
         numericLng <= 180;
 
     // Default center: Garden Reach / Kolkata
-    const defaultCenter = hasCoordinates ? [numericLat, numericLng] : [22.5385, 88.3020];
+    const initialLat = hasCoordinates ? numericLat : 22.5385;
+    const initialLng = hasCoordinates ? numericLng : 88.3020;
 
     // Load Map Library
     useEffect(() => {
@@ -277,8 +278,9 @@ export default function MapLocationPicker({
         const L = window.L;
 
         if (!mapInstanceRef.current) {
+            const center = [initialLat, initialLng];
             const map = L.map(mapContainerRef.current, {
-                center: defaultCenter,
+                center,
                 zoom: hasCoordinates ? 17 : 15,
                 scrollWheelZoom: true,
                 dragging: true,
@@ -311,7 +313,7 @@ export default function MapLocationPicker({
             satelliteLayerRef.current = googleSatelliteLayer;
 
             if (hasCoordinates) {
-                const marker = L.marker(defaultCenter, {
+                const marker = L.marker(center, {
                     draggable: !readOnly,
                     icon: createMarkerIcon(L),
                 }).addTo(map);
@@ -335,10 +337,22 @@ export default function MapLocationPicker({
             mapInstanceRef.current = map;
         }
 
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
         }, 150);
-    }, [mapReady, hasCoordinates, defaultCenter, readOnly, updatePosition]);
+
+        return () => clearTimeout(timer);
+    }, [mapReady, hasCoordinates, initialLat, initialLng, readOnly, updatePosition]);
+
+    useEffect(() => {
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+                markerRef.current = null;
+            }
+        };
+    }, []);
 
     // Switch between Google Street and Google Satellite
     const switchMapType = (type) => {

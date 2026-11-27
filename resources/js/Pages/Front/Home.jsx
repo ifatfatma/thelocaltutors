@@ -313,8 +313,8 @@ export default function Home({
                         : '';
                 setShowcaseStatusMsg(`Found ${res.data.teachers.length} tutors near ${locLabel}${distInfo ? ` (closest is ${distInfo})` : ''}!`);
             }
-        } catch (e) {
-            console.error('Failed to load nearby tutors', e);
+        } catch {
+            // Silently ignore nearby showcase fetch errors
         } finally {
             setIsDetecting(false);
         }
@@ -393,8 +393,8 @@ export default function Home({
                     ...res.data.teacher,
                 }));
             }
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // Keep existing card data in modal if detail refresh fails
         } finally {
             setLoadingDetails(false);
         }

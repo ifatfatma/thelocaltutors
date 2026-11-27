@@ -440,8 +440,8 @@ export default function SearchResults({
                     ...res.data.teacher,
                 }));
             }
-        } catch (err) {
-            console.error(err);
+        } catch {
+            // Keep existing card data in modal if detail refresh fails
         } finally {
             setLoadingDetails(false);
         }

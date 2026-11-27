@@ -92,9 +92,9 @@ Route::resources([
     'teacher_review'  => TeacherReviewController::class,
     'blog'            => BlogController::class,
     'gallery'         => GalleryController::class,
-    'couse_faq'       => CourseFaqController::class,
-    'messages'         => ContactUsController::class,
 ]);
+Route::resource('couse_faq', CourseFaqController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::resource('messages', ContactUsController::class)->only(['index', 'destroy']);
     });
 });
 
@@ -137,7 +137,6 @@ Route::post('/platform-feedback', [FrontController::class, 'postPlatformFeedback
 
 Route::get('/team',[FrontController::class, 'team'])->name('front.team');
 Route::get('/subjects',[FrontController::class, 'subjects'])->name('front.subjects');
-Route::get('/get_lonlat',[FrontController::class, 'get_lonlat'])->name('front.get_lonlat');
 Route::get('/myfavcourse/ajax',[FrontController::class, 'addmyfavcourse'])->name('front.addmyfavcourse'); 
 
 Route::get('/enrollcourse/ajax',[FrontController::class, 'enrollcourse'])->name('front.enrollcourse'); 
@@ -217,25 +216,67 @@ Route::post('/resolve-maps-url', function (\Illuminate\Http\Request $request) {
         return response()->json(['success' => false, 'message' => 'Empty URL provided.'], 400);
     }
 
-    if (!preg_match('/^https?:\/\/(?:[a-zA-Z0-9-]+\.)*(?:goo\.gl|google\.[a-z.]+)\//i', $rawUrl)) {
+    $isAllowedMapsUrl = function (string $url): bool {
+        $parts = parse_url($url);
+        if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true)) {
+            return false;
+        }
+        $host = strtolower($parts['host'] ?? '');
+        $allowedHosts = [
+            'maps.app.goo.gl',
+            'goo.gl',
+            'maps.google.com',
+            'www.google.com',
+            'google.com',
+            'maps.google.co.in',
+            'www.google.co.in',
+            'google.co.in',
+        ];
+        if (!in_array($host, $allowedHosts, true)) {
+            return false;
+        }
+        $ips = gethostbynamel($host);
+        if (!$ips) {
+            return false;
+        }
+        foreach ($ips as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    if (!$isAllowedMapsUrl($rawUrl)) {
         return response()->json(['success' => false, 'message' => 'Not a valid Google Maps URL.'], 400);
     }
 
     try {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $rawUrl);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
-        curl_exec($ch);
-        $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-        curl_close($ch);
+        $currentUrl = $rawUrl;
+        $finalUrl = $rawUrl;
+        for ($hop = 0; $hop < 4; $hop++) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $currentUrl);
+            curl_setopt($ch, CURLOPT_HEADER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+            $headers = curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-        if (!$finalUrl) {
-            $finalUrl = $rawUrl;
+            if ($statusCode >= 300 && $statusCode < 400 && $headers && preg_match('/^Location:\s*(.+)$/mi', $headers, $loc)) {
+                $nextUrl = trim($loc[1]);
+                if (!$isAllowedMapsUrl($nextUrl)) {
+                    break;
+                }
+                $currentUrl = $nextUrl;
+                $finalUrl = $nextUrl;
+            } else {
+                break;
+            }
         }
 
         // 1. @lat,lng

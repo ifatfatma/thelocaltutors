@@ -76,7 +76,7 @@ class HandleInertiaRequests extends Middleware
             },
             'categories' => fn () => CourseCategory::where('is_active', 1)->orderBy('title', 'asc')->get(['id', 'title', 'slug']),
             'appName' => config('app.name', 'The Local Tutors'),
-            'googleMapsApiKey' => env('GOOGLE_MAPS_API_KEY') ?: env('VITE_GOOGLE_MAPS_API_KEY') ?: '',
+            'googleMapsApiKey' => config('services.google.maps_api_key', ''),
         ];
     }
 }

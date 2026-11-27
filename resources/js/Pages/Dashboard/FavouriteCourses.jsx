@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
@@ -6,14 +6,16 @@ import axios from 'axios';
 
 export default function FavouriteCourses({ myfavcourselist }) {
     const list = myfavcourselist?.data || myfavcourselist || [];
+    const [errorMsg, setErrorMsg] = useState('');
 
     const handleRemove = async (courseId) => {
         if (!confirm('Remove this course from favorites?')) return;
+        setErrorMsg('');
         try {
             await axios.get(`/myfavcourse/ajax?id=${courseId}`);
             router.reload();
         } catch (err) {
-            console.error(err);
+            setErrorMsg(err.response?.data?.message || 'Unable to remove course from favorites. Please try again.');
         }
     };
 
@@ -29,6 +31,12 @@ export default function FavouriteCourses({ myfavcourselist }) {
             </div>
 
             <div className="container py-5">
+                {errorMsg && (
+                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                        {errorMsg}
+                        <button type="button" className="btn-close" onClick={() => setErrorMsg('')} aria-label="Close"></button>
+                    </div>
+                )}
                 {list.length === 0 ? (
                     <div className="text-center py-5">
                         <i className="bi bi-heart fs-1 text-muted"></i>

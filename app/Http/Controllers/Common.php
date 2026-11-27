@@ -14,6 +14,7 @@ use App\Models\Teacher;
 use App\Models\Blog;
 use App\Models\Gallery;
 use App\Models\BlogFeedback;
+use App\Models\SinglePage;
 
 
 
@@ -194,9 +195,14 @@ class Common extends Controller
 
     //masked any number
     public static function maskNumber($num){
-      return substr( $num, 0, 2 ) // Get the first two digits
-        .str_repeat( '*', ( strlen( $num ) - 4 ) ) // Apply enough asterisks to cover the middle numbers
-        .substr( $num, -2 );
+      $num = (string) ($num ?? '');
+      $len = strlen($num);
+      if ($len <= 4) {
+        return str_repeat('*', $len);
+      }
+      return substr($num, 0, 2)
+        . str_repeat('*', $len - 4)
+        . substr($num, -2);
     }
 
     public static function teacheroption($id=0){
@@ -232,16 +238,16 @@ public static function tmodeName($id){
 
 public static function getkeyname($id){
   $getname = SinglePage::where('id',$id)->first();
-  return  $getname->slug;
+  return $getname?->slug ?? '';
 }
 public static function getpagename($id){
   $getname = SinglePage::where('id',$id)->first();
-  return  $getname->name;
+  return $getname?->name ?? '';
 }
 
 public static function getpagedetails($id){
   $getname = SinglePage::where('id',$id)->first();
-  return  $getname->description;
+  return $getname?->description ?? '';
 }
 
 public static function feedbackcount($courseid){

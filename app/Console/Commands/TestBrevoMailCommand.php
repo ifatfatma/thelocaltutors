@@ -83,6 +83,7 @@ class TestBrevoMailCommand extends Command
         $otp = sprintf('%06d', random_int(100000, 999999));
         $appName = config('app.name', 'The Local Tutors');
         $subject = "Test Verification Code - {$appName}";
+        $sentAt = date('Y-m-d H:i:s');
 
         $htmlBody = <<<HTML
 <!DOCTYPE html>
@@ -95,7 +96,7 @@ class TestBrevoMailCommand extends Command
             {$otp}
         </div>
         <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
-            Sent at: <strong>" . date('Y-m-d H:i:s') . "</strong><br>
+            Sent at: <strong>{$sentAt}</strong><br>
             If you received this email, your Brevo email OTP service is configured and working perfectly!
         </p>
     </div>

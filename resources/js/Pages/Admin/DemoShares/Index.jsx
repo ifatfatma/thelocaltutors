@@ -9,7 +9,7 @@ export default function Index({ shares, approvedDemos = [], currentStatus = 'all
 
     const handleCopy = (token) => {
         const fullUrl = `${window.location.origin}/demo-view/${token}`;
-        navigator.clipboard.writeText(fullUrl);
+        navigator.clipboard?.writeText(fullUrl)?.catch(() => {});
         setCopiedToken(token);
         setTimeout(() => setCopiedToken(null), 3000);
     };

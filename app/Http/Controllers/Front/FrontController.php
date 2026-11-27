@@ -70,30 +70,30 @@ class FrontController extends Controller
             return response()->json(['status' => 404, 'message' => 'Educator not found']);
         }
 
-        $teacherUser = $user ?? ($teacher->user ?? null);
-        $name = $teacherUser->name ?? ($teacher->name ?? 'Verified Educator');
-        $img = Common::profileimage($teacher->image ?: ($teacherUser->image ?? ''));
-        $gender = $teacher->gender ?: ($teacherUser->teachermore->gender ?? 'Educator');
-        $exp = $teacher->experience ?: ($teacherUser->teachermore->experience ?? '');
+        $teacherUser = $user ?? ($teacher?->user ?? null);
+        $name = $teacherUser?->name ?? ($teacher?->name ?? 'Verified Educator');
+        $img = Common::profileimage(($teacher?->image ?: null) ?? ($teacherUser?->image ?? ''));
+        $gender = ($teacher?->gender ?: null) ?? ($teacherUser?->teachermore?->gender ?? 'Educator');
+        $exp = ($teacher?->experience ?: null) ?? ($teacherUser?->teachermore?->experience ?? '');
         $expText = $exp ? ($exp . ' Yrs Exp') : 'Experienced';
 
-        $city = trim((string)($teacher->city ?? $teacherUser->teachermore->city ?? ''));
-        $state = trim((string)($teacher->state ?? $teacherUser->teachermore->state ?? ''));
+        $city = trim((string)($teacher?->city ?? $teacherUser?->teachermore?->city ?? ''));
+        $state = trim((string)($teacher?->state ?? $teacherUser?->teachermore?->state ?? ''));
         $locParts = [];
         if (!empty($city) && $city !== '0') $locParts[] = $city;
         if (!empty($state) && $state !== '0') $locParts[] = $state;
         $locParts[] = 'India';
         $locationFormatted = implode(', ', $locParts);
 
-        $qualification = $teacher->qualification_name ?: (Common::tmodeName($teacherUser->teachermore->qualification ?? 0) ?: '');
-        $subjects = $teacher->subject_names ?: (Common::getSubjects($teacherUser->teachermore->subjects ?? '') ?: '');
-        $boards = $teacher->board_names ?: '';
-        $teachingMode = $teacher->teaching_mode_name ?: '';
-        $timings = $teacher->timings ?: ($teacherUser->teachermore->timings ?? '');
-        $description = $teacher->description ?: ($teacherUser->teachermore->description ?? '');
+        $qualification = ($teacher?->qualification_name ?: null) ?? (Common::tmodeName($teacherUser?->teachermore?->qualification ?? 0) ?: '');
+        $subjects = ($teacher?->subject_names ?: null) ?? (Common::getSubjects($teacherUser?->teachermore?->subjects ?? '') ?: '');
+        $boards = $teacher?->board_names ?: '';
+        $teachingMode = $teacher?->teaching_mode_name ?: '';
+        $timings = ($teacher?->timings ?: null) ?? ($teacherUser?->teachermore?->timings ?? '');
+        $description = ($teacher?->description ?: null) ?? ($teacherUser?->teachermore?->description ?? '');
 
         // Compute real review rating & count
-        $reviewUserId = $teacherUser->id ?? ($teacher->user_id ?? 0);
+        $reviewUserId = $teacherUser?->id ?? ($teacher?->user_id ?? 0);
         $reviewQuery = TeacherReview::where('teacher_id', $reviewUserId);
         if (Schema::hasColumn('teacher_reviews', 'is_active')) {
             $reviewQuery->where('is_active', 1);
@@ -103,8 +103,8 @@ class FrontController extends Controller
         $realRating = ($avgRating && $reviewCount > 0) ? round((float)$avgRating, 1) : null;
 
         $teacherData = [
-            'id' => $teacher->id ?? $user->id,
-            'user_id' => $teacherUser->id ?? ($teacher->user_id ?? $user->id),
+            'id' => $teacher?->id ?? $user?->id,
+            'user_id' => $teacherUser?->id ?? ($teacher?->user_id ?? $user?->id),
             'name' => $name,
             'image' => $img,
             'gender' => $gender,
@@ -126,8 +126,8 @@ class FrontController extends Controller
             'description' => $description,
             'rating' => $realRating,
             'review_count' => $reviewCount,
-            'latitude' => $teacher->latitude ?: ($teacherUser->teachermore->latitude ?? null),
-            'longitude' => $teacher->longitude ?: ($teacherUser->teachermore->longitude ?? null),
+            'latitude' => ($teacher?->latitude ?: null) ?? ($teacherUser?->teachermore?->latitude ?? null),
+            'longitude' => ($teacher?->longitude ?: null) ?? ($teacherUser?->teachermore?->longitude ?? null),
         ];
 
         return response()->json([
@@ -146,10 +146,8 @@ class FrontController extends Controller
             $tchtxt='';
             $course_details = Course::with('teacher','faq','feedback')->where('id',$courseid)->first();
 
-            if(!empty($course_details->id)){
-               if(!empty($teacherinfo->teachermore->description)){
-                $tchtxt.='<iframe src="'.$course_details->youtube_url.'"></iframe>';
-               } 
+            if(!empty($course_details->id) && !empty($course_details->youtube_url)){
+                $tchtxt .= '<iframe src="' . e($course_details->youtube_url) . '"></iframe>';
             }
             return ['status'=>200,'message'=>$tchtxt];
             }
@@ -555,7 +553,7 @@ class FrontController extends Controller
             $blogfeedback->user_id       = Auth::user()->id??0;
             $blogfeedback->rating        = !empty($request->rating)?$request->rating:0;
             $blogfeedback->blogfeedback  =!empty($request->blogfeedback)?$request->blogfeedback:'';
-            $blogfeedback->is_active     =!empty($request->is_active)?$request->is_active:0;
+            $blogfeedback->is_active     = 0;
             $blogfeedback->save();
             return ["status"=>200,"message"=>"Your feedback has been posted."];
             }
@@ -1033,16 +1031,16 @@ class FrontController extends Controller
             }
             if(!empty($request->search_board) && $request->search_board !== '0'){
                 $board = $request->search_board;
-                $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
+                $lists = $lists->whereRaw('FIND_IN_SET(?, teachers.board)', [$board]);
             }
             if(!empty($request->search_subject) && $request->search_subject !== '0'){
                 $subject = $request->search_subject;
                 if (is_numeric($subject)) {
-                    $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');
+                    $lists = $lists->whereRaw('FIND_IN_SET(?, teachers.subjects)', [$subject]);
                 } else {
                     $subId = CustomData::where('key_name', 'subject')->where('name', 'LIKE', "%{$subject}%")->value('id');
                     if ($subId) {
-                        $lists = $lists->whereRaw('FIND_IN_SET("'.$subId.'",teachers.subjects)');
+                        $lists = $lists->whereRaw('FIND_IN_SET(?, teachers.subjects)', [$subId]);
                     } else {
                         $lists = $lists->where(function($q) use ($subject) {
                             $q->where('teachers.description', 'LIKE', "%{$subject}%")
@@ -1159,7 +1157,7 @@ class FrontController extends Controller
         }
 
         public function showsearchresult(Request $request, $id){
-            $searchdetails = Search::find($id);
+            $searchdetails = Search::where('id', $id)->where('user_id', Auth::id())->first();
             if (!$searchdetails) {
                 return redirect()->route('front.search');
             }
@@ -1195,11 +1193,11 @@ class FrontController extends Controller
             }
             if(!empty($searchdetails->board)){
                 $board = $searchdetails->board;
-                $lists = $lists->whereRaw('FIND_IN_SET("'.$board.'",teachers.board)');                   
+                $lists = $lists->whereRaw('FIND_IN_SET(?, teachers.board)', [$board]);
             }
             if(!empty($searchdetails->subject)){
                 $subject = $searchdetails->subject;
-                $lists = $lists->whereRaw('FIND_IN_SET("'.$subject.'",teachers.subjects)');                   
+                $lists = $lists->whereRaw('FIND_IN_SET(?, teachers.subjects)', [$subject]);
             }
             if(!empty($searchdetails->gender)){
                 $lists = $lists->where('teachers.gender',$searchdetails->gender);
@@ -1230,7 +1228,21 @@ class FrontController extends Controller
             $lists = $lists->paginate(20)->withQueryString();
             $lists = $this->enrichTeacherLists($lists);
             $custom_lookups = CustomData::pluck('name', 'id')->toArray();
-            return Inertia::render('Front/SearchResults', compact('lists', 'searchdetails', 'custom_lookups'));
+            $states = CustomData::where('key_name', 'state')->where('parent_id', 0)->orderBy('name', 'asc')->get(['id', 'name']);
+            $subjects = CustomData::where('key_name', 'subject')->orderBy('name', 'asc')->get(['id', 'name']);
+            $boards = CustomData::where('key_name', 'board')->orderBy('name', 'asc')->get(['id', 'name']);
+            $searchdetails = [
+                'search_state' => $searchdetails->state ?? '',
+                'search_district' => $searchdetails->district ?? '',
+                'search_city' => $searchdetails->city ?? '',
+                'search_board' => $searchdetails->board ?? '',
+                'search_subject' => $searchdetails->subject ?? '',
+                'search_gender' => $searchdetails->gender ?? '',
+                'radius' => $radius,
+                'user_lat' => $userLat,
+                'user_lng' => $userLng,
+            ];
+            return Inertia::render('Front/SearchResults', compact('lists', 'searchdetails', 'custom_lookups', 'states', 'subjects', 'boards'));
         }
 
         private function enrichTeacherLists($lists)
@@ -1310,10 +1322,9 @@ class FrontController extends Controller
 
         public function searchdestroy($id)
         {
-            $searchlist = Search::findorfail($id);
-            $searchlist->forceDelete(); 
+            $searchlist = Search::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+            $searchlist->forceDelete();
             return redirect()->back()->withSuccess('Record deleted successfully.');
-             
         } 
 
         public function team(Request $request){

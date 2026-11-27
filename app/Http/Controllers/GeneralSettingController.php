@@ -27,10 +27,11 @@ class GeneralSettingController extends Controller
         $request->validate([
             'name' => 'required|string|max:192',
             'mobile' => 'nullable|numeric',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
 
-        $generalsettings = General_Setting::find(1);
+        $generalsettings = General_Setting::firstOrNew(['id' => 1]);
         $imageName='';
         if(!empty($request->file('logo'))){
             //unlink old image
@@ -42,17 +43,20 @@ class GeneralSettingController extends Controller
                     File::delete($image_path_thumb);
                 }
             }
-            $image = Image::read($request->file('logo'));
-            // Main Image Upload on Folder Code
-            $imageName = time().'-'.$request->file('logo')->getClientOriginalName();
-            $destinationPath = public_path('generalsettings/');
-            $image->save($destinationPath.$imageName);
-    
-            // Generate Thumbnail Image Upload on Folder Code
-            $destinationPathThumbnail = public_path('generalsettings/thumbnail/');
-            $image->resize(100,100);
-            $image->save($destinationPathThumbnail.$imageName);
-            $generalsettings->logo = $imageName;
+            try {
+                $image = Image::read($request->file('logo'));
+                $imageName = time().'-'.$request->file('logo')->getClientOriginalName();
+                $destinationPath = public_path('generalsettings/');
+                $destinationPathThumbnail = public_path('generalsettings/thumbnail/');
+                File::ensureDirectoryExists($destinationPath);
+                File::ensureDirectoryExists($destinationPathThumbnail);
+                $image->save($destinationPath.$imageName);
+                $image->resize(100,100);
+                $image->save($destinationPathThumbnail.$imageName);
+                $generalsettings->logo = $imageName;
+            } catch (\Throwable $e) {
+                return redirect()->back()->withInput()->with('error', 'Failed to process uploaded logo: ' . $e->getMessage());
+            }
             }
         $generalsettings->name = $request->name??'';
         if (!empty($imageName)) {

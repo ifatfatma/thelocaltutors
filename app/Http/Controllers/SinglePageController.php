@@ -59,7 +59,7 @@ class SinglePageController extends Controller
      */
     public function edit($id)
     {
-        $singlepages = SinglePage::find($id);
+        $singlepages = SinglePage::findOrFail($id);
         return Inertia::render('Admin/SinglePages/Edit', ['singlepages' => $singlepages]);
 
     }

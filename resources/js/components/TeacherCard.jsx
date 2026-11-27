@@ -575,7 +575,13 @@ export default function TeacherCard({
                                                 fontSize: '0.86rem',
                                                 color: '#334155',
                                             }}
-                                            dangerouslySetInnerHTML={{ __html: rawBio }}
+                                            dangerouslySetInnerHTML={{
+                                                __html: String(rawBio)
+                                                    .replace(/<\s*(script|style|iframe|object|embed|applet)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+                                                    .replace(/<\s*(script|style|iframe|object|embed|applet)[^>]*>/gi, '')
+                                                    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                                                    .replace(/(href|src)\s*=\s*("?\s*(?:javascript|vbscript|data):[^"'\s>]*"?|'?\s*(?:javascript|vbscript|data):[^"'\s>]*'?)/gi, '$1="#"'),
+                                            }}
                                         />
                                     ) : (
                                         <p

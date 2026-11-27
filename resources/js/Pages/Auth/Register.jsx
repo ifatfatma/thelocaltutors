@@ -364,7 +364,7 @@ export default function Register() {
                             onChange={(e) => setForm({ ...form, terms: e.target.checked })}
                         />
                         <label className="form-check-label text-muted small" htmlFor="terms">
-                            I agree to the <a href="/terms" target="_blank" className="text-primary text-decoration-none">Terms of Service</a> &amp; <a href="/privacy" target="_blank" className="text-primary text-decoration-none">Privacy Policy</a>
+                            I agree to the <a href="/about" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none">Terms of Service</a> &amp; <a href="/about" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none">Privacy Policy</a>
                         </label>
                         {errors.terms && <div className="text-danger small">{errors.terms[0]}</div>}
                     </div>

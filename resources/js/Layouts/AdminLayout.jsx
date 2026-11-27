@@ -94,10 +94,10 @@ export default function AdminLayout({ children, title }) {
                     </button>
 
                     <div className="d-flex align-items-center">
-                        <Link href="/" target="_blank" className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                        <a href="/" target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
                             <i className="bi bi-box-arrow-up-right"></i>
                             <span className="d-none d-sm-inline">View Website</span>
-                        </Link>
+                        </a>
                     </div>
 
                     <div className="ms-auto d-flex align-items-center gap-3">

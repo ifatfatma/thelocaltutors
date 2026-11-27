@@ -55,6 +55,17 @@ export default function EditProfile({
     });
 
     const [imageFile, setImageFile] = useState(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+    useEffect(() => {
+        if (!imageFile) {
+            setImagePreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(imageFile);
+        setImagePreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [imageFile]);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
     const [detectingLocation, setDetectingLocation] = useState(false);
@@ -353,7 +364,6 @@ export default function EditProfile({
                 router.reload({ preserveScroll: true });
             }, 1800);
         } catch (err) {
-            console.error(err);
             const msg = err.response?.data?.message || 'Error updating profile. Please check your inputs.';
             setStatusMsg({ type: 'danger', text: msg });
         } finally {
@@ -469,8 +479,8 @@ export default function EditProfile({
                                     <div className="col-md-3 text-center">
                                         <img
                                             src={
-                                                imageFile
-                                                    ? URL.createObjectURL(imageFile)
+                                                imagePreviewUrl
+                                                    ? imagePreviewUrl
                                                     : userdetails?.image
                                                     ? `/user/${userdetails.image}`
                                                     : '/front/img/noprofileimage.png'

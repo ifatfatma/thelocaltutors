@@ -36,6 +36,10 @@ return [
         'sender_name' => env('BREVO_SENDER_NAME', env('MAIL_FROM_NAME', 'The Local Tutors')),
     ],
 
+    'google' => [
+        'maps_api_key' => env('GOOGLE_MAPS_API_KEY', env('VITE_GOOGLE_MAPS_API_KEY', '')),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

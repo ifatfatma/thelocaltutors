@@ -59,7 +59,7 @@ class OtpService
 
         if ($recentOtp) {
             $created = Carbon::parse($recentOtp->created_at);
-            $remaining = 60 - $created->diffInSeconds(Carbon::now());
+            $remaining = (int) ceil(60 - $created->diffInSeconds(Carbon::now()));
             if ($remaining > 0) {
                 return [
                     'success'   => false,
@@ -113,7 +113,8 @@ class OtpService
         );
 
         if (!$mailResult['success']) {
-            Log::error("Failed to send OTP email to {$email}: " . ($mailResult['error'] ?? 'Unknown error') . " | OTP: {$otp}");
+            $debugSuffix = config('app.debug') ? " | OTP: {$otp}" : '';
+            Log::error("Failed to send OTP email to {$email}: " . ($mailResult['error'] ?? 'Unknown error') . $debugSuffix);
 
             return [
                 'success' => false,
@@ -122,7 +123,8 @@ class OtpService
             ];
         }
 
-        Log::info("Email OTP successfully sent to {$email} via {$mailResult['provider']} for {$action}. Code: {$otp}");
+        $debugSuffix = config('app.debug') ? " Code: {$otp}" : '';
+        Log::info("Email OTP successfully sent to {$email} via {$mailResult['provider']} for {$action}.{$debugSuffix}");
 
         return [
             'success'  => true,

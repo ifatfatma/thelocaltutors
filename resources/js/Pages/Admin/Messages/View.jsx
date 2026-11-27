@@ -13,18 +13,20 @@ export default function View({ messagesdetails, approvedDemos = [], shares = [] 
             return;
         }
 
+        if (!messagesdetails) return;
+
         router.post('/admin/demo-shares/create', {
             teacher_demo_id: selectedDemoId,
-            student_name: messagesdetails.name,
-            student_phone: messagesdetails.phone,
-            student_email: messagesdetails.email,
-            contact_id: messagesdetails.id,
+            student_name: messagesdetails?.name || '',
+            student_phone: messagesdetails?.phone || '',
+            student_email: messagesdetails?.email || '',
+            contact_id: messagesdetails?.id,
         });
     };
 
     const handleCopy = (token) => {
         const fullUrl = `${window.location.origin}/demo-view/${token}`;
-        navigator.clipboard.writeText(fullUrl);
+        navigator.clipboard?.writeText(fullUrl)?.catch(() => {});
         setCopiedToken(token);
         setTimeout(() => setCopiedToken(null), 3000);
     };
@@ -138,10 +140,10 @@ export default function View({ messagesdetails, approvedDemos = [], shares = [] 
                                         ? `${window.location.origin}/demo-view/${share.token}`
                                         : `/demo-view/${share.token}`;
 
-                                    const cleanPhone = (messagesdetails.phone || '').replace(/\D+/g, '');
+                                    const cleanPhone = (messagesdetails?.phone || '').replace(/\D+/g, '');
                                     const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
                                     const waText = encodeURIComponent(
-                                        `Hello ${messagesdetails.name}, greetings from The Local Tutors!\n\nAs requested, here is your exclusive recorded demo class for ${share.teacher_demo?.subject} (${share.teacher_demo?.class_level}) by ${share.teacher_demo?.user?.name}:\n\n▶ Watch Demo Class: ${fullUrl}\n\nPlease watch and let us know your preferred regular class schedule!`
+                                        `Hello ${messagesdetails?.name || 'Student'}, greetings from The Local Tutors!\n\nAs requested, here is your exclusive recorded demo class for ${share.teacher_demo?.subject} (${share.teacher_demo?.class_level}) by ${share.teacher_demo?.user?.name}:\n\n▶ Watch Demo Class: ${fullUrl}\n\nPlease watch and let us know your preferred regular class schedule!`
                                     );
                                     const waLink = `https://wa.me/${waPhone}?text=${waText}`;
 

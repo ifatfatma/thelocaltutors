@@ -18,7 +18,10 @@ export default function Edit({ teacher }) {
         e.preventDefault();
         const data = new FormData();
         data.append('_method', 'PUT');
-        Object.keys(form).forEach((k) => data.append(k, form[k]));
+        Object.keys(form).forEach((k) => {
+            if (k === 'password' && !form[k]) return;
+            data.append(k, form[k]);
+        });
         if (image) data.append('image', image);
 
         router.post(`/admin/teacher/${teacher.id}`, data, {

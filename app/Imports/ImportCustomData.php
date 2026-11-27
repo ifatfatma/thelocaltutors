@@ -14,29 +14,30 @@ class ImportCustomData implements ToModel
     */
     public function model(array $row)
     {
+        if (empty($row[0]) || empty($row[1])) {
+            return null;
+        }
 
+        $name = trim((string) $row[0]);
+        $keyName = trim((string) $row[1]);
+        $parentId = isset($row[2]) && is_numeric($row[2]) ? (int) $row[2] : 0;
 
-$jewdata = CustomData::where('name',$row[0])->where('key_name',$row[1])->where('parent_id',$row[2])->first();
-if(empty($jewdata->id)){
-    //Log::info(json_encode($row));
-    $newdata = new CustomData;
-    $newdata->name = $row[0];
-    $newdata->key_name = $row[1];
-    $newdata->parent_id = $row[2];
-    $newdata->is_active = 1;
-    $newdata->created_at = date('Y-m-d H:i:s');
-    $newdata->updated_at = date('Y-m-d H:i:s');
-    //$newdata->save();
-    return $newdata;
-}
-//Log::info(json_encode($jewdata));
-        /* return new CustomData([
-            'name'      => $row[0],
-            'key_name'  => $row[1], 
-            'parent_id' => $row[2], 
-            'is_active' => 1, 
-            'created_at'=>date('Y-m-d H:i:s'),
-            'updated_at'=>date('Y-m-d H:i:s')
-        ]); */ 
+        $jewdata = CustomData::where('name', $name)
+            ->where('key_name', $keyName)
+            ->where('parent_id', $parentId)
+            ->first();
+
+        if (empty($jewdata->id)) {
+            $newdata = new CustomData;
+            $newdata->name = $name;
+            $newdata->key_name = $keyName;
+            $newdata->parent_id = $parentId;
+            $newdata->is_active = 1;
+            $newdata->created_at = date('Y-m-d H:i:s');
+            $newdata->updated_at = date('Y-m-d H:i:s');
+            return $newdata;
+        }
+
+        return null;
     }
 }

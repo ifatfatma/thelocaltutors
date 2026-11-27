@@ -139,7 +139,10 @@ export default function Index({ gallery }) {
                                                 <td>
                                                     <img
                                                         src={`/gallery/thumbnail/${item.gallery_image}`}
-                                                        onError={(e) => { e.target.src = `/gallery/${item.gallery_image}`; }}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = `/gallery/${item.gallery_image}`;
+                                                        }}
                                                         alt={item.title}
                                                         className="rounded-3 shadow-sm"
                                                         style={{ width: '60px', height: '45px', objectFit: 'cover' }}
