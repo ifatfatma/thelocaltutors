@@ -21,8 +21,9 @@ class FrontUserController extends Controller
     //edit profile for user
     public function editprofile(){
         
-        $userdetails = User::where('id',Auth::user()->id)->first();  
-        $teacherdetails = Teacher::where('user_id',Auth::user()->id)->first();
+        $userdetails = User::where('id',Auth::user()->id)->first();
+        $isTeacher = ($userdetails && strtolower((string)$userdetails->type) === 'teacher');
+        $teacherdetails = $isTeacher ? Teacher::where('user_id', Auth::user()->id)->first() : null;
         $states = CustomData::where('key_name','state')->where('parent_id',0)->orderBy('name','asc')->get();
         $boards = CustomData::where('key_name','board')->orderBy('name','asc')->get();
         $subjects = CustomData::where('key_name','subject')->orderBy('name','asc')->get();
@@ -276,8 +277,12 @@ class FrontUserController extends Controller
         }
         $teacherbasic->save();
 
-        if ($teacherbasic->type == 'teacher' || $request->filled('experience') || $request->filled('teaching_mode') || $request->filled('qualification') || Teacher::where('user_id', Auth::user()->id)->exists()) {
+        // Strictly update Teacher profile ONLY for accounts with the teacher role (never auto-promote students/admins)
+        if (strtolower((string)$teacherbasic->type) === 'teacher') {
             $teacher                = Teacher::firstOrNew(['user_id' => Auth::user()->id]);
+            $teacher->name          = $teacherbasic->name;
+            $teacher->email         = $teacherbasic->email;
+            $teacher->mobile        = $teacherbasic->mobile;
             $teacher->gender        = $request->gender ?? 'Male';
             $teacher->user_id       = Auth::user()->id;
             $teacher->description   = \App\Helpers\HtmlSanitizer::clean($request->description);
@@ -314,11 +319,6 @@ class FrontUserController extends Controller
             }
 
             $teacher->save();
-
-            if ($teacherbasic->type !== 'teacher') {
-                $teacherbasic->type = 'teacher';
-                $teacherbasic->save();
-            }
         }
 
         if ($request->wantsJson() || $request->ajax()) {

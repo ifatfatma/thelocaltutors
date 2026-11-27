@@ -41,11 +41,13 @@ Auth::routes();
  
 
 Route::prefix('admin')->group(function () {
-      Route::get('/', function () {
+    Route::get('/', function () {
         return redirect()->route('login');
-    }); 
-Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout');
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+    });
+    Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout');
+
+    Route::middleware(['auth', 'user_role:admin'])->group(function () {
+        Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('teacher/updatemore/{id}', [TeacherController::class, 'updateview'])->name('teacher.updatemore');
 Route::post('teacher/updatemore/post/{id}', [TeacherController::class, 'updatemore'])->name('teacher.updatemore.post');
 Route::get('generalsettings', [GeneralSettingController::class, 'index'])->name('generalsettings.index');
@@ -93,7 +95,7 @@ Route::resources([
     'couse_faq'       => CourseFaqController::class,
     'messages'         => ContactUsController::class,
 ]);
-
+    });
 });
 
 Route::get('/',[FrontController::class, 'index'])->name('front.index');
@@ -167,17 +169,20 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::get('/changepassword',[FrontController::class, 'changepassword'])->name('front.changepassword');
     Route::get('/myfavouritecourses',[FrontController::class, 'myfavouritecourses'])->name('front.myfavouritecourses'); 
     Route::get('/mycourses',[FrontController::class, 'mycourses'])->name('front.mycourses'); 
-    Route::get('/dashboard/demos', [TeacherDemoController::class, 'teacherIndex'])->name('front.dashboard.demos');
-    Route::post('/dashboard/demos', [TeacherDemoController::class, 'teacherStore'])->name('front.dashboard.demos.store');
-    Route::delete('/dashboard/demos/{id}', [TeacherDemoController::class, 'teacherDestroy'])->name('front.dashboard.demos.destroy');
+    // Teacher-Only Portal Routes (Strict backend RBAC: Teachers & Admins only, HTTP 403 for Students)
+    Route::middleware(['user_role:teacher,admin'])->group(function () {
+        Route::get('/dashboard/demos', [TeacherDemoController::class, 'teacherIndex'])->name('front.dashboard.demos');
+        Route::post('/dashboard/demos', [TeacherDemoController::class, 'teacherStore'])->name('front.dashboard.demos.store');
+        Route::delete('/dashboard/demos/{id}', [TeacherDemoController::class, 'teacherDestroy'])->name('front.dashboard.demos.destroy');
 
-    // Teacher Course Management Routes (Add course, set custom price with 5% commission)
-    Route::get('/dashboard/courses', [TeacherCourseController::class, 'index'])->name('front.dashboard.courses');
-    Route::post('/dashboard/courses', [TeacherCourseController::class, 'store'])->name('front.dashboard.courses.store');
-    Route::post('/dashboard/courses/{id}/update', [TeacherCourseController::class, 'update'])->name('front.dashboard.courses.update');
-    Route::delete('/dashboard/courses/{id}', [TeacherCourseController::class, 'destroy'])->name('front.dashboard.courses.destroy');
-    Route::post('/dashboard/courses/{id}/toggle', [TeacherCourseController::class, 'toggleStatus'])->name('front.dashboard.courses.toggle');
-    Route::post('/dashboard/courses/enrollment/{id}/status', [TeacherCourseController::class, 'updateEnrollmentStatus'])->name('front.dashboard.courses.enrollment.status');
+        // Teacher Course Management Routes (Add course, set custom price with 5% commission)
+        Route::get('/dashboard/courses', [TeacherCourseController::class, 'index'])->name('front.dashboard.courses');
+        Route::post('/dashboard/courses', [TeacherCourseController::class, 'store'])->name('front.dashboard.courses.store');
+        Route::post('/dashboard/courses/{id}/update', [TeacherCourseController::class, 'update'])->name('front.dashboard.courses.update');
+        Route::delete('/dashboard/courses/{id}', [TeacherCourseController::class, 'destroy'])->name('front.dashboard.courses.destroy');
+        Route::post('/dashboard/courses/{id}/toggle', [TeacherCourseController::class, 'toggleStatus'])->name('front.dashboard.courses.toggle');
+        Route::post('/dashboard/courses/enrollment/{id}/status', [TeacherCourseController::class, 'updateEnrollmentStatus'])->name('front.dashboard.courses.enrollment.status');
+    });
     Route::post('ChangePasswordPost',[FontDashboardController::class,'ChangePasswordPost'])->name('front.changepassword.post'); 
     Route::post('/logout',[FontDashboardController::class, 'logout'])->name('front.logout');
 

@@ -6,25 +6,42 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
     const { auth } = usePage().props;
     const user = auth?.user || {};
 
-    const quickLinks = [
-        {
-            title: 'My Offered Courses & Add Course',
-            desc: 'Create academic courses or batch programs, set your fees with transparent 5% platform commission, and manage enrollments.',
-            href: '/dashboard/courses',
-            icon: 'bi-journal-plus',
-            color: 'primary',
-            badge: 'Teacher Portal',
-        },
-        {
-            title: 'Recorded Demo Sessions',
-            desc: 'Submit and manage sample teaching video previews for interested students and parents.',
-            href: '/dashboard/demos',
-            icon: 'bi-camera-video-fill',
-            color: 'primary',
-        },
+    const isAdmin = Boolean(
+        user.is_admin ||
+        user.type === 'admin' ||
+        user.roles?.includes('Super Admin') ||
+        user.roles?.includes('Admin')
+    );
+    const isTeacher = Boolean(!isAdmin && (user.is_teacher || user.type === 'teacher'));
+    const canManageTeaching = isTeacher || isAdmin;
+
+    const teacherLinks = canManageTeaching
+        ? [
+              {
+                  title: 'My Offered Courses & Add Course',
+                  desc: 'Create academic courses or batch programs, set your fees with transparent 5% platform commission, and manage enrollments.',
+                  href: '/dashboard/courses',
+                  icon: 'bi-journal-plus',
+                  color: 'primary',
+                  badge: 'Teacher Portal',
+              },
+              {
+                  title: 'Recorded Demo Sessions',
+                  desc: 'Submit and manage sample teaching video previews for interested students and parents.',
+                  href: '/dashboard/demos',
+                  icon: 'bi-camera-video-fill',
+                  color: 'primary',
+                  badge: 'Teacher Portal',
+              },
+          ]
+        : [];
+
+    const commonLinks = [
         {
             title: 'Edit Profile',
-            desc: 'Update your contact information, location, and teaching profile details.',
+            desc: canManageTeaching
+                ? 'Update your contact information, location, and teaching profile details.'
+                : 'Update your personal details, email, mobile number, and profile photo.',
             href: '/editprofile',
             icon: 'bi-pencil-square',
             color: 'primary',
@@ -58,6 +75,8 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
             color: 'info',
         },
     ];
+
+    const quickLinks = [...teacherLinks, ...commonLinks];
 
     return (
         <FrontLayout>

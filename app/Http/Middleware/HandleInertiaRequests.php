@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $roleFlags = \App\Http\Middleware\EnsureUserRole::resolveRoleFlags($user);
 
         return [
             ...parent::share($request),
@@ -50,6 +51,9 @@ class HandleInertiaRequests extends Middleware
                     'image' => $user->image ?? '',
                     'type' => $user->type ?? null,
                     'roles' => method_exists($user, 'roles') && $user->roles ? $user->roles->pluck('name') : [],
+                    'is_admin' => $roleFlags['is_admin'],
+                    'is_teacher' => $roleFlags['is_teacher'],
+                    'is_student' => $roleFlags['is_student'],
                 ] : null,
             ],
             'flash' => [
