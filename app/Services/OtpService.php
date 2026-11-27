@@ -15,10 +15,11 @@ class OtpService
      * Send a 6-digit OTP code to the given email address.
      *
      * @param string $email
-     * @param string $action 'login' | 'reset_password'
+     * @param string $action 'login' | 'reset_password' | 'register' | 'verify_email' | 'verify_mobile'
+     * @param string|null $customContext Optional extra context (e.g. new mobile number)
      * @return array
      */
-    public static function generateAndSendOtp(string $email, string $action = 'login'): array
+    public static function generateAndSendOtp(string $email, string $action = 'login', ?string $customContext = null): array
     {
         $email = strtolower(trim($email));
 
@@ -32,7 +33,7 @@ class OtpService
 
         // For login and password reset, ensure account exists
         $user = User::where('email', $email)->first();
-        if (!$user && !in_array($action, ['register', 'verify_email'])) {
+        if (!$user && !in_array($action, ['register', 'verify_email', 'verify_mobile'])) {
             return [
                 'success' => false,
                 'status'  => 404,
@@ -44,7 +45,7 @@ class OtpService
             return [
                 'success' => false,
                 'status'  => 403,
-                'message' => 'Your account is deactivated. Please contact support.',
+                'message' => 'Your account is not verified yet. Please verify your registration via Email OTP first.',
             ];
         }
 
@@ -94,13 +95,14 @@ class OtpService
         $actionTitle = match ($action) {
             'reset_password' => 'Password Reset Code',
             'register'       => 'Registration Verification Code',
-            'verify_email'   => 'Email Verification Code',
+            'verify_email'   => 'Email Change Verification Code',
+            'verify_mobile'  => 'Mobile Number Change Verification Code',
             default          => 'Sign-In Verification Code',
         };
         $userName = $user ? ($user->name ?: 'Learner / Educator') : 'Learner / Educator';
         $appName = config('app.name', 'The Local Tutors');
 
-        $htmlBody = self::buildHtmlEmail($userName, $otp, $action, $appName);
+        $htmlBody = self::buildHtmlEmail($userName, $otp, $action, $appName, $customContext);
 
         // Send via BrevoMailService (bypasses blocked SMTP ports via REST API, with fallback)
         $mailResult = BrevoMailService::sendTransactionalEmail(
@@ -209,19 +211,21 @@ class OtpService
     /**
      * Build responsive HTML email template for OTP.
      */
-    private static function buildHtmlEmail(string $userName, string $otp, string $action, string $appName): string
+    private static function buildHtmlEmail(string $userName, string $otp, string $action, string $appName, ?string $customContext = null): string
     {
         $actionDesc = match ($action) {
             'reset_password' => 'use the verification code below to reset your password',
-            'register'       => 'use the verification code below to complete your registration',
-            'verify_email'   => 'use the verification code below to verify your email address',
+            'register'       => 'use the verification code below to verify your email and complete your registration',
+            'verify_email'   => 'use the verification code below to verify your new email address',
+            'verify_mobile'  => 'use the verification code below to confirm updating your mobile number' . ($customContext ? " to <strong>{$customContext}</strong>" : ''),
             default          => 'use the verification code below to sign in to your account',
         };
 
         $actionNote = match ($action) {
             'reset_password' => 'If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.',
             'register'       => 'If you did not initiate this registration, please disregard this email.',
-            'verify_email'   => 'If you did not request this verification code, please disregard this email.',
+            'verify_email'   => 'If you did not request this email change, please secure your account immediately.',
+            'verify_mobile'  => 'If you did not request this mobile number change, please secure your account immediately.',
             default          => 'If you did not attempt to sign in, please secure your account immediately.',
         };
 

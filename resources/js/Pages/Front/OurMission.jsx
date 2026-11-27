@@ -9,7 +9,7 @@ export default function OurMission({ pageData }) {
 
             <div className="bg-primary text-white py-5">
                 <div className="container text-center">
-                    <h1 className="fw-bold mb-2">Our Mission</h1>
+                    <h1 className="fw-bold text-white mb-2">Our Mission</h1>
                     <nav aria-label="breadcrumb">
                         <ol className="breadcrumb justify-content-center mb-0">
                             <li className="breadcrumb-item">

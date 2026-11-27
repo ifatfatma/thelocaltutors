@@ -9,7 +9,7 @@ export default function AddTeacher() {
 
             <div className="bg-primary text-white py-5">
                 <div className="container text-center">
-                    <h1 className="fw-bold mb-2">Join Our Teaching Community</h1>
+                    <h1 className="fw-bold text-white mb-2">Join Our Teaching Community</h1>
                     <p className="text-white-50">Share your knowledge and tutor eager learners in your city</p>
                 </div>
             </div>

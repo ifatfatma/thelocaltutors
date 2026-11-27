@@ -30,11 +30,11 @@ class FrontAuthController extends Controller
         $loginInput = trim($request->user_mobile);
         $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'mobile';
 
-        // Check user active status first
+        // Check user active / verified status first
         $userCheck = User::where($field, $loginInput)->first();
         if ($userCheck && isset($userCheck->is_active) && (int)$userCheck->is_active === 0) {
             return response()->json([
-                'message' => 'Your account is currently inactive. Please contact support.',
+                'message' => 'Your account is not verified yet. Please verify your registration via Email OTP before signing in.',
             ], 403);
         }
 
@@ -71,8 +71,8 @@ class FrontAuthController extends Controller
     }
 
     /**
-     * Register a new user (Student or Educator) capturing mobile and email.
-     * Activates account immediately without SMS blocking.
+     * Register a new user (Student or Educator).
+     * Forces Email OTP verification before the user can log in.
      */
     public function RegisterPost(RegisterRequest $request)
     {
@@ -85,16 +85,16 @@ class FrontAuthController extends Controller
 
         $email = strtolower(trim($request->email));
         $mobile = trim($request->mobile);
-        $isMobileOtp = ($request->verification_mode === 'mobile_otp');
 
         $user = new User();
-        $user->name      = trim($request->name);
-        $user->email     = $email;
-        $user->mobile    = $mobile;
-        $user->username  = $email;
-        $user->password  = Hash::make($request->password);
-        $user->type      = $request->usertype;
-        $user->is_active = $isMobileOtp ? 0 : 1;
+        $user->name              = trim($request->name);
+        $user->email             = $email;
+        $user->mobile            = $mobile;
+        $user->username          = $email;
+        $user->password          = Hash::make($request->password);
+        $user->type              = $request->usertype;
+        $user->is_active         = 0; // Inactive until Email OTP is verified
+        $user->email_verified_at = null;
         $user->save();
 
         // Create teacher profile if educator
@@ -112,33 +112,31 @@ class FrontAuthController extends Controller
             );
         }
 
-        // If user chose Mobile OTP verification
-        if ($isMobileOtp) {
-            $otp = rand(1000, 9999);
-            Session::put('session_otp', (string)$otp);
-            Session::put('session_mobile', $user->mobile);
-            \App\Http\Controllers\Common::sendOTP($user->mobile, $otp);
+        // Force Email OTP verification via Brevo
+        $otpResult = OtpService::generateAndSendOtp($user->email, 'register');
+
+        if (!($otpResult['success'] ?? false)) {
+            // Roll back unverified account so user can retry cleanly once email succeeds
+            if ($user->type === 'teacher') {
+                Teacher::where('user_id', $user->id)->delete();
+            }
+            $user->delete();
 
             return response()->json([
-                'success'       => true,
-                'otp_sent'      => true,
-                'mobile'        => $user->mobile,
-                'masked_mobile' => \App\Http\Controllers\Common::maskNumber($user->mobile),
-                'message'       => 'A 4-digit verification code has been sent to your mobile number (' . \App\Http\Controllers\Common::maskNumber($user->mobile) . '). Please verify your account.',
-                'dev_otp'       => config('app.debug') ? $otp : null,
-            ]);
+                'success' => false,
+                'message' => $otpResult['message'] ?? 'Unable to send verification OTP email. Please try again.',
+            ], $otpResult['status'] ?? 500);
         }
 
-        // Instant registration - auto login
-        Auth::login($user);
-
-        $isAdmin = ($user->type === 'admin');
-        $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
+        Session::put('pending_register_email', $user->email);
 
         return response()->json([
             'success'      => true,
-            'message'      => 'Account created successfully! Welcome to The Local Tutors.',
-            'redirect_url' => $redirectUrl,
+            'otp_sent'     => true,
+            'email'        => $user->email,
+            'masked_email' => OtpService::maskEmail($user->email),
+            'cooldown'     => $otpResult['cooldown'] ?? 60,
+            'message'      => $otpResult['message'] ?? ('A 6-digit verification code has been sent to ' . OtpService::maskEmail($user->email) . '. Please verify your email to activate your account.'),
         ]);
     }
 
@@ -259,60 +257,71 @@ class FrontAuthController extends Controller
     }
 
     /**
-     * Verify Mobile OTP during registration.
+     * Verify 6-digit Email OTP during registration and activate account.
+     * After verification, user can log in to their account.
      */
     public function RegisterPostOtp(Request $request)
     {
-        $myotp = trim($request->otp ?? ($request->first . $request->second . $request->third . $request->fourth));
-        $sessionOtp = Session::get('session_otp');
-        $sessionMobile = Session::get('session_mobile') ?? $request->mobile;
+        $email = strtolower(trim($request->email ?? Session::get('pending_register_email', '')));
+        $otp = trim($request->otp ?? '');
 
-        if (!empty($sessionOtp) && (string)$sessionOtp === (string)$myotp) {
-            $user = User::where('mobile', $sessionMobile)->first();
-            if ($user) {
-                $user->is_active = 1;
-                $user->save();
-                Auth::login($user);
-            }
-            Session::forget('session_otp');
-            Session::forget('session_mobile');
-
-            $isAdmin = ($user && $user->type === 'admin');
-            $redirectUrl = $isAdmin ? '/admin/home' : '/dashboard';
-
+        if (empty($email) || strlen($otp) !== 6) {
             return response()->json([
-                'code'         => 200,
-                'success'      => true,
-                'message'      => 'Mobile number verified successfully! Redirecting...',
-                'redirect_url' => $redirectUrl,
-            ]);
+                'code'    => 422,
+                'success' => false,
+                'message' => 'Please enter the complete 6-digit verification code sent to your email.',
+            ], 422);
         }
 
+        $verify = OtpService::verifyOtp($email, $otp, 'register', true);
+
+        if (!$verify['success']) {
+            return response()->json([
+                'code'    => 422,
+                'success' => false,
+                'message' => $verify['message'] ?? 'Invalid or expired verification code. Please try again.',
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json([
+                'code'    => 404,
+                'success' => false,
+                'message' => 'Registration account not found. Please register again.',
+            ], 404);
+        }
+
+        $user->is_active = 1;
+        $user->email_verified_at = now();
+        $user->save();
+
+        Session::forget('pending_register_email');
+
         return response()->json([
-            'code'    => 400,
-            'message' => 'Invalid verification code. Please check the 4-digit code and try again.',
-        ], 422);
+            'code'         => 200,
+            'success'      => true,
+            'message'      => 'Email verified successfully! Your account is now active. Redirecting to sign in...',
+            'redirect_url' => '/login',
+        ]);
     }
 
     /**
-     * Resend 4-digit Mobile OTP during registration.
+     * Resend 6-digit Email OTP during registration.
      */
     public function ResendRegisterOtp(Request $request)
     {
-        $sessionMobile = Session::get('session_mobile') ?? $request->mobile;
-        if (!$sessionMobile) {
-            return response()->json(['message' => 'Session expired. Please register again.'], 400);
+        $email = strtolower(trim($request->email ?? Session::get('pending_register_email', '')));
+        if (empty($email)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration session expired. Please submit the registration form again.',
+            ], 400);
         }
 
-        $otp = rand(1000, 9999);
-        Session::put('session_otp', (string)$otp);
-        \App\Http\Controllers\Common::sendOTP($sessionMobile, $otp);
+        $result = OtpService::generateAndSendOtp($email, 'register');
 
-        return response()->json([
-            'success'       => true,
-            'message'       => 'A new 4-digit OTP has been sent to ' . \App\Http\Controllers\Common::maskNumber($sessionMobile) . '.',
-            'dev_otp'       => config('app.debug') ? $otp : null,
-        ]);
+        return response()->json($result, $result['status'] ?? 200);
     }
 
     /**

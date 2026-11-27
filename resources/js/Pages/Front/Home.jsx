@@ -997,7 +997,7 @@ export default function Home({
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-primary mb-3 shadow-sm mx-auto">
+                                <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-primary mb-3 shadow-sm mx-auto" style={{ width: '58px', height: '58px' }}>
                                     <i className="bi bi-book-half fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">CBSE, ICSE &amp; WBBSE</h5>
@@ -1012,7 +1012,7 @@ export default function Home({
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-success mb-3 shadow-sm mx-auto">
+                                <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success mb-3 shadow-sm mx-auto" style={{ width: '58px', height: '58px' }}>
                                     <i className="bi bi-person-workspace fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">1-on-1 Home &amp; Online</h5>
@@ -1027,7 +1027,7 @@ export default function Home({
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-warning mb-3 shadow-sm mx-auto">
+                                <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-warning mb-3 shadow-sm mx-auto" style={{ width: '58px', height: '58px' }}>
                                     <i className="bi bi-shield-check fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">100% Verified Tutors</h5>
@@ -1042,7 +1042,7 @@ export default function Home({
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
                                 }}
                             >
-                                <div className="d-inline-flex p-3 rounded-circle bg-white text-info mb-3 shadow-sm mx-auto">
+                                <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-info mb-3 shadow-sm mx-auto" style={{ width: '58px', height: '58px' }}>
                                     <i className="bi bi-lightbulb-fill fs-4"></i>
                                 </div>
                                 <h5 className="fw-bold mb-1 text-white">Structured Guidance</h5>

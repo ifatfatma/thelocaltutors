@@ -28,7 +28,6 @@ class RegisterRequest extends FormRequest
             'mobile'            => 'required|regex:/^[0-9]{10}$/|unique:users,mobile',
             'password'          => 'required|min:6',
             'terms'             => 'required',
-            'verification_mode' => 'nullable|string|in:instant,mobile_otp',
         ];
     }
 

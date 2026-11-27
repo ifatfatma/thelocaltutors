@@ -146,7 +146,8 @@ Route::get('/login',[FrontController::class, 'login'])->name('front.login');
 Route::get('/register',[FrontController::class, 'register'])->name('front.register');
 Route::post('/RegisterPost',[FrontAuthController::class, 'RegisterPost'])->name('front.RegisterPost');
 Route::post('/RegisterPostOtp',[FrontAuthController::class, 'RegisterPostOtp'])->name('front.RegisterPostOtp');
-Route::post('/auth/register-mobile-otp/resend', [FrontAuthController::class, 'ResendRegisterOtp'])->name('front.register_otp.resend');
+Route::post('/auth/register-email-otp/resend', [FrontAuthController::class, 'ResendRegisterOtp'])->name('front.register_otp.resend');
+Route::post('/auth/register-mobile-otp/resend', [FrontAuthController::class, 'ResendRegisterOtp']);
 Route::post('/LoginPost',[FrontAuthController::class, 'LoginPost'])->name('front.LoginPost');
 
 // Email OTP Authentication & Password Recovery Routes
@@ -183,6 +184,8 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::get('/editprofile',[FrontUserController::class, 'editprofile'])->name('front.editprofile');
     Route::post('EditProfilePost',[FrontUserController::class,'EditProfilePost'])->name('front.EditProfilePost.post');
     Route::post('EditUserProfilePost',[FrontUserController::class,'EditUserProfilePost'])->name('front.EditUserProfilePost.post');
+    Route::post('/auth/profile-otp/send', [FrontUserController::class, 'sendProfileChangeOtp'])->name('front.profile_otp.send');
+    Route::post('/auth/profile-otp/verify', [FrontUserController::class, 'verifyProfileChangeOtp'])->name('front.profile_otp.verify');
     
 });
 

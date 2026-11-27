@@ -58,6 +58,112 @@ export default function EditProfile({
     const [detectingLocation, setDetectingLocation] = useState(false);
     const [locationStatus, setLocationStatus] = useState({ type: '', text: '' });
 
+    // Email & Mobile Change OTP Verification State
+    const originalEmail = (userdetails?.email || '').trim().toLowerCase();
+    const originalMobile = (userdetails?.mobile || '').trim();
+    const currentEmailNorm = (form.email || '').trim().toLowerCase();
+    const currentMobileNorm = (form.mobile || '').trim();
+    const emailChanged = currentEmailNorm !== originalEmail;
+    const mobileChanged = currentMobileNorm !== originalMobile;
+
+    const [emailOtp, setEmailOtp] = useState({
+        sent: false,
+        code: '',
+        loading: false,
+        verifying: false,
+        verifiedValue: '',
+        cooldown: 0,
+        msg: '',
+        msgType: '',
+    });
+    const [mobileOtp, setMobileOtp] = useState({
+        sent: false,
+        code: '',
+        loading: false,
+        verifying: false,
+        verifiedValue: '',
+        cooldown: 0,
+        msg: '',
+        msgType: '',
+    });
+
+    const isEmailChangeVerified = !emailChanged || emailOtp.verifiedValue === currentEmailNorm;
+    const isMobileChangeVerified = !mobileChanged || mobileOtp.verifiedValue === currentMobileNorm;
+
+    // OTP cooldown timers
+    useEffect(() => {
+        if (emailOtp.cooldown <= 0 && mobileOtp.cooldown <= 0) return;
+        const timer = setInterval(() => {
+            setEmailOtp((prev) => (prev.cooldown > 0 ? { ...prev, cooldown: prev.cooldown - 1 } : prev));
+            setMobileOtp((prev) => (prev.cooldown > 0 ? { ...prev, cooldown: prev.cooldown - 1 } : prev));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [emailOtp.cooldown, mobileOtp.cooldown]);
+
+    const handleSendProfileOtp = async (type) => {
+        const value = type === 'email' ? currentEmailNorm : currentMobileNorm;
+        const setter = type === 'email' ? setEmailOtp : setMobileOtp;
+
+        setter((prev) => ({ ...prev, loading: true, msg: '', msgType: '' }));
+        try {
+            const res = await axios.post('/auth/profile-otp/send', { type, value });
+            setter((prev) => ({
+                ...prev,
+                loading: false,
+                sent: true,
+                code: '',
+                cooldown: res.data?.cooldown || 60,
+                msg: res.data?.message || '6-digit verification OTP sent!',
+                msgType: 'success',
+            }));
+        } catch (err) {
+            const data = err.response?.data || {};
+            setter((prev) => ({
+                ...prev,
+                loading: false,
+                cooldown: data.cooldown || prev.cooldown,
+                msg: data.message || 'Failed to send verification OTP.',
+                msgType: 'danger',
+            }));
+        }
+    };
+
+    const handleVerifyProfileOtp = async (type) => {
+        const value = type === 'email' ? currentEmailNorm : currentMobileNorm;
+        const state = type === 'email' ? emailOtp : mobileOtp;
+        const setter = type === 'email' ? setEmailOtp : setMobileOtp;
+
+        if ((state.code || '').trim().length !== 6) {
+            setter((prev) => ({ ...prev, msg: 'Please enter the 6-digit OTP.', msgType: 'danger' }));
+            return;
+        }
+
+        setter((prev) => ({ ...prev, verifying: true, msg: '', msgType: '' }));
+        try {
+            const res = await axios.post('/auth/profile-otp/verify', {
+                type,
+                value,
+                otp: state.code.trim(),
+            });
+            setter((prev) => ({
+                ...prev,
+                verifying: false,
+                verifiedValue: value,
+                sent: false,
+                code: '',
+                msg: res.data?.message || 'Verified successfully!',
+                msgType: 'success',
+            }));
+        } catch (err) {
+            setter((prev) => ({
+                ...prev,
+                verifying: false,
+                msg: err.response?.data?.message || 'Invalid or expired OTP.',
+                msgType: 'danger',
+            }));
+        }
+    };
+
     // Auto-dismiss status toast after 4.5 seconds
     useEffect(() => {
         if (!statusMsg.text) return;
@@ -170,6 +276,23 @@ export default function EditProfile({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!isEmailChangeVerified) {
+            setStatusMsg({
+                type: 'danger',
+                text: 'You changed your email address. Please verify your new email via OTP before saving.',
+            });
+            return;
+        }
+
+        if (!isMobileChangeVerified) {
+            setStatusMsg({
+                type: 'danger',
+                text: 'You changed your mobile number. Please verify your new mobile number via OTP before saving.',
+            });
+            return;
+        }
+
         setLoading(true);
         setStatusMsg({ type: '', text: '' });
 
@@ -382,26 +505,168 @@ export default function EditProfile({
                                             </div>
 
                                             <div className="col-sm-6">
-                                                <label className="form-label small fw-semibold text-secondary">Email Address *</label>
+                                                <label className="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between">
+                                                    <span>Email Address *</span>
+                                                    {emailChanged && isEmailChangeVerified && (
+                                                        <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                            <i className="bi bi-check-circle-fill me-1"></i>Verified
+                                                        </span>
+                                                    )}
+                                                </label>
                                                 <input
                                                     type="email"
                                                     className="form-control"
                                                     value={form.email}
-                                                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setForm({ ...form, email: e.target.value });
+                                                        if (emailOtp.msg) setEmailOtp((p) => ({ ...p, msg: '' }));
+                                                    }}
                                                     required
                                                 />
+                                                {emailChanged && !isEmailChangeVerified && (
+                                                    <div className="mt-2 p-2 bg-warning-subtle border border-warning-subtle rounded-3 small">
+                                                        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1">
+                                                            <span className="text-dark fw-semibold" style={{ fontSize: '12px' }}>
+                                                                <i className="bi bi-shield-lock-fill text-warning me-1"></i>
+                                                                Verify new email via OTP
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-primary btn-sm py-0 px-2"
+                                                                style={{ fontSize: '12px' }}
+                                                                onClick={() => handleSendProfileOtp('email')}
+                                                                disabled={emailOtp.loading || emailOtp.cooldown > 0}
+                                                            >
+                                                                {emailOtp.loading
+                                                                    ? 'Sending...'
+                                                                    : emailOtp.cooldown > 0
+                                                                    ? `Resend (${emailOtp.cooldown}s)`
+                                                                    : emailOtp.sent
+                                                                    ? 'Resend OTP'
+                                                                    : 'Send OTP'}
+                                                            </button>
+                                                        </div>
+                                                        {emailOtp.sent && (
+                                                            <div className="input-group input-group-sm mt-2">
+                                                                <input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    maxLength="6"
+                                                                    className="form-control"
+                                                                    placeholder="Enter 6-digit OTP"
+                                                                    value={emailOtp.code}
+                                                                    onChange={(e) =>
+                                                                        setEmailOtp((p) => ({
+                                                                            ...p,
+                                                                            code: e.target.value.replace(/\D/g, '').slice(0, 6),
+                                                                        }))
+                                                                    }
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-success fw-semibold"
+                                                                    onClick={() => handleVerifyProfileOtp('email')}
+                                                                    disabled={emailOtp.verifying || emailOtp.code.length !== 6}
+                                                                >
+                                                                    {emailOtp.verifying ? 'Verifying...' : 'Verify'}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {emailOtp.msg && (
+                                                            <div
+                                                                className={`mt-1 fw-medium ${
+                                                                    emailOtp.msgType === 'success' ? 'text-success' : 'text-danger'
+                                                                }`}
+                                                                style={{ fontSize: '11.5px' }}
+                                                            >
+                                                                {emailOtp.msg}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="col-sm-6">
-                                                <label className="form-label small fw-semibold text-secondary">Mobile Number (Calling) *</label>
+                                                <label className="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between">
+                                                    <span>Mobile Number (Calling) *</span>
+                                                    {mobileChanged && isMobileChangeVerified && (
+                                                        <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                            <i className="bi bi-check-circle-fill me-1"></i>Verified
+                                                        </span>
+                                                    )}
+                                                </label>
                                                 <input
                                                     type="tel"
                                                     className="form-control"
                                                     placeholder="10-digit mobile number"
                                                     value={form.mobile}
-                                                    onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setForm({ ...form, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) });
+                                                        if (mobileOtp.msg) setMobileOtp((p) => ({ ...p, msg: '' }));
+                                                    }}
                                                     required
                                                 />
+                                                {mobileChanged && !isMobileChangeVerified && (
+                                                    <div className="mt-2 p-2 bg-warning-subtle border border-warning-subtle rounded-3 small">
+                                                        <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1">
+                                                            <span className="text-dark fw-semibold" style={{ fontSize: '12px' }}>
+                                                                <i className="bi bi-shield-lock-fill text-warning me-1"></i>
+                                                                Verify new mobile via Email OTP
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-primary btn-sm py-0 px-2"
+                                                                style={{ fontSize: '12px' }}
+                                                                onClick={() => handleSendProfileOtp('mobile')}
+                                                                disabled={mobileOtp.loading || mobileOtp.cooldown > 0}
+                                                            >
+                                                                {mobileOtp.loading
+                                                                    ? 'Sending...'
+                                                                    : mobileOtp.cooldown > 0
+                                                                    ? `Resend (${mobileOtp.cooldown}s)`
+                                                                    : mobileOtp.sent
+                                                                    ? 'Resend OTP'
+                                                                    : 'Send OTP'}
+                                                            </button>
+                                                        </div>
+                                                        {mobileOtp.sent && (
+                                                            <div className="input-group input-group-sm mt-2">
+                                                                <input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    maxLength="6"
+                                                                    className="form-control"
+                                                                    placeholder="Enter 6-digit OTP"
+                                                                    value={mobileOtp.code}
+                                                                    onChange={(e) =>
+                                                                        setMobileOtp((p) => ({
+                                                                            ...p,
+                                                                            code: e.target.value.replace(/\D/g, '').slice(0, 6),
+                                                                        }))
+                                                                    }
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-success fw-semibold"
+                                                                    onClick={() => handleVerifyProfileOtp('mobile')}
+                                                                    disabled={mobileOtp.verifying || mobileOtp.code.length !== 6}
+                                                                >
+                                                                    {mobileOtp.verifying ? 'Verifying...' : 'Verify'}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {mobileOtp.msg && (
+                                                            <div
+                                                                className={`mt-1 fw-medium ${
+                                                                    mobileOtp.msgType === 'success' ? 'text-success' : 'text-danger'
+                                                                }`}
+                                                                style={{ fontSize: '11.5px' }}
+                                                            >
+                                                                {mobileOtp.msg}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="col-sm-6">
