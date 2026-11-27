@@ -14,6 +14,7 @@ use Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use App\Services\OtpService;
 
 class FrontUserController extends Controller
 {
@@ -34,9 +35,207 @@ class FrontUserController extends Controller
         ));
     }
 
+    /**
+     * Send 6-digit OTP to verify a new Email or Mobile change on Edit Profile.
+     */
+    public function sendProfileChangeOtp(Request $request)
+    {
+        $request->validate([
+            'type'  => 'required|in:email,mobile',
+            'value' => 'required|string|max:192',
+        ]);
+
+        $user = User::findOrFail(Auth::id());
+        $type = $request->type;
+        $value = $type === 'email' ? strtolower(trim($request->value)) : trim($request->value);
+
+        if ($type === 'email') {
+            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please enter a valid email address.',
+                ], 422);
+            }
+            if ($value === strtolower(trim((string)$user->email))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This is already your current email address.',
+                ], 422);
+            }
+            if (User::where('email', $value)->where('id', '!=', $user->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email address is already used by another account.',
+                ], 422);
+            }
+
+            // Send OTP to the NEW email address to prove ownership
+            $result = OtpService::generateAndSendOtp($value, 'verify_email');
+            return response()->json($result, $result['status'] ?? 200);
+        }
+
+        // Mobile number change
+        if (!preg_match('/^[0-9]{10}$/', $value)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter a valid 10-digit mobile number.',
+            ], 422);
+        }
+        if ($value === trim((string)$user->mobile)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This is already your current mobile number.',
+            ], 422);
+        }
+        if (User::where('mobile', $value)->where('id', '!=', $user->id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This mobile number is already used by another account.',
+            ], 422);
+        }
+
+        // Send OTP to user's verified email via Brevo to confirm the mobile change
+        $targetEmail = strtolower(trim((string)$user->email));
+        if (!filter_var($targetEmail, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A valid email address on your account is required to receive the verification OTP.',
+            ], 422);
+        }
+
+        $result = OtpService::generateAndSendOtp($targetEmail, 'verify_mobile', $value);
+        if ($result['success'] ?? false) {
+            $result['message'] = 'A 6-digit OTP to confirm mobile number ' . $value . ' has been sent to your email (' . OtpService::maskEmail($targetEmail) . ').';
+        }
+
+        return response()->json($result, $result['status'] ?? 200);
+    }
+
+    /**
+     * Verify 6-digit OTP for Email or Mobile change and record session approval.
+     */
+    public function verifyProfileChangeOtp(Request $request)
+    {
+        $request->validate([
+            'type'  => 'required|in:email,mobile',
+            'value' => 'required|string|max:192',
+            'otp'   => 'required|string|size:6',
+        ]);
+
+        $user = User::findOrFail(Auth::id());
+        $type = $request->type;
+        $value = $type === 'email' ? strtolower(trim($request->value)) : trim($request->value);
+        $otp = trim($request->otp);
+
+        if ($type === 'email') {
+            $verify = OtpService::verifyOtp($value, $otp, 'verify_email', true);
+            if (!$verify['success']) {
+                return response()->json($verify, 422);
+            }
+
+            Session::put('verified_profile_email', [
+                'user_id'     => $user->id,
+                'value'       => $value,
+                'verified_at' => now()->timestamp,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'New email address verified! Click "Save Profile" to apply your changes.',
+            ]);
+        }
+
+        $targetEmail = strtolower(trim((string)$user->email));
+        $verify = OtpService::verifyOtp($targetEmail, $otp, 'verify_mobile', true);
+        if (!$verify['success']) {
+            return response()->json($verify, 422);
+        }
+
+        Session::put('verified_profile_mobile', [
+            'user_id'     => $user->id,
+            'value'       => $value,
+            'verified_at' => now()->timestamp,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'New mobile number verified! Click "Save Profile" to apply your changes.',
+        ]);
+    }
+
     public function EditProfilePost(Request $request)
     {
         $teacherbasic = User::findOrFail(Auth::user()->id);
+
+        $newEmail = strtolower(trim((string)($request->email ?? $teacherbasic->email)));
+        $currentEmail = strtolower(trim((string)$teacherbasic->email));
+        $emailChanged = ($newEmail !== $currentEmail);
+
+        $newMobile = trim((string)($request->mobile ?? $teacherbasic->mobile));
+        $currentMobile = trim((string)$teacherbasic->mobile);
+        $mobileChanged = ($newMobile !== $currentMobile);
+
+        // Enforce OTP verification if Email was changed
+        if ($emailChanged) {
+            if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                return response()->json([
+                    'status'  => 422,
+                    'message' => 'Please enter a valid email address.',
+                ], 422);
+            }
+            if (User::where('email', $newEmail)->where('id', '!=', $teacherbasic->id)->exists()) {
+                return response()->json([
+                    'status'  => 422,
+                    'message' => 'This email address is already registered to another account.',
+                ], 422);
+            }
+
+            $verifiedEmail = Session::get('verified_profile_email');
+            $isEmailVerified = $verifiedEmail
+                && ($verifiedEmail['user_id'] ?? null) === $teacherbasic->id
+                && ($verifiedEmail['value'] ?? null) === $newEmail
+                && (now()->timestamp - ($verifiedEmail['verified_at'] ?? 0)) <= 1800;
+
+            if (!$isEmailVerified) {
+                return response()->json([
+                    'status'       => 422,
+                    'requires_otp' => true,
+                    'field'        => 'email',
+                    'message'      => 'You changed your email address. Please verify your new email via OTP before saving.',
+                ], 422);
+            }
+        }
+
+        // Enforce OTP verification if Mobile was changed
+        if ($mobileChanged) {
+            if (!preg_match('/^[0-9]{10}$/', $newMobile)) {
+                return response()->json([
+                    'status'  => 422,
+                    'message' => 'Please enter a valid 10-digit mobile number.',
+                ], 422);
+            }
+            if (User::where('mobile', $newMobile)->where('id', '!=', $teacherbasic->id)->exists()) {
+                return response()->json([
+                    'status'  => 422,
+                    'message' => 'This mobile number is already registered to another account.',
+                ], 422);
+            }
+
+            $verifiedMobile = Session::get('verified_profile_mobile');
+            $isMobileVerified = $verifiedMobile
+                && ($verifiedMobile['user_id'] ?? null) === $teacherbasic->id
+                && ($verifiedMobile['value'] ?? null) === $newMobile
+                && (now()->timestamp - ($verifiedMobile['verified_at'] ?? 0)) <= 1800;
+
+            if (!$isMobileVerified) {
+                return response()->json([
+                    'status'       => 422,
+                    'requires_otp' => true,
+                    'field'        => 'mobile',
+                    'message'      => 'You changed your mobile number. Please verify your new mobile number via OTP before saving.',
+                ], 422);
+            }
+        }
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
@@ -65,8 +264,16 @@ class FrontUserController extends Controller
         }
 
         $teacherbasic->name = $request->name ?? '';
-        $teacherbasic->mobile = $request->mobile ?? '';
-        $teacherbasic->email = $request->email ?? '';
+        $teacherbasic->mobile = $newMobile;
+        $teacherbasic->email = $newEmail;
+        if ($emailChanged) {
+            $teacherbasic->username = $newEmail;
+            $teacherbasic->email_verified_at = now();
+            Session::forget('verified_profile_email');
+        }
+        if ($mobileChanged) {
+            Session::forget('verified_profile_mobile');
+        }
         $teacherbasic->save();
 
         if ($teacherbasic->type == 'teacher' || $request->filled('experience') || $request->filled('teaching_mode') || $request->filled('qualification') || Teacher::where('user_id', Auth::user()->id)->exists()) {

@@ -15,18 +15,12 @@ export default function Register() {
         mobile: '',
         password: '',
         terms: true,
-        verification_mode: 'mobile_otp', // 'mobile_otp' | 'instant'
     });
     const [showPassword, setShowPassword] = useState(false);
 
-    // Mobile OTP Step State
-    const [otp, setOtp] = useState({
-        first: '',
-        second: '',
-        third: '',
-        fourth: '',
-    });
-    const [maskedMobile, setMaskedMobile] = useState('');
+    // 6-Digit Email OTP Step State
+    const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+    const [maskedEmail, setMaskedEmail] = useState('');
     const [cooldown, setCooldown] = useState(0);
 
     // Status states
@@ -35,8 +29,8 @@ export default function Register() {
     const [successMsg, setSuccessMsg] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // OTP Input Refs
-    const inputRefs = [useRef(), useRef(), useRef(), useRef()];
+    // 6 OTP Input Refs
+    const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
     // Geolocation capture
     useEffect(() => {
@@ -61,7 +55,7 @@ export default function Register() {
         return () => clearInterval(timer);
     }, [cooldown]);
 
-    // 1. Submit Registration Form
+    // 1. Submit Registration Form -> Sends mandatory 6-digit Email OTP
     const handleRegister = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -79,56 +73,74 @@ export default function Register() {
             setLoading(false);
 
             if (res.data.otp_sent) {
-                setMaskedMobile(res.data.masked_mobile || form.mobile);
-                setSuccessMsg(res.data.message || 'Verification code sent to your mobile.');
-                setCooldown(60);
+                setMaskedEmail(res.data.masked_email || form.email);
+                setSuccessMsg(res.data.message || 'A 6-digit verification code has been sent to your email.');
+                setCooldown(res.data.cooldown || 60);
+                setOtpDigits(['', '', '', '', '', '']);
                 setStep('otp');
                 setTimeout(() => {
                     if (inputRefs[0].current) inputRefs[0].current.focus();
                 }, 100);
             } else {
-                setSuccessMsg(res.data.message || 'Account created successfully! Redirecting...');
-                const targetUrl = res.data.redirect_url || '/dashboard';
-                setTimeout(() => {
-                    window.location.href = targetUrl;
-                }, 800);
+                setSuccessMsg(res.data.message || 'Account created! Please verify your email.');
             }
         } catch (err) {
             setLoading(false);
             if (err.response?.status === 422) {
                 setErrors(err.response.data.errors || {});
+                if (err.response.data.message && !err.response.data.errors) {
+                    setErrorMsg(err.response.data.message);
+                }
             } else {
                 setErrorMsg(err.response?.data?.message || 'Registration failed. Please check your details and try again.');
             }
         }
     };
 
-    // 2. Handle 4-Digit OTP Input Change
+    // 2. Handle 6-Digit Email OTP Input Change & Paste
     const handleOtpChange = (index, value) => {
-        const cleanVal = value.replace(/\D/g, '').slice(-1);
-        const keys = ['first', 'second', 'third', 'fourth'];
-        const updated = { ...otp, [keys[index]]: cleanVal };
-        setOtp(updated);
+        const cleanDigits = value.replace(/\D/g, '');
+        if (!cleanDigits) {
+            const updated = [...otpDigits];
+            updated[index] = '';
+            setOtpDigits(updated);
+            return;
+        }
 
-        // Auto-advance to next input
-        if (cleanVal && index < 3 && inputRefs[index + 1].current) {
+        // Support pasting full 6-digit code
+        if (cleanDigits.length > 1) {
+            const pasted = cleanDigits.slice(0, 6).split('');
+            const updated = ['', '', '', '', '', ''];
+            pasted.forEach((d, idx) => {
+                updated[idx] = d;
+            });
+            setOtpDigits(updated);
+            const focusIdx = Math.min(pasted.length, 5);
+            if (inputRefs[focusIdx].current) inputRefs[focusIdx].current.focus();
+            return;
+        }
+
+        const updated = [...otpDigits];
+        updated[index] = cleanDigits;
+        setOtpDigits(updated);
+
+        if (index < 5 && inputRefs[index + 1].current) {
             inputRefs[index + 1].current.focus();
         }
     };
 
     const handleOtpKeyDown = (index, e) => {
-        const keys = ['first', 'second', 'third', 'fourth'];
-        if (e.key === 'Backspace' && !otp[keys[index]] && index > 0 && inputRefs[index - 1].current) {
+        if (e.key === 'Backspace' && !otpDigits[index] && index > 0 && inputRefs[index - 1].current) {
             inputRefs[index - 1].current.focus();
         }
     };
 
-    // 3. Verify Mobile OTP
+    // 3. Verify 6-Digit Email OTP -> Activates account and redirects to Sign In
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
-        const fullOtp = `${otp.first}${otp.second}${otp.third}${otp.fourth}`;
-        if (fullOtp.length !== 4) {
-            setErrorMsg('Please enter the complete 4-digit verification code.');
+        const fullOtp = otpDigits.join('');
+        if (fullOtp.length !== 6) {
+            setErrorMsg('Please enter the complete 6-digit verification code.');
             return;
         }
 
@@ -138,48 +150,54 @@ export default function Register() {
 
         try {
             const res = await axios.post('/RegisterPostOtp', {
-                ...otp,
-                mobile: form.mobile,
+                email: form.email,
+                otp: fullOtp,
             });
-            setSuccessMsg(res.data.message || 'Mobile number verified successfully! Redirecting...');
-            const targetUrl = res.data.redirect_url || '/dashboard';
+            setSuccessMsg(res.data.message || 'Email verified successfully! Redirecting to sign in...');
+            const targetUrl = res.data.redirect_url || '/login';
             setTimeout(() => {
                 window.location.href = targetUrl;
-            }, 800);
+            }, 1200);
         } catch (err) {
             setLoading(false);
-            setErrorMsg(err.response?.data?.message || 'Invalid verification code. Please try again.');
+            setErrorMsg(err.response?.data?.message || 'Invalid or expired verification code. Please try again.');
         }
     };
 
-    // 4. Resend Mobile OTP
+    // 4. Resend 6-Digit Email OTP
     const handleResendOtp = async () => {
         if (cooldown > 0) return;
         setLoading(true);
         setErrorMsg('');
+        setSuccessMsg('');
         try {
-            const res = await axios.post('/auth/register-mobile-otp/resend', {
-                mobile: form.mobile,
+            const res = await axios.post('/auth/register-email-otp/resend', {
+                email: form.email,
             });
             setLoading(false);
-            setCooldown(60);
-            setSuccessMsg(res.data.message || 'A new verification code has been sent to your mobile.');
+            setCooldown(res.data.cooldown || 60);
+            setSuccessMsg(res.data.message || 'A new 6-digit verification code has been sent to your email.');
         } catch (err) {
             setLoading(false);
-            setErrorMsg(err.response?.data?.message || 'Failed to resend code. Please try again.');
+            if (err.response?.data?.cooldown) {
+                setCooldown(err.response.data.cooldown);
+            }
+            setErrorMsg(err.response?.data?.message || 'Failed to resend verification code. Please try again.');
         }
     };
 
+    const fullOtpValue = otpDigits.join('');
+
     return (
         <AuthLayout
-            title={step === 'form' ? 'Create an Account' : 'Verify Mobile Number'}
+            title={step === 'form' ? 'Create an Account' : 'Verify Your Email'}
             subtitle={
                 step === 'form'
                     ? 'Join The Local Tutors as a student, parent, or educator'
-                    : `Enter the 4-digit code sent via SMS to ${maskedMobile || form.mobile}`
+                    : `Enter the 6-digit verification code sent to ${maskedEmail || form.email}`
             }
         >
-            <Head title={step === 'form' ? 'Register' : 'Verify Mobile OTP'} />
+            <Head title={step === 'form' ? 'Register' : 'Verify Email OTP'} />
 
             {successMsg && (
                 <div className="alert alert-success d-flex align-items-center mb-3">
@@ -203,28 +221,30 @@ export default function Register() {
                         <label className="form-label fw-semibold">
                             I want to join as: <span className="text-danger">*</span>
                         </label>
-                        <div className="row g-2">
-                            <div className="col-6">
+                        <div className="row g-2 align-items-stretch">
+                            <div className="col-6 d-flex">
                                 <button
                                     type="button"
-                                    className={`btn w-100 py-2 d-flex align-items-center justify-content-center gap-2 ${
+                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-2 text-nowrap ${
                                         form.usertype === 'student' ? 'btn-primary' : 'btn-outline-secondary'
                                     }`}
+                                    style={{ minHeight: '42px', fontSize: '0.92rem' }}
                                     onClick={() => setForm({ ...form, usertype: 'student' })}
                                 >
-                                    <i className="bi bi-mortarboard-fill"></i>
+                                    <i className="bi bi-mortarboard-fill flex-shrink-0"></i>
                                     <span>Student</span>
                                 </button>
                             </div>
-                            <div className="col-6">
+                            <div className="col-6 d-flex">
                                 <button
                                     type="button"
-                                    className={`btn w-100 py-2 d-flex align-items-center justify-content-center gap-2 ${
+                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-2 text-nowrap ${
                                         form.usertype === 'teacher' ? 'btn-primary' : 'btn-outline-secondary'
                                     }`}
+                                    style={{ minHeight: '42px', fontSize: '0.92rem' }}
                                     onClick={() => setForm({ ...form, usertype: 'teacher' })}
                                 >
-                                    <i className="bi bi-person-video3"></i>
+                                    <i className="bi bi-person-video3 flex-shrink-0"></i>
                                     <span>Educator / Tutor</span>
                                 </button>
                             </div>
@@ -288,11 +308,10 @@ export default function Register() {
                             <input
                                 type="tel"
                                 id="mobile"
-                                maxLength="10"
                                 className={`form-control ${errors.mobile ? 'is-invalid' : ''}`}
                                 placeholder="10-digit mobile number"
                                 value={form.mobile}
-                                onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}
+                                onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                                 required
                             />
                             {errors.mobile && <div className="invalid-feedback">{errors.mobile[0]}</div>}
@@ -329,36 +348,10 @@ export default function Register() {
                         </div>
                     </div>
 
-                    {/* Sign Up Option: Mobile OTP vs Instant */}
-                    <div className="mb-4 p-3 bg-light rounded-3 border">
-                        <label className="form-label fw-semibold small mb-2 d-flex align-items-center">
-                            <i className="bi bi-shield-check text-primary me-2"></i> Verification Option:
-                        </label>
-                        <div className="d-flex gap-2">
-                            <button
-                                type="button"
-                                className={`btn btn-sm flex-fill py-2 fw-semibold ${
-                                    form.verification_mode === 'mobile_otp' ? 'btn-primary' : 'btn-outline-secondary'
-                                }`}
-                                onClick={() => setForm({ ...form, verification_mode: 'mobile_otp' })}
-                            >
-                                <i className="bi bi-phone me-1"></i> Mobile OTP Sign Up
-                            </button>
-                            <button
-                                type="button"
-                                className={`btn btn-sm flex-fill py-2 fw-semibold ${
-                                    form.verification_mode === 'instant' ? 'btn-primary' : 'btn-outline-secondary'
-                                }`}
-                                onClick={() => setForm({ ...form, verification_mode: 'instant' })}
-                            >
-                                <i className="bi bi-lightning-charge me-1"></i> Instant Sign Up
-                            </button>
-                        </div>
-                        <div className="form-text small text-muted mt-2">
-                            {form.verification_mode === 'mobile_otp'
-                                ? 'A 4-digit OTP will be sent to your mobile number via SMS to verify.'
-                                : 'Instantly activate and sign into your account without waiting for SMS.'}
-                        </div>
+                    {/* Email OTP Notice */}
+                    <div className="mb-3 p-2 px-3 bg-primary-subtle bg-opacity-50 border border-primary-subtle rounded-3 small text-primary-emphasis d-flex align-items-center gap-2">
+                        <i className="bi bi-envelope-check-fill text-primary flex-shrink-0"></i>
+                        <span>A 6-digit verification OTP will be sent to your email address to activate your account.</span>
                     </div>
 
                     {/* Terms */}
@@ -384,12 +377,13 @@ export default function Register() {
                         {loading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                {form.verification_mode === 'mobile_otp' ? 'Sending Mobile OTP...' : 'Creating Account...'}
+                                Sending Email OTP...
                             </>
-                        ) : form.verification_mode === 'mobile_otp' ? (
-                            'Sign Up with Mobile OTP'
                         ) : (
-                            'Create Account'
+                            <>
+                                <i className="bi bi-envelope-check me-2"></i>
+                                Sign Up &amp; Verify Email
+                            </>
                         )}
                     </button>
 
@@ -403,65 +397,62 @@ export default function Register() {
                     </div>
                 </form>
             ) : (
-                /* STEP 2: MOBILE OTP VERIFICATION */
+                /* STEP 2: MANDATORY 6-DIGIT EMAIL OTP VERIFICATION */
                 <form onSubmit={handleVerifyOtp} noValidate>
                     <div className="text-center mb-4">
                         <div
                             className="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3"
                             style={{ width: '60px', height: '60px' }}
                         >
-                            <i className="bi bi-phone-vibrate fs-2"></i>
+                            <i className="bi bi-envelope-check fs-2"></i>
                         </div>
-                        <h6 className="fw-bold mb-1">Enter Verification Code</h6>
+                        <h6 className="fw-bold mb-1">Enter Email Verification Code</h6>
                         <p className="text-muted small mb-0">
-                            We've sent a 4-digit code to <strong>{maskedMobile || form.mobile}</strong>
+                            We&apos;ve sent a 6-digit OTP to <strong>{maskedEmail || form.email}</strong>
                         </p>
                     </div>
 
-                    {/* 4-digit individual boxes */}
+                    {/* 6-digit individual boxes */}
                     <div className="d-flex justify-content-center gap-2 mb-4">
-                        {[0, 1, 2, 3].map((index) => {
-                            const keys = ['first', 'second', 'third', 'fourth'];
-                            return (
-                                <input
-                                    key={index}
-                                    ref={inputRefs[index]}
-                                    type="text"
-                                    maxLength="1"
-                                    className="form-control text-center fs-3 fw-bold"
-                                    style={{ width: '56px', height: '60px' }}
-                                    value={otp[keys[index]]}
-                                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    autoFocus={index === 0}
-                                />
-                            );
-                        })}
+                        {otpDigits.map((digit, index) => (
+                            <input
+                                key={index}
+                                ref={inputRefs[index]}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength="6"
+                                className="form-control text-center fs-4 fw-bold px-0"
+                                style={{ width: '46px', height: '54px' }}
+                                value={digit}
+                                onChange={(e) => handleOtpChange(index, e.target.value)}
+                                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                autoFocus={index === 0}
+                            />
+                        ))}
                     </div>
 
                     <button
                         type="submit"
                         className="btn btn-primary w-100 py-2 fw-semibold mb-3"
-                        disabled={loading || `${otp.first}${otp.second}${otp.third}${otp.fourth}`.length !== 4}
+                        disabled={loading || fullOtpValue.length !== 6}
                     >
                         {loading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                Verifying...
+                                Verifying Email...
                             </>
                         ) : (
-                            'Verify & Complete Sign Up'
+                            'Verify Email & Activate Account'
                         )}
                     </button>
 
                     <div className="d-flex justify-content-between align-items-center pt-2 border-top">
-                        <button
-                            type="button"
-                            onClick={() => { setStep('form'); setErrorMsg(''); setSuccessMsg(''); }}
+                        <Link
+                            href="/login"
                             className="btn btn-link p-0 text-decoration-none text-muted small"
                         >
-                            <i className="bi bi-arrow-left me-1"></i> Edit Details
-                        </button>
+                            <i className="bi bi-arrow-left me-1"></i> Back to Sign In
+                        </Link>
 
                         {cooldown > 0 ? (
                             <span className="small text-muted">
@@ -474,7 +465,7 @@ export default function Register() {
                                 disabled={loading}
                                 className="btn btn-link p-0 text-decoration-none small fw-semibold text-primary"
                             >
-                                Resend Code
+                                Resend Email OTP
                             </button>
                         )}
                     </div>

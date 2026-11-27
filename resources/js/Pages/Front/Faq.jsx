@@ -11,7 +11,7 @@ export default function Faq({ faqlist = [] }) {
 
             <div className="bg-primary text-white py-5">
                 <div className="container text-center">
-                    <h1 className="fw-bold mb-2">Frequently Asked Questions</h1>
+                    <h1 className="fw-bold text-white mb-2">Frequently Asked Questions</h1>
                     <nav aria-label="breadcrumb">
                         <ol className="breadcrumb justify-content-center mb-0">
                             <li className="breadcrumb-item">

@@ -10,7 +10,7 @@ export default function About({ pageData, pageDatax }) {
             {/* Breadcrumb banner */}
             <div className="bg-primary text-white py-5">
                 <div className="container text-center">
-                    <h1 className="fw-bold mb-2">About Us</h1>
+                    <h1 className="fw-bold text-white mb-2">About Us</h1>
                     <nav aria-label="breadcrumb">
                         <ol className="breadcrumb justify-content-center mb-0">
                             <li className="breadcrumb-item">
