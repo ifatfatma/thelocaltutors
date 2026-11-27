@@ -17,7 +17,9 @@ export default function EditProfile({
     days = [],
 }) {
     const { auth } = usePage().props;
-    const isTeacher = auth?.user?.type === 'teacher' || !!teacherdetails?.id;
+    const isTeacher = Boolean(
+        auth?.user?.is_teacher || (auth?.user?.type || '').toLowerCase() === 'teacher'
+    );
 
     const [form, setForm] = useState({
         name: userdetails?.name || '',
@@ -385,7 +387,9 @@ export default function EditProfile({
                                 {isTeacher ? 'Teacher Profile & Pan-India Location' : 'Edit Profile'}
                             </h2>
                             <p className="text-secondary small mb-0">
-                                Keep your personal contact information, teaching credentials, and Pan-India service location up to date.
+                                {isTeacher
+                                    ? 'Keep your personal contact information, teaching credentials, and Pan-India service location up to date.'
+                                    : 'Keep your personal contact information, email, and mobile number up to date.'}
                             </p>
                         </div>
                         {isTeacher && (
@@ -669,25 +673,29 @@ export default function EditProfile({
                                                 )}
                                             </div>
 
-                                            <div className="col-sm-6">
-                                                <label className="form-label small fw-semibold text-secondary">WhatsApp Number</label>
-                                                <input
-                                                    type="tel"
-                                                    className="form-control"
-                                                    placeholder="WhatsApp number for instant demo requests"
-                                                    value={form.whatsapp}
-                                                    onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                                                />
-                                            </div>
+                                            {isTeacher && (
+                                                <div className="col-sm-6">
+                                                    <label className="form-label small fw-semibold text-secondary">WhatsApp Number</label>
+                                                    <input
+                                                        type="tel"
+                                                        className="form-control"
+                                                        placeholder="WhatsApp number for instant demo requests"
+                                                        value={form.whatsapp}
+                                                        onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Pan-India Location Section */}
-                                <h5 className="fw-bold text-dark border-bottom pb-2 mb-3 mt-4 d-flex align-items-center gap-2">
-                                    <i className="bi bi-geo-alt-fill text-danger"></i>
-                                    <span>Pan-India Location &amp; Tutoring Coverage</span>
-                                </h5>
+                                {isTeacher && (
+                                    <>
+                                        {/* Pan-India Location Section */}
+                                        <h5 className="fw-bold text-dark border-bottom pb-2 mb-3 mt-4 d-flex align-items-center gap-2">
+                                            <i className="bi bi-geo-alt-fill text-danger"></i>
+                                            <span>Pan-India Location &amp; Tutoring Coverage</span>
+                                        </h5>
                                 <p className="text-secondary small mb-3">
                                     Select your State/UT and City. This ensures students and parents in your region can match with you for doorstep home tuition or online classes.
                                 </p>
@@ -1004,6 +1012,8 @@ export default function EditProfile({
                                         />
                                     </div>
                                 </div>
+                                    </>
+                                )}
 
                                 <div className="mt-4 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-3">
                                     <div className="d-flex gap-2">

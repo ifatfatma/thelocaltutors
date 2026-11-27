@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'user_role' => \App\Http\Middleware\EnsureUserRole::class,
             //'Common'=>App\Http\Controllers\Common::class,
             'guest'=>App\Http\Middleware\RedirectIfAuthenticated::class
         ]);

@@ -249,9 +249,16 @@ export default function FrontLayout({ children, title }) {
                             {/* Right Side: Auth / CTA */}
                             <div className="d-flex align-items-center gap-2">
                                 {auth?.user ? (() => {
-                                    const isAdmin = auth.user.type === 'admin' ||
+                                    const isAdmin = Boolean(
+                                        auth.user.is_admin ||
+                                        auth.user.type === 'admin' ||
                                         auth.user.roles?.includes('Super Admin') ||
-                                        auth.user.roles?.includes('Admin');
+                                        auth.user.roles?.includes('Admin')
+                                    );
+                                    const isTeacher = Boolean(
+                                        !isAdmin && (auth.user.is_teacher || auth.user.type === 'teacher')
+                                    );
+                                    const canManageTeaching = isTeacher || isAdmin;
 
                                     return (
                                         <div className="dropdown position-relative">
@@ -297,16 +304,20 @@ export default function FrontLayout({ children, title }) {
                                                         <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
                                                     </Link>
                                                 </li>
-                                                <li>
-                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/courses" onClick={closeAll}>
-                                                        <i className="bi bi-journal-plus me-2 text-primary"></i>My Offered Courses
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/demos" onClick={closeAll}>
-                                                        <i className="bi bi-camera-video me-2 text-primary"></i>Demo Sessions
-                                                    </Link>
-                                                </li>
+                                                {canManageTeaching && (
+                                                    <>
+                                                        <li>
+                                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/courses" onClick={closeAll}>
+                                                                <i className="bi bi-journal-plus me-2 text-primary"></i>My Offered Courses
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/dashboard/demos" onClick={closeAll}>
+                                                                <i className="bi bi-camera-video me-2 text-primary"></i>Demo Sessions
+                                                            </Link>
+                                                        </li>
+                                                    </>
+                                                )}
                                                 <li>
                                                     <Link className="dropdown-item py-2 px-3 fw-medium rounded-3" href="/myfavouritecourses" onClick={closeAll}>
                                                         <i className="bi bi-heart me-2 text-danger"></i>Saved Courses
