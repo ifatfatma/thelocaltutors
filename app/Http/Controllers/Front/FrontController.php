@@ -965,6 +965,109 @@ class FrontController extends Controller
 
             $area = trim($request->area ?? $request->quick_area ?? '');
 
+            // Handle Institutional Categories: Coaching Institutes, Schools, Colleges, Universities
+            $institutionType = \App\Models\Institution::resolveTypeFromSearch($category);
+            if ($institutionType !== null) {
+                $instQuery = \App\Models\Institution::publiclyVisible()
+                    ->where('institution_type', $institutionType)
+                    ->withCount('programs');
+
+                if (!empty($area)) {
+                    $instQuery->where(function ($q) use ($area) {
+                        $q->where('address', 'LIKE', "%{$area}%")
+                          ->orWhere('area', 'LIKE', "%{$area}%")
+                          ->orWhere('city', 'LIKE', "%{$area}%");
+                    });
+                }
+
+                if (!empty($keyword)) {
+                    $instQuery->where(function ($q) use ($keyword) {
+                        $q->where('name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('tagline', 'LIKE', "%{$keyword}%")
+                          ->orWhere('overview', 'LIKE', "%{$keyword}%")
+                          ->orWhere('address', 'LIKE', "%{$keyword}%")
+                          ->orWhere('area', 'LIKE', "%{$keyword}%")
+                          ->orWhere('city', 'LIKE', "%{$keyword}%")
+                          ->orWhere('state', 'LIKE', "%{$keyword}%")
+                          ->orWhere('details', 'LIKE', "%{$keyword}%")
+                          ->orWhereHas('programs', function ($pq) use ($keyword) {
+                              $pq->where('title', 'LIKE', "%{$keyword}%")
+                                 ->orWhere('level', 'LIKE', "%{$keyword}%");
+                          });
+                    });
+                }
+
+                if (!empty($request->search_state) && $request->search_state !== '0') {
+                    $instQuery->where('state', 'LIKE', "%{$request->search_state}%");
+                }
+                if (!empty($request->search_city) && $request->search_city !== '0') {
+                    $instQuery->where(function ($q) use ($request) {
+                        $q->where('city', 'LIKE', "%{$request->search_city}%")
+                          ->orWhere('address', 'LIKE', "%{$request->search_city}%");
+                    });
+                }
+                if (!empty($request->admission_status) && in_array($request->admission_status, ['open', 'upcoming', 'closed'], true)) {
+                    $instQuery->where('admission_status', $request->admission_status);
+                }
+
+                $haversineInst = "( 6371 * acos(
+                    least(1.0, greatest(-1.0,
+                        cos( radians(?) ) *
+                        cos( radians( CAST(latitude AS DECIMAL(10,6)) ) ) *
+                        cos( radians( CAST(longitude AS DECIMAL(10,6)) ) - radians(?) ) +
+                        sin( radians(?) ) *
+                        sin( radians( CAST(latitude AS DECIMAL(10,6)) ) )
+                    ))
+                ) )";
+
+                $instQuery->select('institutions.*')
+                    ->selectRaw(
+                        "CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN {$haversineInst} ELSE NULL END AS distance",
+                        [$userLat, $userLng, $userLat]
+                    );
+
+                if ($radius > 0) {
+                    $instQuery->whereNotNull('latitude')
+                        ->whereNotNull('longitude')
+                        ->having('distance', '<=', $radius)
+                        ->orderBy('distance', 'asc');
+                } elseif ($filterMode === 'near_me') {
+                    $instQuery->orderByRaw('distance IS NULL ASC, distance ASC');
+                } else {
+                    $instQuery->orderByDesc('verified_badge')->orderByDesc('id');
+                }
+
+                $lists = $instQuery->paginate(12)->withQueryString();
+
+                $searchdetails = [
+                    'lookingfor'        => $category,
+                    'keyword'           => $keyword,
+                    'search_state'      => $request->search_state ?? '0',
+                    'search_city'       => $request->search_city ?? '0',
+                    'search_radius'     => $radius,
+                    'area'              => $area,
+                    'filter_mode'       => $filterMode,
+                    'user_lat'          => $userLat,
+                    'user_lng'          => $userLng,
+                    'admission_status'  => $request->admission_status ?? '',
+                ];
+
+                $states = CustomData::where('key_name', 'state')->where('parent_id', 0)->orderBy('name', 'asc')->get();
+                $subjects = CustomData::where('key_name', 'subject')->orderBy('name', 'asc')->get();
+                $boards = CustomData::where('key_name', 'board')->orderBy('name', 'asc')->get();
+
+                return Inertia::render('Front/SearchResults', [
+                    'lists'           => $lists,
+                    'resultType'      => 'institution',
+                    'institutionType' => $institutionType,
+                    'searchdetails'   => $searchdetails,
+                    'custom_lookups'  => [],
+                    'states'          => $states,
+                    'subjects'        => $subjects,
+                    'boards'          => $boards,
+                ]);
+            }
+
             $lists = User::select(
                 'users.*',
                 'teachers.id as tid',

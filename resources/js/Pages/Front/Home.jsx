@@ -601,7 +601,17 @@ export default function Home({
                                         <input
                                             type="text"
                                             className="form-control border-0 shadow-none py-2 ps-1"
-                                            placeholder="Search subject or course (e.g. Mathematics, Physics, NEET)..."
+                                            placeholder={
+                                                primaryCategory === 'coaching-center'
+                                                    ? 'Search Coaching Institutes (e.g. JEE, NEET, UPSC, Banking)...'
+                                                    : primaryCategory === 'schools'
+                                                    ? 'Search Schools by name, board (CBSE, ICSE, WBBSE), or city...'
+                                                    : primaryCategory === 'college'
+                                                    ? 'Search Colleges by degree, stream (B.Tech, BBA, B.Sc), or affiliation...'
+                                                    : primaryCategory === 'university'
+                                                    ? 'Search Universities (Central, State, Private, UG/PG/PhD)...'
+                                                    : 'Search subject or course (e.g. Mathematics, Physics, NEET)...'
+                                            }
                                             value={searchQuery}
                                             onChange={(e) => {
                                                 setSearchQuery(e.target.value);

@@ -42,9 +42,10 @@ class EnsureUserRole
     {
         if (!$user) {
             return [
-                'is_admin'   => false,
-                'is_teacher' => false,
-                'is_student' => false,
+                'is_admin'       => false,
+                'is_teacher'     => false,
+                'is_institution' => false,
+                'is_student'     => false,
             ];
         }
 
@@ -65,13 +66,16 @@ class EnsureUserRole
             || in_array('admin', $spatieRoles, true)
             || in_array('super admin', $spatieRoles, true);
 
-        $isTeacher = !$isAdmin && (($type === 'teacher') || in_array('teacher', $spatieRoles, true));
-        $isStudent = !$isAdmin && !$isTeacher;
+        $institutionTypes = ['institution', 'coaching_institute', 'school', 'college', 'university'];
+        $isInstitution = !$isAdmin && (in_array($type, $institutionTypes, true) || in_array('institution', $spatieRoles, true));
+        $isTeacher = !$isAdmin && !$isInstitution && (($type === 'teacher') || in_array('teacher', $spatieRoles, true));
+        $isStudent = !$isAdmin && !$isInstitution && !$isTeacher;
 
         return [
-            'is_admin'   => $isAdmin,
-            'is_teacher' => $isTeacher,
-            'is_student' => $isStudent,
+            'is_admin'       => $isAdmin,
+            'is_teacher'     => $isTeacher,
+            'is_institution' => $isInstitution,
+            'is_student'     => $isStudent,
         ];
     }
 
@@ -88,6 +92,9 @@ class EnsureUserRole
                 return true;
             }
             if ($r === 'teacher' && $flags['is_teacher']) {
+                return true;
+            }
+            if ($r === 'institution' && $flags['is_institution']) {
                 return true;
             }
             if ($r === 'student' && $flags['is_student']) {

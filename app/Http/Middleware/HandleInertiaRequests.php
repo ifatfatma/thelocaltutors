@@ -53,6 +53,7 @@ class HandleInertiaRequests extends Middleware
                     'roles' => method_exists($user, 'roles') && $user->roles ? $user->roles->pluck('name') : [],
                     'is_admin' => $roleFlags['is_admin'],
                     'is_teacher' => $roleFlags['is_teacher'],
+                    'is_institution' => $roleFlags['is_institution'],
                     'is_student' => $roleFlags['is_student'],
                 ] : null,
             ],

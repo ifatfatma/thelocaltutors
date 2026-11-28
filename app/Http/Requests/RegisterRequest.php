@@ -36,8 +36,9 @@ class RegisterRequest extends FormRequest
         }
 
         return [
-            'usertype'          => 'required|in:student,teacher',
+            'usertype'          => 'required|in:student,teacher,coaching_institute,school,college,university',
             'name'              => 'required|string|max:192',
+            'institution_name'  => 'required_if:usertype,coaching_institute,school,college,university|nullable|string|max:255',
             'email'             => ['required', 'email', 'max:192', $emailUnique],
             'mobile'            => ['required', 'regex:/^[0-9]{10}$/', $mobileUnique],
             'password'          => 'required|min:6',

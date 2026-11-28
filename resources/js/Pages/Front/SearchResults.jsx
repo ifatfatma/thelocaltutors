@@ -4,6 +4,7 @@ import FrontLayout from '../../Layouts/FrontLayout';
 import Pagination from '../../Components/Pagination';
 import TeacherCard from '../../Components/TeacherCard';
 import TeacherProfileModal from '../../Components/TeacherProfileModal';
+import InstitutionCard from '../../Components/InstitutionCard';
 import { cleanExcerpt } from '../../Utils/text';
 import { STATES_LIST, getCitiesForState } from '../../Utils/indiaLocations';
 import axios from 'axios';
@@ -78,12 +79,15 @@ const QUICK_AREAS = [
 
 export default function SearchResults({
     lists,
+    resultType = 'teacher',
+    institutionType = null,
     searchdetails = {},
     custom_lookups = {},
     states = [],
     subjects = [],
     boards = [],
 }) {
+    const isInstitutionResults = resultType === 'institution';
     const teacherList = lists?.data || lists || [];
     const totalCount = lists?.total !== undefined ? lists.total : teacherList.length;
 
@@ -566,7 +570,17 @@ export default function SearchResults({
                                     <input
                                         type="text"
                                         className="form-control border-0 shadow-none py-2 ps-1"
-                                        placeholder="Search subject, course, or topic (e.g. Mathematics, Physics, NEET)..."
+                                        placeholder={
+                                            primaryCategory === 'coaching-center'
+                                                ? 'Search Coaching Institutes (e.g. JEE, NEET, UPSC, Banking)...'
+                                                : primaryCategory === 'schools'
+                                                ? 'Search Schools by name, board (CBSE, ICSE, WBBSE), or city...'
+                                                : primaryCategory === 'college'
+                                                ? 'Search Colleges by degree, stream (B.Tech, BBA, B.Sc), or affiliation...'
+                                                : primaryCategory === 'university'
+                                                ? 'Search Universities (Central, State, Private, UG/PG/PhD)...'
+                                                : 'Search subject, course, or topic (e.g. Mathematics, Physics, NEET)...'
+                                        }
                                         value={searchQuery}
                                         onChange={(e) => {
                                             setSearchQuery(e.target.value);
@@ -853,15 +867,15 @@ export default function SearchResults({
                 {/* ============================================================== */}
                 {teacherList.length === 0 ? (
                     <div className="text-center py-5 bg-white rounded-4 shadow-sm p-4">
-                        <i className={`bi ${currentRadius > 0 ? 'bi-geo-alt' : 'bi-person-x'} fs-1 text-muted`}></i>
+                        <i className={`bi ${currentRadius > 0 ? 'bi-geo-alt' : isInstitutionResults ? 'bi-building' : 'bi-person-x'} fs-1 text-muted`}></i>
                         <h4 className="mt-3 text-dark fw-bold">
                             {currentRadius > 0
-                                ? `No tutors found within ${currentRadius} km of your location.`
-                                : 'No tutors matched your current search filters.'}
+                                ? `No ${isInstitutionResults ? activeCategoryObj.name.toLowerCase() : 'tutors'} found within ${currentRadius} km of your location.`
+                                : `No ${isInstitutionResults ? activeCategoryObj.name.toLowerCase() : 'tutors'} matched your current search filters.`}
                         </h4>
                         <p className="text-muted small">
                             {currentRadius > 0
-                                ? 'Try expanding the radius to 10 km or browsing all tutors in your city.'
+                                ? 'Try expanding the radius to 10 km or browsing all locations in your city.'
                                 : 'Try broadening your search keywords or removing some filters.'}
                         </p>
                         <div className="d-flex justify-content-center gap-2 mt-4 flex-wrap">
@@ -877,11 +891,19 @@ export default function SearchResults({
                             <button
                                 type="button"
                                 className="btn btn-primary rounded-pill px-4"
-                                onClick={() => router.get('/search', { lookingfor: 'teacher', filter_mode: 'all' })}
+                                onClick={() => router.get('/search', { lookingfor: primaryCategory || 'teacher', filter_mode: 'all' })}
                             >
                                 Reset Search Filters
                             </button>
                         </div>
+                    </div>
+                ) : isInstitutionResults ? (
+                    <div className="row g-4">
+                        {teacherList.map((inst, idx) => (
+                            <div key={inst.id || idx} className="col-12 col-md-6 col-lg-4 mb-2">
+                                <InstitutionCard institution={inst} />
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="row g-4">
