@@ -9,6 +9,8 @@ use App\Http\Requests\LoginRequest;
 use App\Services\OtpService;
 use App\Models\User;
 use App\Models\Teacher;
+use App\Models\Institution;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie;
@@ -108,6 +110,31 @@ class FrontAuthController extends Controller
             );
         }
 
+        // Create institution profile if institution representative
+        $institutionTypes = ['coaching_institute', 'school', 'college', 'university'];
+        if (in_array($user->type, $institutionTypes, true)) {
+            $instName = trim((string)($request->institution_name ?: $user->name));
+            $baseSlug = Str::slug($instName) ?: 'institution';
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Institution::withTrashed()->where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter++;
+            }
+
+            Institution::create([
+                'user_id'             => $user->id,
+                'institution_type'    => $user->type,
+                'name'                => $instName,
+                'slug'                => $slug,
+                'email'               => $user->email,
+                'phone'               => $user->mobile,
+                'latitude'            => $request->latitude ?: null,
+                'longitude'           => $request->longitude ?: null,
+                'verification_status' => 'pending',
+                'is_active'           => true,
+            ]);
+        }
+
         // Force Email OTP verification via Brevo
         $otpResult = OtpService::generateAndSendOtp($user->email, 'register');
 
@@ -115,6 +142,9 @@ class FrontAuthController extends Controller
             // Roll back unverified account so user can retry cleanly once email succeeds
             if ($user->type === 'teacher') {
                 Teacher::where('user_id', $user->id)->delete();
+            }
+            if (in_array($user->type, $institutionTypes, true)) {
+                Institution::where('user_id', $user->id)->forceDelete();
             }
             $user->delete();
 

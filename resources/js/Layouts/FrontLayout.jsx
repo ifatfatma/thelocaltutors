@@ -258,6 +258,12 @@ export default function FrontLayout({ children, title }) {
                                     const isTeacher = Boolean(
                                         !isAdmin && (auth.user.is_teacher || auth.user.type === 'teacher')
                                     );
+                                    const isInstitution = Boolean(
+                                        !isAdmin && (
+                                            auth.user.is_institution ||
+                                            ['institution', 'coaching_institute', 'school', 'college', 'university'].includes(auth.user.type)
+                                        )
+                                    );
                                     const canManageTeaching = isTeacher || isAdmin;
 
                                     return (
@@ -304,6 +310,13 @@ export default function FrontLayout({ children, title }) {
                                                         <i className="bi bi-speedometer2 me-2 text-primary"></i>Account Panel
                                                     </Link>
                                                 </li>
+                                                {isInstitution && (
+                                                    <li>
+                                                        <Link className="dropdown-item py-2 px-3 fw-semibold rounded-3 text-primary bg-primary-subtle mb-1" href="/dashboard/institution" onClick={closeAll}>
+                                                            <i className="bi bi-building-gear me-2 text-primary"></i>Institution Dashboard
+                                                        </Link>
+                                                    </li>
+                                                )}
                                                 {canManageTeaching && (
                                                     <>
                                                         <li>

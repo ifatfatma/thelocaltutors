@@ -13,7 +13,26 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
         user.roles?.includes('Admin')
     );
     const isTeacher = Boolean(!isAdmin && (user.is_teacher || user.type === 'teacher'));
+    const isInstitution = Boolean(
+        !isAdmin && (
+            user.is_institution ||
+            ['institution', 'coaching_institute', 'school', 'college', 'university'].includes(user.type)
+        )
+    );
     const canManageTeaching = isTeacher || isAdmin;
+
+    const institutionLinks = isInstitution
+        ? [
+              {
+                  title: 'Institution Dashboard',
+                  desc: 'Manage your institution profile, programs & fees, campus facilities, gallery photos, brochure PDF, map pin, and student admission inquiries.',
+                  href: '/dashboard/institution',
+                  icon: 'bi-building-gear',
+                  color: 'primary',
+                  badge: 'Institution Portal',
+              },
+          ]
+        : [];
 
     const teacherLinks = canManageTeaching
         ? [
@@ -76,7 +95,7 @@ export default function Index({ stats = { enrolled: 0, favourites: 0, searches: 
         },
     ];
 
-    const quickLinks = [...teacherLinks, ...commonLinks];
+    const quickLinks = [...institutionLinks, ...teacherLinks, ...commonLinks];
 
     return (
         <FrontLayout>

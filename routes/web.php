@@ -25,6 +25,9 @@ use App\Http\Controllers\CourseFaqController;
 use App\Http\Controllers\Installer\InstallController;
 use App\Http\Controllers\TeacherDemoController;
 use App\Http\Controllers\TeacherCourseController;
+use App\Http\Controllers\InstitutionDashboardController;
+use App\Http\Controllers\AdminInstitutionController;
+use App\Http\Controllers\PublicInstitutionController;
 
 // Web Installer Routes
 Route::prefix('install')->name('install.')->group(function () {
@@ -80,6 +83,16 @@ Route::get('platform-feedback', [FrontController::class, 'adminPlatformFeedback'
 Route::get('platform-feedback/accept/{id}', [FrontController::class, 'acceptPlatformFeedback'])->name('admin.platform_feedback.accept');
 Route::delete('platform-feedback/{id}', [FrontController::class, 'destroyPlatformFeedback'])->name('admin.platform_feedback.destroy');
 
+// Institutions CRUD & Approval Queue (Coaching Institutes, Schools, Colleges, Universities)
+Route::get('institutions', [AdminInstitutionController::class, 'index'])->name('admin.institutions.index');
+Route::get('institutions/create', [AdminInstitutionController::class, 'create'])->name('admin.institutions.create');
+Route::post('institutions', [AdminInstitutionController::class, 'store'])->name('admin.institutions.store');
+Route::get('institutions/{id}/edit', [AdminInstitutionController::class, 'edit'])->name('admin.institutions.edit');
+Route::post('institutions/{id}/update', [AdminInstitutionController::class, 'update'])->name('admin.institutions.update');
+Route::post('institutions/{id}/status', [AdminInstitutionController::class, 'updateStatus'])->name('admin.institutions.status');
+Route::delete('institutions/gallery/{id}', [AdminInstitutionController::class, 'deleteGallery'])->name('admin.institutions.gallery.delete');
+Route::delete('institutions/{id}', [AdminInstitutionController::class, 'destroy'])->name('admin.institutions.destroy');
+
 Route::resources([
     'roles'           => RoleController::class,
     'users'           => UserController::class,
@@ -131,6 +144,8 @@ Route::get('/shop_dtails',[FrontController::class, 'shop_dtails'])->name('front.
 Route::get('/shop',[FrontController::class, 'shop'])->name('front.shop');
 Route::get('/studentinterface',[FrontController::class, 'studentinterface'])->name('front.studentinterface');
 Route::get('/search',[FrontController::class, 'search'])->name('front.search');
+Route::get('/institutions/{slug}', [PublicInstitutionController::class, 'show'])->name('front.institutions.show');
+Route::post('/institutions/{id}/inquiry', [PublicInstitutionController::class, 'submitInquiry'])->name('front.institutions.inquiry');
 Route::get('/demo-view/{token}', [TeacherDemoController::class, 'publicDemoView'])->name('front.demo.view');
 Route::post('/demo-view/{token}/confirm', [TeacherDemoController::class, 'confirmDemoBooking'])->name('front.demo.confirm');
 Route::post('/platform-feedback', [FrontController::class, 'postPlatformFeedback'])->name('front.platform_feedback.submit');
@@ -168,6 +183,15 @@ Route::delete('/searchhistory/{id}/delete',[FrontController::class,'searchdestro
     Route::get('/changepassword',[FrontController::class, 'changepassword'])->name('front.changepassword');
     Route::get('/myfavouritecourses',[FrontController::class, 'myfavouritecourses'])->name('front.myfavouritecourses'); 
     Route::get('/mycourses',[FrontController::class, 'mycourses'])->name('front.mycourses'); 
+    // Institution Self-Management Portal (Institutions & Admins only)
+    Route::middleware(['user_role:institution,admin'])->group(function () {
+        Route::get('/dashboard/institution', [InstitutionDashboardController::class, 'index'])->name('front.dashboard.institution');
+        Route::post('/dashboard/institution/profile', [InstitutionDashboardController::class, 'updateProfile'])->name('front.dashboard.institution.profile');
+        Route::post('/dashboard/institution/gallery', [InstitutionDashboardController::class, 'uploadGallery'])->name('front.dashboard.institution.gallery.upload');
+        Route::delete('/dashboard/institution/gallery/{id}', [InstitutionDashboardController::class, 'deleteGallery'])->name('front.dashboard.institution.gallery.delete');
+        Route::post('/dashboard/institution/inquiries/{id}/status', [InstitutionDashboardController::class, 'updateInquiryStatus'])->name('front.dashboard.institution.inquiries.status');
+    });
+
     // Teacher-Only Portal Routes (Strict backend RBAC: Teachers & Admins only, HTTP 403 for Students)
     Route::middleware(['user_role:teacher,admin'])->group(function () {
         Route::get('/dashboard/demos', [TeacherDemoController::class, 'teacherIndex'])->name('front.dashboard.demos');

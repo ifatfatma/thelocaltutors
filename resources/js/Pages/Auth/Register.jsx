@@ -11,11 +11,13 @@ export default function Register() {
     const [form, setForm] = useState({
         usertype: 'student',
         name: '',
+        institution_name: '',
         email: '',
         mobile: '',
         password: '',
         terms: true,
     });
+    const isInstitutionRole = ['coaching_institute', 'school', 'college', 'university'].includes(form.usertype);
     const [showPassword, setShowPassword] = useState(false);
 
     // 6-Digit Email OTP Step State
@@ -222,33 +224,90 @@ export default function Register() {
                             I want to join as: <span className="text-danger">*</span>
                         </label>
                         <div className="row g-2 align-items-stretch">
-                            <div className="col-6 d-flex">
+                            <div className="col-4 d-flex">
                                 <button
                                     type="button"
-                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-2 text-nowrap ${
+                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-1 text-nowrap ${
                                         form.usertype === 'student' ? 'btn-primary' : 'btn-outline-secondary'
                                     }`}
-                                    style={{ minHeight: '42px', fontSize: '0.92rem' }}
+                                    style={{ minHeight: '42px', fontSize: '0.86rem' }}
                                     onClick={() => setForm({ ...form, usertype: 'student' })}
                                 >
                                     <i className="bi bi-mortarboard-fill flex-shrink-0"></i>
                                     <span>Student</span>
                                 </button>
                             </div>
-                            <div className="col-6 d-flex">
+                            <div className="col-4 d-flex">
                                 <button
                                     type="button"
-                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-2 text-nowrap ${
+                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-1 text-nowrap ${
                                         form.usertype === 'teacher' ? 'btn-primary' : 'btn-outline-secondary'
                                     }`}
-                                    style={{ minHeight: '42px', fontSize: '0.92rem' }}
+                                    style={{ minHeight: '42px', fontSize: '0.86rem' }}
                                     onClick={() => setForm({ ...form, usertype: 'teacher' })}
                                 >
                                     <i className="bi bi-person-video3 flex-shrink-0"></i>
-                                    <span>Educator / Tutor</span>
+                                    <span>Tutor</span>
+                                </button>
+                            </div>
+                            <div className="col-4 d-flex">
+                                <button
+                                    type="button"
+                                    className={`btn w-100 h-100 py-2 px-2 d-flex align-items-center justify-content-center gap-1 text-nowrap ${
+                                        isInstitutionRole ? 'btn-primary' : 'btn-outline-secondary'
+                                    }`}
+                                    style={{ minHeight: '42px', fontSize: '0.86rem' }}
+                                    onClick={() => setForm({ ...form, usertype: isInstitutionRole ? form.usertype : 'coaching_institute' })}
+                                >
+                                    <i className="bi bi-building flex-shrink-0"></i>
+                                    <span>Institution</span>
                                 </button>
                             </div>
                         </div>
+
+                        {isInstitutionRole && (
+                            <div className="mt-2 p-3 bg-light rounded-3 border">
+                                <label className="form-label small fw-semibold text-secondary mb-2">
+                                    Select Institution Category <span className="text-danger">*</span>
+                                </label>
+                                <div className="row g-2 mb-3">
+                                    {[
+                                        { value: 'coaching_institute', label: 'Coaching Institute', icon: 'bi-building' },
+                                        { value: 'school', label: 'School', icon: 'bi-backpack4' },
+                                        { value: 'college', label: 'College', icon: 'bi-mortarboard' },
+                                        { value: 'university', label: 'University', icon: 'bi-bank' },
+                                    ].map((cat) => (
+                                        <div key={cat.value} className="col-6 d-flex">
+                                            <button
+                                                type="button"
+                                                className={`btn btn-sm w-100 h-100 py-2 d-flex align-items-center justify-content-center gap-1 text-nowrap ${
+                                                    form.usertype === cat.value ? 'btn-primary text-white' : 'btn-white bg-white border text-secondary'
+                                                }`}
+                                                onClick={() => setForm({ ...form, usertype: cat.value })}
+                                            >
+                                                <i className={`bi ${cat.icon}`}></i>
+                                                <span>{cat.label}</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <label htmlFor="institution_name" className="form-label small fw-semibold text-secondary">
+                                    Institution Name <span className="text-danger">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="institution_name"
+                                    className={`form-control form-control-sm ${errors.institution_name ? 'is-invalid' : ''}`}
+                                    placeholder="Enter official institution / organization name"
+                                    value={form.institution_name}
+                                    onChange={(e) => setForm({ ...form, institution_name: e.target.value })}
+                                    required={isInstitutionRole}
+                                />
+                                {errors.institution_name && <div className="invalid-feedback">{errors.institution_name[0]}</div>}
+                            </div>
+                        )}
+
                         {errors.usertype && <div className="text-danger small mt-1">{errors.usertype[0]}</div>}
                     </div>
 
