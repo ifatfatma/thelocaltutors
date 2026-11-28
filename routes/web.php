@@ -28,6 +28,7 @@ use App\Http\Controllers\TeacherCourseController;
 use App\Http\Controllers\InstitutionDashboardController;
 use App\Http\Controllers\AdminInstitutionController;
 use App\Http\Controllers\PublicInstitutionController;
+use App\Http\Controllers\TeacherDiscoveryController;
 
 // Web Installer Routes
 Route::prefix('install')->name('install.')->group(function () {
@@ -92,6 +93,22 @@ Route::post('institutions/{id}/update', [AdminInstitutionController::class, 'upd
 Route::post('institutions/{id}/status', [AdminInstitutionController::class, 'updateStatus'])->name('admin.institutions.status');
 Route::delete('institutions/gallery/{id}', [AdminInstitutionController::class, 'deleteGallery'])->name('admin.institutions.gallery.delete');
 Route::delete('institutions/{id}', [AdminInstitutionController::class, 'destroy'])->name('admin.institutions.destroy');
+
+// Automated Teacher & Tutor Discovery System (Admin Only)
+Route::get('teacher-discovery', [TeacherDiscoveryController::class, 'index'])->name('admin.teacher_discovery.index');
+Route::post('teacher-discovery/search', [TeacherDiscoveryController::class, 'search'])->name('admin.teacher_discovery.search');
+Route::get('teacher-discovery/searches/{id}', [TeacherDiscoveryController::class, 'showSearch'])->name('admin.teacher_discovery.show');
+Route::get('teacher-discovery/searches/{id}/status', [TeacherDiscoveryController::class, 'searchStatus'])->name('admin.teacher_discovery.status');
+Route::get('teacher-discovery/history', [TeacherDiscoveryController::class, 'history'])->name('admin.teacher_discovery.history');
+Route::get('teacher-discovery/imported', [TeacherDiscoveryController::class, 'imported'])->name('admin.teacher_discovery.imported');
+Route::get('teacher-discovery/settings', [TeacherDiscoveryController::class, 'settings'])->name('admin.teacher_discovery.settings');
+Route::post('teacher-discovery/settings', [TeacherDiscoveryController::class, 'updateSettings'])->name('admin.teacher_discovery.settings.update');
+Route::post('teacher-discovery/results/{id}/update', [TeacherDiscoveryController::class, 'updateResult'])->name('admin.teacher_discovery.results.update');
+Route::post('teacher-discovery/results/{id}/reject', [TeacherDiscoveryController::class, 'rejectResult'])->name('admin.teacher_discovery.results.reject');
+Route::post('teacher-discovery/results/{id}/verify', [TeacherDiscoveryController::class, 'verifyImported'])->name('admin.teacher_discovery.results.verify');
+Route::post('teacher-discovery/import-selected', [TeacherDiscoveryController::class, 'importSelected'])->name('admin.teacher_discovery.import_selected');
+Route::post('teacher-discovery/searches/{id}/import-non-duplicates', [TeacherDiscoveryController::class, 'importAllNonDuplicates'])->name('admin.teacher_discovery.import_non_duplicates');
+Route::get('teacher-discovery/export', [TeacherDiscoveryController::class, 'export'])->name('admin.teacher_discovery.export');
 
 Route::resources([
     'roles'           => RoleController::class,

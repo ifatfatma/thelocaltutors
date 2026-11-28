@@ -18,6 +18,7 @@ export default function AdminLayout({ children, title }) {
         { label: 'Roles', href: '/admin/roles', icon: 'bi-shield-check' },
         { label: 'Users', href: '/admin/users', icon: 'bi-people' },
         { label: 'Teachers', href: '/admin/teacher', icon: 'bi-mortarboard' },
+        { label: 'Teacher Discovery', href: '/admin/teacher-discovery', icon: 'bi-radar' },
         { label: 'Coaching Institutes', href: '/admin/institutions?type=coaching_institute', icon: 'bi-building' },
         { label: 'Schools', href: '/admin/institutions?type=school', icon: 'bi-backpack4' },
         { label: 'Colleges', href: '/admin/institutions?type=college', icon: 'bi-mortarboard-fill' },

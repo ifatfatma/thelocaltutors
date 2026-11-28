@@ -36,6 +36,15 @@ return [
         'sender_name' => env('BREVO_SENDER_NAME', env('MAIL_FROM_NAME', 'The Local Tutors')),
     ],
 
+    'teacher_discovery' => [
+        'provider'           => env('DISCOVERY_SEARCH_PROVIDER', 'google_cse'),
+        'google_cse_api_key' => env('GOOGLE_CSE_API_KEY'),
+        'google_cse_cx'      => env('GOOGLE_CSE_CX'),
+        'bing_api_key'       => env('BING_SEARCH_API_KEY'),
+        'bing_endpoint'      => env('BING_SEARCH_ENDPOINT', 'https://api.bing.microsoft.com/v7.0/search'),
+        'serper_api_key'     => env('SERPER_API_KEY'),
+    ],
+
     'google' => [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY', env('VITE_GOOGLE_MAPS_API_KEY', '')),
     ],
