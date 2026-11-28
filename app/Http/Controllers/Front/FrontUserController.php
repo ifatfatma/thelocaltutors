@@ -287,9 +287,6 @@ class FrontUserController extends Controller
         // Strictly update Teacher profile ONLY for accounts with the teacher role (never auto-promote students/admins)
         if (strtolower((string)$teacherbasic->type) === 'teacher') {
             $teacher                = Teacher::firstOrNew(['user_id' => Auth::user()->id]);
-            $teacher->name          = $teacherbasic->name;
-            $teacher->email         = $teacherbasic->email;
-            $teacher->mobile        = $teacherbasic->mobile;
             $teacher->gender        = $request->gender ?? 'Male';
             $teacher->user_id       = Auth::user()->id;
             $teacher->description   = \App\Helpers\HtmlSanitizer::clean($request->description);
