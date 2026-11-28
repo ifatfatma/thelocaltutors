@@ -22,8 +22,10 @@ class TeacherDiscoveryImportService
     /**
      * Import a batch of discovery result IDs into the existing users + teachers tables.
      * Never overwrites existing verified accounts, never sends emails/SMS, uses DB transactions.
+     *
+     * @param bool $isAutoImport When true, strictly never auto-activates accounts.
      */
-    public function importBatch(array $resultIds, bool $skipDuplicates = true): array
+    public function importBatch(array $resultIds, bool $skipDuplicates = true, bool $isAutoImport = false): array
     {
         $settings = TeacherDiscoverySetting::current();
         $results = TeacherDiscoveryResult::whereIn('id', $resultIds)->get();
@@ -42,6 +44,11 @@ class TeacherDiscoveryImportService
                 continue;
             }
 
+            if (empty(trim((string)$result->teacher_name))) {
+                $skipped++;
+                continue;
+            }
+
             // Re-run duplicate detection right before import to prevent race duplicates
             $dup = $this->duplicateService->detect($result->toArray(), $settings, $result->id);
             $result->fill($dup);
@@ -53,10 +60,18 @@ class TeacherDiscoveryImportService
                 continue;
             }
 
+            // Auto-import must also skip possible duplicates
+            if ($isAutoImport && $dup['duplicate_status'] !== 'unique') {
+                $skipped++;
+                continue;
+            }
+
             try {
-                DB::transaction(function () use ($result, $settings) {
+                DB::transaction(function () use ($result, $settings, $isAutoImport) {
                     $defaultStatus = $settings->default_account_status ?: 'pending_verification';
-                    $isActive = ($defaultStatus === 'verified') ? 1 : 0;
+                    // Automatic import must NEVER automatically publish/activate accounts
+                    $isActive = (!$isAutoImport && in_array($defaultStatus, ['active', 'verified'], true)) ? 1 : 0;
+                    $verificationState = ($isActive === 1) ? 'verified' : 'pending_verification';
 
                     // Reuse existing users table (never send emails/SMS; inactive by default until verified)
                     $email = $result->normalized_email ?: null;
@@ -95,7 +110,7 @@ class TeacherDiscoveryImportService
                     $teacher->save();
 
                     $result->import_status = 'imported';
-                    $result->verification_status = $defaultStatus;
+                    $result->verification_status = $verificationState;
                     $result->imported_user_id = $user->id;
                     $result->imported_teacher_id = $teacher->id;
                     $result->imported_at = now();

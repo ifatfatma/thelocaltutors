@@ -64,9 +64,9 @@ class TeacherDiscoveryService
                 }
             }
 
-            // Step 3: Auto-import ONLY if explicitly enabled in Import Settings (default is manual)
+            // Step 3: Auto-import ONLY if explicitly enabled in Import Settings (never auto-publishes/activates)
             if ($settings->import_mode === 'auto' && !empty($uniqueIdsForAutoImport)) {
-                $this->importer->importBatch($uniqueIdsForAutoImport, true);
+                $this->importer->importBatch($uniqueIdsForAutoImport, true, true);
             }
 
             TeacherDiscoveryImportService::refreshSearchCounters($search->id);
