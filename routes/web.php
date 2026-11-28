@@ -103,6 +103,7 @@ Route::get('teacher-discovery/history', [TeacherDiscoveryController::class, 'his
 Route::get('teacher-discovery/imported', [TeacherDiscoveryController::class, 'imported'])->name('admin.teacher_discovery.imported');
 Route::get('teacher-discovery/settings', [TeacherDiscoveryController::class, 'settings'])->name('admin.teacher_discovery.settings');
 Route::post('teacher-discovery/settings', [TeacherDiscoveryController::class, 'updateSettings'])->name('admin.teacher_discovery.settings.update');
+Route::post('teacher-discovery/settings/test-provider', [TeacherDiscoveryController::class, 'testProvider'])->name('admin.teacher_discovery.settings.test');
 Route::post('teacher-discovery/results/{id}/update', [TeacherDiscoveryController::class, 'updateResult'])->name('admin.teacher_discovery.results.update');
 Route::post('teacher-discovery/results/{id}/reject', [TeacherDiscoveryController::class, 'rejectResult'])->name('admin.teacher_discovery.results.reject');
 Route::post('teacher-discovery/results/{id}/verify', [TeacherDiscoveryController::class, 'verifyImported'])->name('admin.teacher_discovery.results.verify');

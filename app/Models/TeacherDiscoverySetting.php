@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class TeacherDiscoverySetting extends Model
 {
+    public const CACHE_KEY = 'teacher_discovery_settings_singleton';
+
     protected $fillable = [
         'search_provider',
         'max_results_default',
@@ -32,20 +35,27 @@ class TeacherDiscoverySetting extends Model
 
     public static function current(): self
     {
-        return self::firstOrCreate([], [
-            'search_provider'            => env('DISCOVERY_SEARCH_PROVIDER', 'google_cse'),
-            'max_results_default'        => 25,
-            'timeout_seconds'            => 15,
-            'max_retries'                => 2,
-            'rate_limit_per_minute'      => 20,
-            'respect_robots_txt'         => true,
-            'match_by_email'             => true,
-            'match_by_phone'             => true,
-            'match_by_name_city_subject' => true,
-            'match_by_source_url'        => true,
-            'import_mode'                => 'manual',
-            'default_account_status'     => 'pending_verification',
-            'use_queue_above'            => 25,
-        ]);
+        return Cache::remember(self::CACHE_KEY, 3600, function () {
+            return self::firstOrCreate([], [
+                'search_provider'            => env('DISCOVERY_SEARCH_PROVIDER', 'google_cse'),
+                'max_results_default'        => 25,
+                'timeout_seconds'            => 15,
+                'max_retries'                => 3,
+                'rate_limit_per_minute'      => 20,
+                'respect_robots_txt'         => true,
+                'match_by_email'             => true,
+                'match_by_phone'             => true,
+                'match_by_name_city_subject' => true,
+                'match_by_source_url'        => true,
+                'import_mode'                => 'manual',
+                'default_account_status'     => 'pending_verification',
+                'use_queue_above'            => 25,
+            ]);
+        });
+    }
+
+    public static function clearCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
     }
 }

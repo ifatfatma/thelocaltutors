@@ -27,11 +27,57 @@ class TeacherDuplicateDetectionService
     public static function normalizePhone(?string $phone): ?string
     {
         if (!$phone) return null;
-        $digits = preg_replace('/\D/', '', $phone);
-        if (strlen($digits) > 10) {
-            $digits = substr($digits, -10);
+        $raw = trim($phone);
+        $hasPlus = str_starts_with($raw, '+');
+        $digits = preg_replace('/\D/', '', $raw);
+
+        if ($digits === '' || strlen($digits) < 7) {
+            return null;
         }
-        return strlen($digits) >= 10 ? $digits : null;
+
+        // Normalize Indian numbers (+91 / 91 / leading 0) to 10 digits without corrupting non-Indian numbers
+        if (strlen($digits) === 12 && str_starts_with($digits, '91')) {
+            return substr($digits, 2);
+        }
+        if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            return substr($digits, 1);
+        }
+        if (!$hasPlus && strlen($digits) === 10) {
+            return $digits;
+        }
+
+        return ($hasPlus ? '+' : '') . $digits;
+    }
+
+    /**
+     * Canonicalize a URL by normalizing scheme/host and removing common tracking parameters.
+     */
+    public static function canonicalizeUrl(?string $url): ?string
+    {
+        if (!$url) return null;
+        $parsed = parse_url(trim($url));
+        if (empty($parsed['host'])) {
+            return null;
+        }
+
+        $scheme = strtolower($parsed['scheme'] ?? 'https');
+        $host = preg_replace('/^www\./i', '', strtolower($parsed['host']));
+        $path = rtrim($parsed['path'] ?? '', '/');
+
+        $cleanQuery = '';
+        if (!empty($parsed['query'])) {
+            parse_str($parsed['query'], $params);
+            $trackingKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'ref', 'source'];
+            foreach ($trackingKeys as $tk) {
+                unset($params[$tk]);
+            }
+            if (!empty($params)) {
+                ksort($params);
+                $cleanQuery = '?' . http_build_query($params);
+            }
+        }
+
+        return "{$scheme}://{$host}{$path}{$cleanQuery}";
     }
 
     /**
@@ -51,7 +97,8 @@ class TeacherDuplicateDetectionService
         $normName = self::normalizeName($data['teacher_name'] ?? null);
         $normEmail = self::normalizeEmail($data['email'] ?? null);
         $normPhone = self::normalizePhone($data['phone'] ?? null);
-        $urlHash = $data['source_url_hash'] ?? (!empty($data['source_url']) ? hash('sha256', rtrim(strtolower($data['source_url']), '/')) : null);
+        $canonicalUrl = self::canonicalizeUrl($data['source_url'] ?? null);
+        $urlHash = $canonicalUrl ? hash('sha256', $canonicalUrl) : ($data['source_url_hash'] ?? null);
 
         $status = 'unique';
         $reason = null;

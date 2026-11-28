@@ -9,6 +9,7 @@ use App\Models\TeacherDiscoveryResult;
 use App\Models\TeacherDiscoverySearch;
 use App\Models\TeacherDiscoverySetting;
 use App\Models\User;
+use App\Services\TeacherDiscovery\Providers\SearchProviderManager;
 use App\Services\TeacherDiscovery\SearchProviderService;
 use App\Services\TeacherDiscovery\TeacherDiscoveryImportService;
 use App\Services\TeacherDiscovery\TeacherDiscoveryService;
@@ -254,14 +255,38 @@ class TeacherDiscoveryController extends Controller
             'match_by_name_city_subject' => 'boolean',
             'match_by_source_url'        => 'boolean',
             'import_mode'                => 'required|in:manual,auto',
-            'default_account_status'     => 'required|in:pending_verification,verified',
+            'default_account_status'     => 'required|in:pending_verification,inactive,active,verified',
             'use_queue_above'            => 'required|integer|min:10|max:100',
         ]);
 
         $settings = TeacherDiscoverySetting::current();
         $settings->update($validated);
+        TeacherDiscoverySetting::clearCache();
 
-        return redirect()->back()->with('success', 'Teacher Discovery import settings saved successfully.');
+        return redirect()->back()->with('success', 'Teacher Discovery import settings saved and applied to future searches.');
+    }
+
+    /**
+     * Run a live Test Connection request against a Search API provider (never exposes API keys).
+     */
+    public function testProvider(Request $request, SearchProviderManager $manager)
+    {
+        $validated = $request->validate([
+            'provider' => 'required|in:google_cse,bing,serper',
+        ]);
+
+        $settings = TeacherDiscoverySetting::current();
+        $result = $manager->testProvider($validated['provider'], $settings);
+
+        return response()->json([
+            'success'          => $result['valid'],
+            'status'           => $result['status'],
+            'provider'         => $result['provider'],
+            'response_time_ms' => $result['response_time_ms'],
+            'sample_count'     => $result['sample_count'],
+            'message'          => $result['message'],
+            'providersStatus'  => $manager->getProvidersStatus(),
+        ]);
     }
 
     /**

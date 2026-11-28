@@ -68,7 +68,10 @@ export default function Search({
     }, [liveStatus?.id, liveStatus?.status]);
 
     const citiesForState = getCitiesForState(form.state);
-    const currentProviderConfigured = Boolean(providersStatus[settings?.search_provider || 'google_cse']);
+    const activeProviderInfo = providersStatus[settings?.search_provider || 'google_cse'];
+    const currentProviderConfigured = typeof activeProviderInfo === 'object'
+        ? activeProviderInfo?.status === 'configured'
+        : Boolean(activeProviderInfo);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
